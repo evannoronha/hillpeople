@@ -395,6 +395,7 @@ export interface ApiPostPost extends Struct.CollectionTypeSchema {
     publishedAt: Schema.Attribute.DateTime;
     publishedDate: Schema.Attribute.DateTime;
     slug: Schema.Attribute.UID<'title'> & Schema.Attribute.Required;
+    stravaActivityId: Schema.Attribute.UID;
     title: Schema.Attribute.String &
       Schema.Attribute.Required &
       Schema.Attribute.Unique;

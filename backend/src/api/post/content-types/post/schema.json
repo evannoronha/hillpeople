@@ -43,6 +43,9 @@
       "type": "relation",
       "relation": "oneToOne",
       "target": "admin::user"
+    },
+    "stravaActivityId": {
+      "type": "uid"
     }
   }
 }
