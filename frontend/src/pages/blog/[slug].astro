@@ -12,14 +12,14 @@ export async function getStaticPaths() {
     }));
 }
 
-const { post } = Astro.props;
+const { slug } = Astro.params;
+const post = await fetchPostBySlug(slug);
+
+console.debug(post);
 ---
 
 <Layout>
-    <img
-        src={`${post.coverImage.formats.large.url}`}
-        alt={post.title}
-    />
+    <img src={`${post.coverImage.formats.large.url}`} alt={post.title} />
     <h1>{post.title}</h1>
     <div>{post.content}</div>
     <div
