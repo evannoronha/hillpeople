@@ -26,7 +26,9 @@ export async function fetchPosts() {
 
 export async function fetchPostBySlug(slug: string) {
     try {
-        const response = await fetch(`${STRAPI_URL}/api/posts?filters[slug][$eq]=${slug}&populate=cover`, { headers })
+        const reqUrl = `${STRAPI_URL}/api/posts?filters[slug][$eq]=${slug}&populate=*`
+        console.debug("Fetching posts from:", reqUrl)
+        const response = await fetch(reqUrl, { headers })
 
         if (!response.ok) {
             throw new Error(`Failed to fetch post: ${response.status}`)
