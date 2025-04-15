@@ -2,42 +2,27 @@
 import Layout from "../layouts/Layout.astro";
 
 // Fetch all posts from Strapi
-const res = await fetch(
-    `http://localhost:1337/api/posts?sort=publishedAt:desc&populate=*`,
-);
-const data = await res.json();
-const posts = data.data;
+
+import { fetchPosts } from "../lib/api";
+const posts = await fetchPosts();
 ---
 
 <Layout>
-	<section class="max-w-4xl mx-auto py-12 px-4">
-		<h1 class="text-5xl font-bold mb-10 text-center">Blog</h1>
-
-		<div class="grid gap-8 md:grid-cols-2">
+	<section>
+		<h1>Blog</h1>
+		<div>
 			{
 				posts.map((post) => {
-					const { title, slug, coverImage, publishedAt } =
-						post;
-					const imageUrl = coverImage?.data?.attributes?.url;
+					const { title, slug, coverImage, publishedAt } = post;
+					const imageUrl = coverImage?.formats?.large.url;
 					const postUrl = `/blog/${slug}`;
 
 					return (
-						<a
-							href={postUrl}
-							class="block rounded-xl shadow hover:shadow-lg transition overflow-hidden border border-gray-100"
-						>
-							{imageUrl && (
-								<img
-									src={`${import.meta.env.PUBLIC_API_URL.replace("/api", "")}${imageUrl}`}
-									alt={title}
-									class="w-full h-48 object-cover"
-								/>
-							)}
+						<a href={postUrl}>
+							{imageUrl && <img src={imageUrl} alt={title} />}
 							<div class="p-4">
-								<h2 class="text-2xl font-semibold mb-2">
-									{title}
-								</h2>
-								<p class="text-sm text-gray-500">
+								<h2>{title}</h2>
+								<p>
 									{new Date(publishedAt).toLocaleDateString()}
 								</p>
 							</div>

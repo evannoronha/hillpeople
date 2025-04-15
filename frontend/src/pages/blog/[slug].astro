@@ -1,27 +1,23 @@
 ---
 import Layout from "../../layouts/Layout.astro";
 
-export async function getStaticPaths() {
-    const res = await fetch("http://localhost:1337/api/posts");
-    const posts: { data: { slug: string }[] } = await res.json();
+import { fetchPostBySlug, fetchPosts } from "../../lib/api";
 
-    return posts.data.map((post: { slug: string }) => ({
+export async function getStaticPaths() {
+    const posts = await fetchPosts();
+
+    return posts.map((post) => ({
         params: { slug: post.slug },
+        props: { post },
     }));
 }
 
-const { slug } = Astro.params;
-const res = await fetch(
-    `http://localhost:1337/api/posts?filters[slug][$eq]=${slug}&populate=*`,
-);
-const data = await res.json();
-const post = data.data[0];
-console.log(post);
+const { post } = Astro.props;
 ---
 
 <Layout>
     <img
-        src={`http://localhost:1337${post.coverImage.formats.large.url}`}
+        src={`${post.coverImage.formats.large.url}`}
         alt={post.title}
     />
     <h1>{post.title}</h1>
