@@ -1,27 +1,17 @@
 ---
+import { marked } from "marked";
 import Layout from "../../layouts/Layout.astro";
-
-import { fetchPostBySlug, fetchPosts } from "../../lib/api";
-
-export async function getStaticPaths() {
-    const posts = await fetchPosts();
-
-    return posts.map((post) => ({
-        params: { slug: post.slug },
-        props: { post },
-    }));
-}
+import { fetchPostBySlug } from "../../lib/api";
 
 const { slug } = Astro.params;
 const post = await fetchPostBySlug(slug);
-
-console.debug(post);
+const htmlContent = await marked(post.content);
 ---
 
 <Layout>
     <img src={`${post.coverImage.formats.large.url}`} alt={post.title} />
     <h1>{post.title}</h1>
-    <div>{post.content}</div>
+    <div set:html={htmlContent} />
     <div
         class="strava-embed-placeholder"
         data-embed-type="activity"
