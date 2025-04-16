@@ -2,6 +2,8 @@
 import Layout from "../layouts/Layout.astro";
 
 import { fetchPosts } from "../lib/api";
+import { getMediaUrl } from "../lib/imageUrl";
+
 const posts = await fetchPosts();
 ---
 
@@ -12,7 +14,7 @@ const posts = await fetchPosts();
 			{
 				posts.map((post) => {
 					const { title, slug, coverImage, publishedAt } = post;
-					const imageUrl = coverImage?.formats?.large.url;
+					const imageUrl = getMediaUrl(coverImage?.formats?.large.url);
 					const postUrl = `/blog/${slug}`;
 
 					return (
@@ -20,9 +22,7 @@ const posts = await fetchPosts();
 							{imageUrl && <img src={imageUrl} alt={title} />}
 							<div>
 								<h2>{title}</h2>
-								<p>
-									{new Date(publishedAt).toLocaleString()}
-								</p>
+								<p>{new Date(publishedAt).toLocaleString()}</p>
 							</div>
 						</a>
 					);
