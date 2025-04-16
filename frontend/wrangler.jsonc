@@ -12,5 +12,8 @@
     },
     "observability": {
         "enabled": true
+    },
+    "vars": {
+        "STRAPI_API_URL": "https://journal.hillpeople.net"
     }
 }
