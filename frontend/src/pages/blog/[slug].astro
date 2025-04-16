@@ -7,13 +7,12 @@ import { getMediaUrl } from "../../lib/imageUrl";
 const { slug } = Astro.params;
 const post = await fetchPostBySlug(slug);
 const htmlContent = await marked(post.content);
+const imageUrl = getMediaUrl(post?.coverImage?.formats?.small?.url);
 ---
 
 <Layout>
-    <img
-        src={`${getMediaUrl(post.coverImage.formats.large.url)}`}
-        alt={post.title}
-    />
+    {imageUrl && <img src={imageUrl} alt={post.title}
+    />}
     <h1>{post.title}</h1>
     <div set:html={htmlContent} />
     <div

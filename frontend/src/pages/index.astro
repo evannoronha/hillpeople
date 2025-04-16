@@ -14,7 +14,7 @@ const posts = await fetchPosts();
 			{
 				posts.map((post) => {
 					const { title, slug, coverImage, publishedAt } = post;
-					const imageUrl = getMediaUrl(coverImage?.formats?.small.?url);
+					const imageUrl = getMediaUrl(coverImage?.formats?.small?.url);
 					const postUrl = `/blog/${slug}`;
 
 					return (
