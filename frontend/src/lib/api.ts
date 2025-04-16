@@ -1,16 +1,10 @@
-const STRAPI_URL = import.meta.env.STRAPI_API_URL || "https://your-strapi-cloud-url.com"
-const STRAPI_TOKEN = import.meta.env.STRAPI_API_TOKEN
-
-const headers = {
-    "Content-Type": "application/json",
-    ...(STRAPI_TOKEN && { Authorization: `Bearer ${STRAPI_TOKEN}` }),
-}
+const STRAPI_URL = import.meta.env.STRAPI_API_URL
 
 export async function fetchPosts() {
     try {
         const reqUrl = `${STRAPI_URL}/api/posts?populate=*`
         console.debug("Fetching posts from:", reqUrl)
-        const response = await fetch(reqUrl, { headers })
+        const response = await fetch(reqUrl)
 
         if (!response.ok) {
             throw new Error(`Failed to fetch posts: ${response.status}`)
@@ -28,7 +22,7 @@ export async function fetchPostBySlug(slug: string) {
     try {
         const reqUrl = `${STRAPI_URL}/api/posts?filters[slug][$eq]=${slug}&populate=*`
         console.debug("Fetching posts from:", reqUrl)
-        const response = await fetch(reqUrl, { headers })
+        const response = await fetch(reqUrl)
 
         if (!response.ok) {
             throw new Error(`Failed to fetch post: ${response.status}`)
