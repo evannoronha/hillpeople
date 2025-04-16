@@ -1,8 +1,6 @@
 ---
 import Layout from "../layouts/Layout.astro";
 
-// Fetch all posts from Strapi
-
 import { fetchPosts } from "../lib/api";
 const posts = await fetchPosts();
 ---
@@ -20,10 +18,10 @@ const posts = await fetchPosts();
 					return (
 						<a href={postUrl}>
 							{imageUrl && <img src={imageUrl} alt={title} />}
-							<div class="p-4">
+							<div>
 								<h2>{title}</h2>
 								<p>
-									{new Date(publishedAt).toLocaleDateString()}
+									{new Date(publishedAt).toLocaleString()}
 								</p>
 							</div>
 						</a>
