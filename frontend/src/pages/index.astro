@@ -5,26 +5,51 @@ import { fetchPosts } from "../lib/api";
 import { getMediaUrl } from "../lib/imageUrl";
 
 const posts = await fetchPosts();
+
+const getLargestImage = (post:any) => {
+	const { coverImage } = post;
+	if (!coverImage) return null;
+
+	const formats = coverImage.formats;
+	if (!formats) return null;
+
+	const largestFormat = Object.keys(formats).reduce((largest, key) => {
+		return formats[key].size > formats[largest].size ? key : largest;
+	}, Object.keys(formats)[0]);
+
+	return formats[largestFormat]
+};
 ---
 
 <Layout>
 	<section>
-		<h1>Hill People -- Evan and Morgan's Notes from along the way.</h1>
+		<h1>Hill People</h1>
+		<h2>Evan and Morgan's Notes from along the way.</h2>
+		<hr />
 		<div>
 			{
-				posts.map((post) => {
+				posts.map((post:any) => {
 					const { title, slug, coverImage, publishedAt } = post;
-					const imageUrl = getMediaUrl(coverImage?.formats?.small?.url);
+					const imageUrl = getMediaUrl(getLargestImage(post).url);
 					const postUrl = `/blog/${slug}`;
 
 					return (
 						<a href={postUrl}>
-							{imageUrl && <img src={imageUrl} alt={title} />}
+							{imageUrl &&
+							<div class="w-full max-w-xl aspect-[1/1]">
+							<img
+							 class="w-full h-full object-cover"
+							 src={imageUrl}
+							 alt={title}
+							/>
+							}
+							</div>
 							<div>
 								<h2>{title}</h2>
 								<p>{new Date(publishedAt).toLocaleString()}</p>
 							</div>
 						</a>
+						<hr />
 					);
 				})
 			}
