@@ -6,7 +6,8 @@ import { getMediaUrl, getLargestImage } from "../../lib/imageUrl";
 import StravaEmbed from "../../components/StravaEmbed.astro";
 
 const { slug } = Astro.params;
-const post = await fetchPostBySlug(slug);
+
+const post = await fetchPostBySlug(slug!);
 const htmlContent = await marked(post.content);
 const image = getLargestImage(post);
 const imageUrl = getMediaUrl(image?.url);
