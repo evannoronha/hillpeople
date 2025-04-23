@@ -2,7 +2,7 @@ const STRAPI_URL = import.meta.env.STRAPI_API_URL
 
 export async function fetchPosts() {
     try {
-        const reqUrl = `${STRAPI_URL}/api/posts?populate=*&sort=createdAt:desc`
+        const reqUrl = `${STRAPI_URL}/api/posts?populate=*&sort=publishedDate:desc`
         console.debug("Fetching posts from:", reqUrl)
         const response = await fetch(reqUrl)
 
