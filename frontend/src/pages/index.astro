@@ -2,23 +2,11 @@
 import Layout from "../layouts/Layout.astro";
 
 import { fetchPosts } from "../lib/api";
-import { getMediaUrl } from "../lib/imageUrl";
+import { getMediaUrl, getLargestImage } from "../lib/imageUrl";
 
 const posts = await fetchPosts();
 
-const getLargestImage = (post:any) => {
-	const { coverImage } = post;
-	if (!coverImage) return null;
 
-	const formats = coverImage.formats;
-	if (!formats) return null;
-
-	const largestFormat = Object.keys(formats).reduce((largest, key) => {
-		return formats[key].size > formats[largest].size ? key : largest;
-	}, Object.keys(formats)[0]);
-
-	return formats[largestFormat]
-};
 ---
 
 <Layout>
