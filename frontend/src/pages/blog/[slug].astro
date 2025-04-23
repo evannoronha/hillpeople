@@ -30,6 +30,12 @@ const imageUrl = getMediaUrl(image?.url);
         }
 
         <h1 class="text-4xl font-bold mb-4">{post.title}</h1>
+        <h2 class="text-2xl font-bold mb-3">
+            Written by {post.createdBy.firstname}
+            {post.createdBy.lastname} on {
+                new Date(post.publishedDate).toLocaleDateString()
+            }
+        </h2>
 
         <div set:html={htmlContent} />
 
