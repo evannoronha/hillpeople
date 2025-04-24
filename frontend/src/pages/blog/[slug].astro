@@ -14,7 +14,7 @@ const image = getLargestImage(post);
 const imageUrl = getMediaUrl(image?.url);
 ---
 
-<Layout>
+<Layout pageTitle={post.title}>
     <article
         class="max-w-3xl mx-auto px-4 py-10 prose prose-lg dark:prose-invert"
     >
