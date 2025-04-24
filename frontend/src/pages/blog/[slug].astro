@@ -1,6 +1,7 @@
 ---
 import { marked } from "marked";
 import Layout from "../../layouts/Layout.astro";
+import Prose from "../../components/Prose.astro";
 import { fetchPostBySlug } from "../../lib/api";
 import { getMediaUrl, getLargestImage } from "../../lib/imageUrl";
 import StravaEmbed from "../../components/StravaEmbed.astro";
@@ -37,7 +38,7 @@ const imageUrl = getMediaUrl(image?.url);
             }
         </h2>
 
-        <div set:html={htmlContent} />
+        <Prose set:html={htmlContent} />
 
         {
             post.stravaActivityId && (
