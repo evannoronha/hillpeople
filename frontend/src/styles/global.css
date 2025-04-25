@@ -4,5 +4,11 @@
 html,
 body {
     font-family: "Libre Baskerville", serif;
-    background-color: #2f2f2f;
+    background-color: #dadada;
+}
+@media (prefers-color-scheme: dark) {
+    html,
+    body {
+        background-color: #2f2f2f;
+    }
 }
