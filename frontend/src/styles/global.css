@@ -4,3 +4,11 @@
 html {
     font-family: "Libre Baskerville", serif;
 }
+
+@theme {
+    --color-bg-color: green;
+    --color-body-text-color: purple;
+    --color-header-color: blue;
+    --color-subhead-color: orange;
+    --color-accent-color: yellow;
+}
