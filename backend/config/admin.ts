@@ -38,7 +38,6 @@ const getPreviewPathname = (uid, { locale, document }): string => {
 
 export default ({ env }: { env: (key: string, defaultValue?: any) => any }) => {
   const clientUrl = env("CLIENT_URL"); // Frontend application URL
-  const previewSecret = env("PREVIEW_SECRET"); // Secret key for preview authentication
 
   return {
     auth: {
