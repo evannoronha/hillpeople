@@ -18,9 +18,12 @@ export async function fetchPosts() {
     }
 }
 
-export async function fetchPostBySlug(slug: string) {
+export async function fetchPostBySlug(slug: string, preview: boolean = false) {
     try {
-        const reqUrl = `${STRAPI_URL}/api/posts?filters[slug][$eq]=${slug}&populate=*`
+        let reqUrl = `${STRAPI_URL}/api/posts?filters[slug][$eq]=${slug}&populate=*`
+        if (preview) {
+            reqUrl += "&status=draft"
+        }
         console.debug("Fetching posts from:", reqUrl)
         const response = await fetch(reqUrl)
 
