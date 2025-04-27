@@ -8,7 +8,9 @@ import StravaEmbed from "../../components/StravaEmbed.astro";
 
 const { slug } = Astro.params;
 
-const post = await fetchPostBySlug(slug!);
+// extract query params
+const previewMode = Astro.url.searchParams.get('status') == "draft";
+const post = await fetchPostBySlug(slug!, previewMode)
 const htmlContent = await marked(post.content);
 const image = getLargestImage(post);
 const imageUrl = getMediaUrl(image?.url);
@@ -32,8 +34,8 @@ const imageUrl = getMediaUrl(image?.url);
 
         <h1 class="text-4xl font-bold mb-4">{post.title}</h1>
         <h2 class="text-2xl font-bold mb-3">
-            Written by {post.createdBy.firstname}
-            {post.createdBy.lastname} on {
+            Written by {post.createdBy?.firstname}
+            {post.createdBy?.lastname} on {
                 new Date(post.publishedDate).toLocaleDateString()
             }
         </h2>
