@@ -6,9 +6,9 @@ html {
 }
 
 @theme {
-    --color-bg-color: #fbf3ef;
+    --color-bg-color: #e8d8cd;
     --color-body-text-color: #0e4842;
     --color-header-color: #d45b09;
     --color-subhead-color: #f8931d;
-    --color-accent-color: #91abaa;
+    --color-accent-color: #bacac9;
 }
