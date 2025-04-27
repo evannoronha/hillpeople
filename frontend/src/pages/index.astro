@@ -18,10 +18,10 @@ const posts = await fetchPosts();
 					return (
 						<a
 							href={postUrl}
-							class="block bg-accent-color hover:opacity-90 transition"
+							class="rounded-xl block bg-accent-color hover:opacity-90 transition"
 						>
 							{imageUrl && (
-								<div class="aspect-square overflow-hidden bg-black">
+								<div class="rounded-t-xl aspect-square overflow-hidden bg-black">
 									<img
 										src={imageUrl}
 										alt={title}
@@ -30,7 +30,7 @@ const posts = await fetchPosts();
 									/>
 								</div>
 							)}
-							<div class="p-4 bg-accent-color">
+							<div class="rounded-xl p-4 bg-accent-color">
 								<h2 class="text-lg font-semibold leading-tight">
 									{title}
 								</h2>

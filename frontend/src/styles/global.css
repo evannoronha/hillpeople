@@ -6,9 +6,9 @@ html {
 }
 
 @theme {
-    --color-bg-color: green;
-    --color-body-text-color: purple;
-    --color-header-color: blue;
-    --color-subhead-color: orange;
-    --color-accent-color: yellow;
+    --color-bg-color: #fbf3ef;
+    --color-body-text-color: #0e4842;
+    --color-header-color: #d45b09;
+    --color-subhead-color: #f8931d;
+    --color-accent-color: #91abaa;
 }
