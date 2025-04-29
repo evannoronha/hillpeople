@@ -4,3 +4,14 @@
 html {
     font-family: "Libre Baskerville", serif;
 }
+
+
+@theme {
+    --color-bg-color: #f4f2ec;
+    /* --color-body-text-color: #0a332e; dark green */
+    --color-body-text-color: #643f41; /*dark terracotta*/
+    --color-light-body-text-color: #f4f2ec;
+    --color-header-color: #f16e53;
+    --color-subhead-color: #f16e53;
+    --color-accent-color: #627f7c;
+}
