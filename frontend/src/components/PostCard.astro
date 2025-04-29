@@ -1,0 +1,38 @@
+---
+import { getLargestImage, getMediaUrl } from "../lib/imageUrl";
+
+const { post } = Astro.props;
+
+const { title, slug, publishedDate } = post;
+const imageUrl = getMediaUrl(getLargestImage(post).url);
+const postUrl = `/blog/${slug}`;
+---
+
+<a href={postUrl} class="block bg-black text-white hover:opacity-90 transition">
+    {
+        imageUrl && (
+            <div class="aspect-square overflow-hidden bg-black">
+                <img
+                    src={imageUrl}
+                    alt={title}
+                    class="w-full h-full object-cover"
+                    loading="lazy"
+                />
+            </div>
+        )
+    }
+    <div class="p-4 bg-black">
+        <h2 class="text-lg font-semibold leading-tight">
+            {title}
+        </h2>
+        <p class="text-sm text-gray-300 mt-1">
+            {
+                new Date(publishedDate).toLocaleDateString(undefined, {
+                    year: "numeric",
+                    month: "long",
+                    day: "numeric",
+                })
+            }
+        </p>
+    </div>
+</a>

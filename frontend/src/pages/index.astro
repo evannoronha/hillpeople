@@ -1,4 +1,5 @@
 ---
+import PostCard from "../components/PostCard.astro";
 import Layout from "../layouts/Layout.astro";
 import { fetchPosts } from "../lib/api";
 import { getMediaUrl, getLargestImage } from "../lib/imageUrl";
@@ -8,46 +9,12 @@ const posts = await fetchPosts();
 
 <Layout pageTitle="Home">
 	<section class="max-w-5xl mx-auto px-4 py-10">
-
 		<div class="grid gap-8 sm:grid-cols-2 lg:grid-cols-3">
 			{
 				posts.map((post: any) => {
-					const { title, slug, publishedDate } = post;
-					const imageUrl = getMediaUrl(getLargestImage(post).url);
-					const postUrl = `/blog/${slug}`;
-
 					return (
-						<a
-							href={postUrl}
-							class="block bg-black text-white hover:opacity-90 transition"
-						>
-							{imageUrl && (
-								<div class="aspect-square overflow-hidden bg-black">
-									<img
-										src={imageUrl}
-										alt={title}
-										class="w-full h-full object-cover"
-										loading="lazy"
-									/>
-								</div>
-							)}
-							<div class="p-4 bg-black">
-								<h2 class="text-lg font-semibold leading-tight">
-									{title}
-								</h2>
-								<p class="text-sm text-gray-300 mt-1">
-									{new Date(publishedDate).toLocaleDateString(
-										undefined,
-										{
-											year: "numeric",
-											month: "long",
-											day: "numeric",
-										},
-									)}
-								</p>
-							</div>
-						</a>
-					);
+						<PostCard post={post} />
+					)
 				})
 			}
 		</div>
