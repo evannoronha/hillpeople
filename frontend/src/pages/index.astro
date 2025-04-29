@@ -2,7 +2,6 @@
 import PostCard from "../components/PostCard.astro";
 import Layout from "../layouts/Layout.astro";
 import { fetchPosts } from "../lib/api";
-import { getMediaUrl, getLargestImage } from "../lib/imageUrl";
 
 const posts = await fetchPosts();
 ---
