@@ -15,10 +15,7 @@ const postUrl = `/blog/${slug}`;
         transition
         rounded-lg
         shadow-md
-        bg-black
-        text-white
-        dark:bg-white
-        dark:text-black"
+        bg-inverse"
 >
     {
         // If the post has an image, show it
@@ -36,9 +33,9 @@ const postUrl = `/blog/${slug}`;
         )
     }
     <div class="p-4">
-        <h2 class="text-lg font-semibold leading-tight">
+        <h3 class="text-xl font-semibold leading-tight">
             {title}
-        </h2>
+        </h3>
         <p class="text-sm mt-1">
             {
                 new Date(publishedDate).toLocaleDateString(undefined, {
