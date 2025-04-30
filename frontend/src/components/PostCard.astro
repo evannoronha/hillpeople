@@ -8,10 +8,18 @@ const imageUrl = getMediaUrl(getLargestImage(post).url);
 const postUrl = `/blog/${slug}`;
 ---
 
-<a href={postUrl} class="block bg-black text-white hover:opacity-90 transition">
+<a
+    href={postUrl}
+    class="block
+        hover:opacity-90
+        transition
+        rounded-lg
+        shadow-md
+        bg-inverse"
+>
     {
         imageUrl && (
-            <div class="aspect-square overflow-hidden bg-black">
+            <div class="aspect-square overflow-hidden  rounded-t-lg">
                 <img
                     src={imageUrl}
                     alt={title}
@@ -21,11 +29,11 @@ const postUrl = `/blog/${slug}`;
             </div>
         )
     }
-    <div class="p-4 bg-black">
-        <h2 class="text-lg font-semibold leading-tight">
+    <div class="p-4">
+        <h3 class="text-xl font-semibold leading-tight">
             {title}
-        </h2>
-        <p class="text-sm text-gray-300 mt-1">
+        </h3>
+        <p class="text-sm mt-1">
             {
                 new Date(publishedDate).toLocaleDateString(undefined, {
                     year: "numeric",
