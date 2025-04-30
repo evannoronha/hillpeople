@@ -9,17 +9,15 @@ import StravaEmbed from "../../components/StravaEmbed.astro";
 const { slug } = Astro.params;
 
 // extract query params
-const previewMode = Astro.url.searchParams.get('status') == "draft";
-const post = await fetchPostBySlug(slug!, previewMode)
+const previewMode = Astro.url.searchParams.get("status") == "draft";
+const post = await fetchPostBySlug(slug!, previewMode);
 const htmlContent = await marked(post.content);
 const image = getLargestImage(post);
 const imageUrl = getMediaUrl(image?.url);
 ---
 
 <Layout pageTitle={post.title}>
-    <article
-        class="max-w-3xl mx-auto px-4 py-10 prose-lg"
-    >
+    <article class="max-w-3xl mx-auto px-4 py-10">
         {
             imageUrl && (
                 <div class="aspect-square overflow-hidden mb-8">
