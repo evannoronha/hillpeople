@@ -8,10 +8,24 @@ const imageUrl = getMediaUrl(getLargestImage(post).url);
 const postUrl = `/blog/${slug}`;
 ---
 
-<a href={postUrl} class="block hover:opacity-90 transition">
+<a
+    href={postUrl}
+    class="block
+        hover:opacity-90
+        transition
+        rounded-lg
+        shadow-md
+        bg-black
+        text-white
+        dark:bg-white
+        dark:text-black"
+>
+    {
+        // If the post has an image, show it
+    }
     {
         imageUrl && (
-            <div class="aspect-square overflow-hidden">
+            <div class="aspect-square overflow-hidden  rounded-t-lg">
                 <img
                     src={imageUrl}
                     alt={title}
