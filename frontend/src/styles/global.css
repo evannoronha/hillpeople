@@ -18,13 +18,13 @@ html {
 
     @media (prefers-color-scheme: dark) {
         :root {
-            --color-bg: #2b2c32;
+            --color-bg: #101828;
             --color-text: #e7e7e7;
-            --color-header: #daa07c;
+            --color-header: #d77a40;
             --color-sub-header: #dfcec3;
-            --color-inverse-bg: #c0e1de;
+            --color-inverse-bg: #e3ded3;
             --color-inverse-text: #231d1d;
-            --color-accent: #f16e53;
+            --color-accent: #5e413b;
         }
     }
 
