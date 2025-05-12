@@ -384,9 +384,7 @@ export interface ApiPostPost extends Struct.CollectionTypeSchema {
   attributes: {
     admin_user: Schema.Attribute.Relation<'oneToOne', 'admin::user'>;
     content: Schema.Attribute.RichText & Schema.Attribute.Required;
-    coverImage: Schema.Attribute.Media<
-      'images' | 'files' | 'videos' | 'audios'
-    >;
+    coverImage: Schema.Attribute.Media<'images'> & Schema.Attribute.Required;
     createdAt: Schema.Attribute.DateTime;
     createdBy: Schema.Attribute.Relation<'oneToOne', 'admin::user'>;
     locale: Schema.Attribute.String & Schema.Attribute.Private;
