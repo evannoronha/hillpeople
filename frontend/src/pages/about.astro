@@ -1,0 +1,26 @@
+---
+import Layout from "../layouts/Layout.astro";
+import Prose from "../components/Prose.astro";
+import { marked } from "marked";
+import { fetchSingleType } from "../lib/api";
+import { getLargestImage, getMediaUrl } from "../lib/imageUrl";
+
+const about = await fetchSingleType("about");
+const htmlContent = await marked(about.content);
+const image = about.images[0];
+const imageUrl = getMediaUrl(image.url);
+---
+
+<Layout pageTitle={about.title}>
+    <div class="max-w-3xl mx-auto px-4 py-10">
+        <div class="aspect-square overflow-hidden mb-8 rounded-xl">
+            <img
+                src={imageUrl}
+                alt={about.title}
+                class="w-full h-full object-cover"
+            />
+        </div>
+        <h1 class="text-4xl font-bold mb-4">{about.title}</h1>
+        <Prose set:html={htmlContent} />
+    </div>
+</Layout>
