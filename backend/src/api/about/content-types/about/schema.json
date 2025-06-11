@@ -15,10 +15,6 @@
       "type": "string",
       "required": true
     },
-    "content": {
-      "type": "blocks",
-      "required": true
-    },
     "images": {
       "type": "media",
       "multiple": true,
@@ -28,6 +24,9 @@
         "videos",
         "audios"
       ]
+    },
+    "content": {
+      "type": "richtext"
     }
   }
 }
