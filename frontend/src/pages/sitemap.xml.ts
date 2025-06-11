@@ -13,7 +13,7 @@ export async function GET() {
                 if (!post.publishedAt) return '';
                 let lastMod = (post.updatedAt ?? post.publishedAt)
                 lastMod = new Date(lastMod).toISOString().split('T')[0];
-                return `<url><loc>${siteUrl}/blog/${post.slug}/</loc><lastmod>${lastMod}</lastmod></url>`;
+                return `<url><loc>${siteUrl}/blog/${post.slug}</loc><lastmod>${lastMod}</lastmod></url>`;
             })
             .join('\n')}
     <url><loc>${siteUrl}/about/</loc></url>
