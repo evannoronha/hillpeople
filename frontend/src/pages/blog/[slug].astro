@@ -11,6 +11,10 @@ const { slug } = Astro.params;
 // extract query params
 const previewMode = Astro.url.searchParams.get("status") == "draft";
 const post = await fetchPostBySlug(slug!, previewMode);
+
+if (!post) {
+    return Astro.rewrite("/404");
+}
 const htmlContent = await marked(post.content);
 const image = getLargestImage(post);
 const imageUrl = getMediaUrl(image?.url);
