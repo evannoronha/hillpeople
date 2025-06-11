@@ -16,7 +16,7 @@ export async function GET() {
                 return `<url><loc>${siteUrl}/blog/${post.slug}</loc><lastmod>${lastMod}</lastmod></url>`;
             })
             .join('\n')}
-    <url><loc>${siteUrl}/about/</loc></url>
+    <url><loc>${siteUrl}/about</loc></url>
 </urlset>
   `.trim();
 
