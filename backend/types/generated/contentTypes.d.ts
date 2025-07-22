@@ -416,6 +416,7 @@ export interface ApiPostPost extends Struct.CollectionTypeSchema {
     populateCreatorFields: true;
   };
   attributes: {
+    author_override: Schema.Attribute.Relation<'oneToMany', 'admin::user'>;
     content: Schema.Attribute.RichText & Schema.Attribute.Required;
     coverImage: Schema.Attribute.Media<'images'> & Schema.Attribute.Required;
     createdAt: Schema.Attribute.DateTime;

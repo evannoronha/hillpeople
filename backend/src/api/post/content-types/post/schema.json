@@ -39,6 +39,11 @@
     },
     "stravaActivityId": {
       "type": "uid"
+    },
+    "author_override": {
+      "type": "relation",
+      "relation": "oneToMany",
+      "target": "admin::user"
     }
   }
 }

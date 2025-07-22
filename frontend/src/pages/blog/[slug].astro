@@ -36,7 +36,7 @@ const imageUrl = getMediaUrl(image?.url);
 
         <h1 class="text-4xl font-bold mb-4">{post.title}</h1>
         <h2 class="text-2xl font-bold mb-3 mt-12">
-            Written by {post.createdBy?.firstname}
+            Written by {post.author_override ? post.author_override[0] : post.createdBy?.firstname}
             {post.createdBy?.lastname} on {
                 new Date(post.publishedDate).toLocaleDateString()
             }
