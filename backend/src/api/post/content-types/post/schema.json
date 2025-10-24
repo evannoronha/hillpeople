@@ -8,9 +8,9 @@
     "description": ""
   },
   "options": {
-    "draftAndPublish": true,
-    "populateCreatorFields": true
+    "draftAndPublish": true
   },
+  "pluginOptions": {},
   "attributes": {
     "title": {
       "type": "string",
@@ -44,6 +44,13 @@
       "type": "relation",
       "relation": "oneToMany",
       "target": "admin::user"
+    },
+    "content_v2": {
+      "type": "dynamiczone",
+      "components": [
+        "content.text",
+        "content.media"
+      ]
     }
   }
 }
