@@ -5,6 +5,7 @@ import Prose from "../../components/Prose.astro";
 import { fetchPostBySlug } from "../../lib/api";
 import { getMediaUrl, getLargestImage } from "../../lib/imageUrl";
 import StravaEmbed from "../../components/StravaEmbed.astro";
+import { BlocksRenderer } from "@strapi/blocks-react-renderer";
 
 const { slug } = Astro.params;
 
@@ -36,7 +37,11 @@ const imageUrl = getMediaUrl(image?.url);
 
         <h1 class="text-4xl font-bold mb-4">{post.title}</h1>
         <h2 class="text-2xl font-bold mb-3 mt-12">
-            Written by {post.author_override ? post.author_override[0] : post.createdBy?.firstname}
+            Written by {
+                post.author_override
+                    ? post.author_override[0]
+                    : post.createdBy?.firstname
+            }
             {post.createdBy?.lastname} on {
                 new Date(post.publishedDate).toLocaleDateString()
             }
@@ -50,6 +55,16 @@ const imageUrl = getMediaUrl(image?.url);
                     <StravaEmbed activityId={post.stravaActivityId} />
                 </div>
             )
+        }
+
+        <!-- {post.content_v2.map((block:any) => JSON.stringify(block))} -->
+        {
+            // itereate over content_v2. if element is a rich text block, render it using BlocksRenderer, if it's media, show the image or video
+            post.content_v2.map((block: any) => {
+                if (block.__component === "content.text") {
+                     return <BlocksRenderer content={block.text} />
+                }
+            })
         }
     </article>
 </Layout>

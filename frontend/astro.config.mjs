@@ -5,6 +5,8 @@ import tailwindcss from '@tailwindcss/vite';
 
 import cloudflare from '@astrojs/cloudflare';
 
+import react from '@astrojs/react';
+
 // https://astro.build/config
 export default defineConfig({
   output: 'server',
@@ -15,8 +17,9 @@ export default defineConfig({
   },
 
   adapter: cloudflare(),
+
   experimental: {
-    session: true, // since you're using sessions
   },
 
-});
+  integrations: [react()],
+})
