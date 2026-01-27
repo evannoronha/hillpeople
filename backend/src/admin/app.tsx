@@ -1,4 +1,10 @@
-import { type PluginConfig, setPluginConfig, defaultHtmlPreset } from '@_sh/strapi-plugin-ckeditor';
+import {
+  type PluginConfig,
+  setPluginConfig,
+  defaultHtmlPreset,
+  StrapiMediaLib,
+  StrapiUploadAdapter,
+} from '@_sh/strapi-plugin-ckeditor';
 
 const config: PluginConfig = {
   presets: [
@@ -6,9 +12,28 @@ const config: PluginConfig = {
       ...defaultHtmlPreset,
       editorConfig: {
         ...defaultHtmlPreset.editorConfig,
+        // Add Strapi media library integration
+        extraPlugins: [StrapiMediaLib, StrapiUploadAdapter],
         mediaEmbed: {
           previewsInData: true,
         },
+        // Add media library button to toolbar
+        toolbar: [
+          'heading',
+          '|',
+          'bold',
+          'italic',
+          'link',
+          'bulletedList',
+          'numberedList',
+          '|',
+          'strapiMediaLib',
+          'insertTable',
+          'blockQuote',
+          '|',
+          'undo',
+          'redo',
+        ],
       },
     },
   ],
