@@ -6,7 +6,11 @@ import { fetchSingleType } from "../lib/api";
 import { getLargestImage, getMediaUrl } from "../lib/imageUrl";
 
 const about = await fetchSingleType("about");
-const htmlContent = await marked(about.content);
+
+// Use CKEditor richContent if available, fallback to markdown content
+const useRichContent = !!about.richContent;
+const htmlContent = useRichContent ? about.richContent : await marked(about.content);
+
 const image = about.images[0];
 const imageUrl = getMediaUrl(image.url);
 ---
