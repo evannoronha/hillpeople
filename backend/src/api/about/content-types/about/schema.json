@@ -27,6 +27,14 @@
     },
     "content": {
       "type": "richtext"
+    },
+    "blocksContent": {
+      "type": "blocks"
+    },
+    "videoEmbeds": {
+      "type": "component",
+      "repeatable": true,
+      "component": "shared.video-embed"
     }
   }
 }

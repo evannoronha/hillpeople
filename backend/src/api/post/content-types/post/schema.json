@@ -44,6 +44,14 @@
       "type": "relation",
       "relation": "oneToMany",
       "target": "admin::user"
+    },
+    "blocksContent": {
+      "type": "blocks"
+    },
+    "videoEmbeds": {
+      "type": "component",
+      "repeatable": true,
+      "component": "shared.video-embed"
     }
   }
 }

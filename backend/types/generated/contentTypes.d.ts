@@ -474,6 +474,7 @@ export interface ApiPostPost extends Struct.CollectionTypeSchema {
   };
   attributes: {
     author_override: Schema.Attribute.Relation<'oneToMany', 'admin::user'>;
+    blocksContent: Schema.Attribute.Blocks;
     content: Schema.Attribute.RichText & Schema.Attribute.Required;
     coverImage: Schema.Attribute.Media<'images'> & Schema.Attribute.Required;
     createdAt: Schema.Attribute.DateTime;
@@ -490,6 +491,7 @@ export interface ApiPostPost extends Struct.CollectionTypeSchema {
       Schema.Attribute.Unique;
     updatedAt: Schema.Attribute.DateTime;
     updatedBy: Schema.Attribute.Relation<'oneToOne', 'admin::user'>;
+    videoEmbeds: Schema.Attribute.Component<'shared.video-embed', true>;
   };
 }
 
