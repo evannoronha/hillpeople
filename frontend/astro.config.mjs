@@ -15,8 +15,4 @@ export default defineConfig({
   },
 
   adapter: cloudflare(),
-  experimental: {
-    session: true, // since you're using sessions
-  },
-
 });
