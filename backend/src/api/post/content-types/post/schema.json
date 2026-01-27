@@ -44,6 +44,10 @@
       "type": "relation",
       "relation": "oneToMany",
       "target": "admin::user"
+    },
+    "richContent": {
+      "type": "customField",
+      "customField": "plugin::ckeditor5.CKEditor"
     }
   }
 }
