@@ -454,7 +454,12 @@ export interface ApiAboutAbout extends Struct.SingleTypeSchema {
       Schema.Attribute.Private;
     publishedAt: Schema.Attribute.DateTime;
     richContent: Schema.Attribute.RichText &
-      Schema.Attribute.CustomField<'plugin::ckeditor5.CKEditor'>;
+      Schema.Attribute.CustomField<
+        'plugin::ckeditor5.CKEditor',
+        {
+          preset: 'defaultHtml';
+        }
+      >;
     title: Schema.Attribute.String & Schema.Attribute.Required;
     updatedAt: Schema.Attribute.DateTime;
     updatedBy: Schema.Attribute.Relation<'oneToOne', 'admin::user'> &
@@ -486,7 +491,12 @@ export interface ApiPostPost extends Struct.CollectionTypeSchema {
     publishedAt: Schema.Attribute.DateTime;
     publishedDate: Schema.Attribute.DateTime;
     richContent: Schema.Attribute.RichText &
-      Schema.Attribute.CustomField<'plugin::ckeditor5.CKEditor'>;
+      Schema.Attribute.CustomField<
+        'plugin::ckeditor5.CKEditor',
+        {
+          preset: 'defaultHtml';
+        }
+      >;
     slug: Schema.Attribute.UID<'title'> & Schema.Attribute.Required;
     stravaActivityId: Schema.Attribute.UID;
     title: Schema.Attribute.String &
