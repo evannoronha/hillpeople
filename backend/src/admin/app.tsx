@@ -306,6 +306,9 @@ const config: PluginConfig = {
         mediaEmbed: {
           previewsInData: true,
         },
+        htmlEmbed: {
+          showPreviews: true,
+        },
         // Toolbar matching native Strapi Blocks Editor layout:
         // Headings | B I U S | Lists | Code Image Link Quote
         toolbar: [
@@ -323,6 +326,8 @@ const config: PluginConfig = {
           '|',
           'code',
           'strapiMediaLib',
+          'mediaEmbed',
+          'htmlEmbed',
           'link',
           'blockQuote',
           '|',
