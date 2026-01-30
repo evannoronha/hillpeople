@@ -48,7 +48,7 @@ async function fetchAllPosts(): Promise<any[]> {
     if (!res.ok) {
       throw new Error(`Failed to fetch posts (page ${page}): ${res.status} ${res.statusText}`);
     }
-    const json = await res.json();
+    const json = (await res.json()) as { data?: any[]; meta?: { pagination?: { pageCount: number } } };
     const data = json.data || [];
     posts.push(...data);
 
@@ -67,7 +67,7 @@ async function fetchAbout(): Promise<any | null> {
     if (res.status === 404) return null;
     throw new Error(`Failed to fetch about: ${res.status} ${res.statusText}`);
   }
-  const json = await res.json();
+  const json = (await res.json()) as { data?: any };
   return json.data || null;
 }
 
