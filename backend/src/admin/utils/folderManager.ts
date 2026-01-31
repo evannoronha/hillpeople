@@ -45,10 +45,16 @@ function getAuthToken(): string | null {
     // Fallback to cookie (Strapi v5 may use cookies)
     const tokenFromCookie = getCookieValue('jwtToken');
     if (tokenFromCookie) {
-      return tokenFromCookie;
+      // Cookie value might be URL-encoded or have extra quotes
+      let decoded = decodeURIComponent(tokenFromCookie);
+      // Remove surrounding quotes if present
+      if (decoded.startsWith('"') && decoded.endsWith('"')) {
+        decoded = decoded.slice(1, -1);
+      }
+      return decoded;
     }
-  } catch (err) {
-    console.warn('[FolderManager] Failed to get auth token:', err);
+  } catch {
+    // Ignore errors
   }
   return null;
 }
@@ -56,10 +62,10 @@ function getAuthToken(): string | null {
 /**
  * Fetches all folders from Strapi and updates the cache
  */
-async function fetchFolders(): Promise<Map<string, Folder>> {
+async function fetchFolders(): Promise<Folder[]> {
   const now = Date.now();
   if (folderCache.folders.size > 0 && now - folderCache.lastFetch < CACHE_TTL) {
-    return folderCache.folders;
+    return Array.from(folderCache.folders.values());
   }
 
   const token = getAuthToken();
@@ -80,9 +86,9 @@ async function fetchFolders(): Promise<Map<string, Folder>> {
   const data = await response.json() as { data: Folder[] };
   const folders = new Map<string, Folder>();
 
-  // Index folders by their full path
+  // Index folders by their id for easy lookup
   for (const folder of data.data) {
-    folders.set(folder.path, folder);
+    folders.set(String(folder.id), folder);
   }
 
   folderCache = {
@@ -90,7 +96,24 @@ async function fetchFolders(): Promise<Map<string, Folder>> {
     lastFetch: now,
   };
 
-  return folders;
+  return data.data;
+}
+
+/**
+ * Finds a folder by name and optional parent ID
+ */
+function findFolder(folders: Folder[], name: string, parentId: number | null): Folder | undefined {
+  return folders.find((f) => {
+    if (f.name !== name) return false;
+    if (parentId === null) {
+      // Root folder: path should be just "/{pathId}" (no slash after the first segment)
+      return !f.path.includes('/', 1);
+    }
+    // Child folder: parent's pathId should be in the path
+    const parentFolder = folders.find((p) => p.id === parentId);
+    if (!parentFolder) return false;
+    return f.path.startsWith(parentFolder.path + '/');
+  });
 }
 
 /**
@@ -114,6 +137,7 @@ async function createFolder(name: string, parentId: number | null): Promise<Fold
       Authorization: `Bearer ${token}`,
     },
     body: JSON.stringify(body),
+    credentials: 'include',
   });
 
   if (!response.ok) {
@@ -140,14 +164,11 @@ export async function ensureFolderPath(pathParts: string[]): Promise<number> {
     throw new Error('Folder path cannot be empty');
   }
 
-  const folders = await fetchFolders();
+  let folders = await fetchFolders();
   let parentId: number | null = null;
-  let currentPath = '';
 
   for (const part of pathParts) {
-    currentPath = currentPath ? `${currentPath}/${part}` : `/${part}`;
-
-    const existingFolder = folders.get(currentPath);
+    const existingFolder = findFolder(folders, part, parentId);
     if (existingFolder) {
       parentId = existingFolder.id;
     } else {
@@ -155,13 +176,14 @@ export async function ensureFolderPath(pathParts: string[]): Promise<number> {
       try {
         const newFolder = await createFolder(part, parentId);
         parentId = newFolder.id;
-        // Add to local cache
-        folders.set(currentPath, newFolder);
+        // Refresh folders list to include the new folder
+        folders = await fetchFolders();
       } catch (error) {
         // If folder creation fails due to conflict (already exists),
         // try fetching folders again to get the ID
-        const freshFolders = await fetchFolders();
-        const folder = freshFolders.get(currentPath);
+        folderCache.lastFetch = 0; // Force refresh
+        folders = await fetchFolders();
+        const folder = findFolder(folders, part, parentId);
         if (folder) {
           parentId = folder.id;
         } else {

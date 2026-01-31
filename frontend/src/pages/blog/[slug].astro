@@ -3,7 +3,7 @@ import { marked } from "marked";
 import Layout from "../../layouts/Layout.astro";
 import Prose from "../../components/Prose.astro";
 import { fetchPostBySlug } from "../../lib/api";
-import { getMediaUrl, getLargestImage } from "../../lib/imageUrl";
+import { getMediaUrl, getLargestImage, transformContentUrls } from "../../lib/imageUrl";
 import StravaEmbed from "../../components/StravaEmbed.astro";
 
 const { slug } = Astro.params;
@@ -18,7 +18,9 @@ if (!post) {
 
 // Use CKEditor richContent if available, fallback to markdown content
 const useRichContent = !!post.richContent;
-const htmlContent = useRichContent ? post.richContent : await marked(post.content);
+const rawHtml = useRichContent ? post.richContent : await marked(post.content);
+// Transform relative /uploads/ URLs to absolute Strapi URLs
+const htmlContent = transformContentUrls(rawHtml);
 
 const image = getLargestImage(post);
 const imageUrl = getMediaUrl(image?.url);
