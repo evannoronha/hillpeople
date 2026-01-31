@@ -1,0 +1,42 @@
+---
+import Layout from "../layouts/Layout.astro";
+import Prose from "../components/Prose.astro";
+import { marked } from "marked";
+import { fetchSingleType } from "../lib/api";
+import { transformContentUrls } from "../lib/imageUrl";
+
+const privacy = await fetchSingleType("privacy-policy");
+
+// Use CKEditor richContent if available, fallback to markdown content
+const useRichContent = !!privacy?.richContent;
+const rawHtml = useRichContent
+  ? privacy.richContent
+  : privacy?.content
+    ? await marked(privacy.content)
+    : "";
+// Transform relative /uploads/ URLs to absolute Strapi URLs
+const htmlContent = transformContentUrls(rawHtml);
+
+const title = privacy?.title || "Privacy Policy";
+const lastUpdated = privacy?.lastUpdated
+  ? new Date(privacy.lastUpdated).toLocaleDateString('en-US', {
+      year: 'numeric',
+      month: 'long',
+      day: 'numeric'
+    })
+  : null;
+---
+
+<Layout pageTitle={title}>
+  <div class="max-w-3xl mx-auto px-4 py-10">
+    <h1 class="text-4xl font-bold mb-4">{title}</h1>
+    {lastUpdated && (
+      <p class="text-sm text-gray-500 mb-8">Last updated: {lastUpdated}</p>
+    )}
+    {htmlContent ? (
+      <Prose set:html={htmlContent} />
+    ) : (
+      <p class="text-gray-500">Privacy policy content coming soon.</p>
+    )}
+  </div>
+</Layout>
