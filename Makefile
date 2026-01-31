@@ -1,4 +1,4 @@
-.PHONY: dev dev-prod sync-data backend migrate-ckeditor migrate-ckeditor-dry
+.PHONY: dev dev-prod sync-data backend migrate-ckeditor migrate-ckeditor-dry upgrade-strapi
 
 # Run frontend against local Strapi (http://localhost:1337)
 dev:
@@ -23,3 +23,7 @@ migrate-ckeditor:
 # Preview migration output without writing (requires STRAPI_TOKEN env var)
 migrate-ckeditor-dry:
 	cd backend && npx tsx scripts/migrate-richtext-to-ckeditor.ts --dry-run
+
+# Upgrade Strapi to latest version
+upgrade-strapi:
+	cd backend && npx @strapi/upgrade minor
