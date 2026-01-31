@@ -21,16 +21,13 @@
       "default": false
     },
     "confirmationToken": {
-      "type": "string",
-      "private": true
+      "type": "string"
     },
     "tokenExpiry": {
-      "type": "datetime",
-      "private": true
+      "type": "datetime"
     },
     "unsubscribeToken": {
-      "type": "string",
-      "private": true
+      "type": "string"
     },
     "subscribedAt": {
       "type": "datetime"
