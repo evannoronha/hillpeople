@@ -37,20 +37,20 @@ newsletter-deploy:
 
 # Trigger newsletter manually (sends eligible posts to all subscribers)
 newsletter-send:
-	curl -X POST https://hillpeople-newsletter.workers.dev/trigger-newsletter
+	curl -X POST https://hillpeople-newsletter.evannoronha.workers.dev/trigger-newsletter
 
 # Send to specific email only
 newsletter-send-to:
 	@test -n "$(TO)" || (echo "Usage: make newsletter-send-to TO=email@example.com" && exit 1)
-	curl -X POST https://hillpeople-newsletter.workers.dev/trigger-newsletter -H "Content-Type: application/json" -d '{"to": "$(TO)"}'
+	curl -X POST https://hillpeople-newsletter.evannoronha.workers.dev/trigger-newsletter -H "Content-Type: application/json" -d '{"to": "$(TO)"}'
 
 # Send specific posts only
 newsletter-send-posts:
 	@test -n "$(POSTS)" || (echo "Usage: make newsletter-send-posts POSTS=1,2,3" && exit 1)
-	curl -X POST https://hillpeople-newsletter.workers.dev/trigger-newsletter -H "Content-Type: application/json" -d '{"posts": [$(POSTS)]}'
+	curl -X POST https://hillpeople-newsletter.evannoronha.workers.dev/trigger-newsletter -H "Content-Type: application/json" -d '{"posts": [$(POSTS)]}'
 
 # Override both recipient and posts
 newsletter-send-force:
 	@test -n "$(TO)" || (echo "Usage: make newsletter-send-force TO=email POSTS=1,2,3" && exit 1)
 	@test -n "$(POSTS)" || (echo "Usage: make newsletter-send-force TO=email POSTS=1,2,3" && exit 1)
-	curl -X POST https://hillpeople-newsletter.workers.dev/trigger-newsletter -H "Content-Type: application/json" -d '{"to": "$(TO)", "posts": [$(POSTS)]}'
+	curl -X POST https://hillpeople-newsletter.evannoronha.workers.dev/trigger-newsletter -H "Content-Type: application/json" -d '{"to": "$(TO)", "posts": [$(POSTS)]}'
