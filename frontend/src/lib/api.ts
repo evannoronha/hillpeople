@@ -82,6 +82,10 @@ export async function fetchSingleType(pageName: string) {
         const response = await fetch(reqUrl)
 
         if (!response.ok) {
+            // 404 is expected if the single type content hasn't been created yet
+            if (response.status === 404) {
+                return null
+            }
             throw new Error(`Failed to fetch single type: ${response.status}`)
         }
 
