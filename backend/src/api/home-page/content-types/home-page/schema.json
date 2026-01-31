@@ -29,6 +29,10 @@
       "type": "string",
       "default": "Subscribe"
     },
+    "newsletterFabLabel": {
+      "type": "string",
+      "default": "Subscribe"
+    },
     "loadMoreButtonText": {
       "type": "string",
       "default": "Load more posts"
