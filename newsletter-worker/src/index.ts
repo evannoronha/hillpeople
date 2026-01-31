@@ -282,15 +282,15 @@ async function sendNewsletter(env: Env, toOverride?: string, postIdsOverride?: n
 
   let posts: Post[];
   if (postIdsOverride && postIdsOverride.length > 0) {
-    // Fetch specific posts by ID
-    const postFilters = postIdsOverride.map(id => `filters[id][$in]=${id}`).join('&');
-    const response = await fetch(
-      `${env.STRAPI_API_URL}/api/posts?${postFilters}&filters[publishedAt][$notNull]=true`,
-      {
-        headers: { Authorization: `Bearer ${env.STRAPI_NEWSLETTER_TOKEN}` },
-      }
-    );
+    // Fetch specific posts by ID (Strapi 5 requires indexed array syntax for $in)
+    const postFilters = postIdsOverride.map((id, i) => `filters[id][$in][${i}]=${id}`).join('&');
+    const url = `${env.STRAPI_API_URL}/api/posts?${postFilters}&filters[publishedAt][$notNull]=true`;
+    console.log(`Fetching posts with URL: ${url}`);
+    const response = await fetch(url, {
+      headers: { Authorization: `Bearer ${env.STRAPI_NEWSLETTER_TOKEN}` },
+    });
     const data = await response.json() as StrapiResponse<Post[]>;
+    console.log(`Strapi response: ${JSON.stringify(data)}`);
     posts = data.data || [];
   } else {
     // Fetch posts that haven't been sent and weren't recently updated
