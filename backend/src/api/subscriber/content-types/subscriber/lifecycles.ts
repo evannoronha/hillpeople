@@ -25,18 +25,26 @@ export default {
       return;
     }
 
+    const requestBody = {
+      email: result.email,
+      confirmationToken: result.confirmationToken,
+    };
+
+    strapi.log.info(`Sending confirmation request to ${workerUrl}/send-confirmation`);
+    strapi.log.info(`Request body: ${JSON.stringify(requestBody)}`);
+
     try {
       const response = await fetch(`${workerUrl}/send-confirmation`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          email: result.email,
-          confirmationToken: result.confirmationToken,
-        }),
+        body: JSON.stringify(requestBody),
       });
 
+      const responseText = await response.text();
+      strapi.log.info(`Worker response: ${response.status} - ${responseText}`);
+
       if (!response.ok) {
-        strapi.log.error(`Failed to send confirmation email: ${response.status}`);
+        strapi.log.error(`Failed to send confirmation email: ${response.status} - ${responseText}`);
       } else {
         strapi.log.info(`Confirmation email sent to ${result.email}`);
       }
