@@ -51,6 +51,10 @@
         "preset": "defaultHtml"
       },
       "customField": "plugin::ckeditor5.CKEditor"
+    },
+    "newsletterSent": {
+      "type": "boolean",
+      "default": false
     }
   }
 }
