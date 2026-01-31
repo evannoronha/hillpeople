@@ -1,4 +1,4 @@
-.PHONY: dev dev-prod sync-data backend migrate-ckeditor migrate-ckeditor-dry upgrade-strapi newsletter-dev newsletter-deploy newsletter-send newsletter-send-to newsletter-send-posts newsletter-send-force
+.PHONY: dev dev-prod sync-data backend migrate-ckeditor migrate-ckeditor-dry upgrade-strapi newsletter-dev newsletter-deploy newsletter-send newsletter-send-to newsletter-send-posts newsletter-send-force newsletter-godmode-send
 
 # Run frontend against local Strapi (http://localhost:1337)
 dev:
@@ -54,3 +54,21 @@ newsletter-send-force:
 	@test -n "$(TO)" || (echo "Usage: make newsletter-send-force TO=email POSTS=1,2,3" && exit 1)
 	@test -n "$(POSTS)" || (echo "Usage: make newsletter-send-force TO=email POSTS=1,2,3" && exit 1)
 	curl -X POST https://hillpeople-newsletter.evannoronha.workers.dev/trigger-newsletter -H "Content-Type: application/json" -d '{"to": "$(TO)", "posts": [$(POSTS)]}'
+
+# Godmode: bypass all filters (updatedAt, newsletterSent), requires GODMODE_TOKEN env var
+# Posts will NOT be marked as sent. Accepts post slugs (not IDs).
+newsletter-godmode-send:
+	@test -n "$(SLUGS)" || (echo "Usage: make newsletter-godmode-send SLUGS=slug1,slug2 [TO=email]" && exit 1)
+	@test -n "$$GODMODE_TOKEN" || (echo "Error: GODMODE_TOKEN env var is required" && exit 1)
+	@slugs_json=$$(echo '$(SLUGS)' | sed 's/,/","/g' | sed 's/^/["/;s/$$/"]/')  && \
+	if [ -n "$(TO)" ]; then \
+		curl -X POST https://hillpeople-newsletter.evannoronha.workers.dev/godmode \
+			-H "Content-Type: application/json" \
+			-H "Authorization: Bearer $$GODMODE_TOKEN" \
+			-d "{\"slugs\": $$slugs_json, \"to\": \"$(TO)\"}"; \
+	else \
+		curl -X POST https://hillpeople-newsletter.evannoronha.workers.dev/godmode \
+			-H "Content-Type: application/json" \
+			-H "Authorization: Bearer $$GODMODE_TOKEN" \
+			-d "{\"slugs\": $$slugs_json}"; \
+	fi

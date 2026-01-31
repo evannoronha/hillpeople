@@ -15,3 +15,4 @@ WORKER_URL = "https://hillpeople-newsletter.evannoronha.workers.dev"
 # Secrets (set via `wrangler secret put`):
 # - STRAPI_NEWSLETTER_TOKEN: API token for reading subscribers and updating posts
 # - RESEND_API_KEY: API key from Resend (https://resend.com)
+# - GODMODE_TOKEN: Auth token for /godmode endpoint (bypasses all filters)
