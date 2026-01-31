@@ -57,6 +57,19 @@ export default {
     }
 
     try {
+      // GET /health - Health check endpoint
+      if (path === '/health' && request.method === 'GET') {
+        const strapiOk = await checkStrapiConnection(env);
+        const status = strapiOk ? 200 : 503;
+        return new Response(JSON.stringify({
+          status: strapiOk ? 'healthy' : 'unhealthy',
+          strapi: strapiOk ? 'connected' : 'unreachable',
+        }), {
+          status,
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+        });
+      }
+
       // POST /send-confirmation - Called by Strapi when a new subscriber is created
       if (path === '/send-confirmation' && request.method === 'POST') {
         const body = await request.json() as { email: string; confirmationToken: string };
@@ -115,6 +128,17 @@ export default {
     ctx.waitUntil(sendNewsletter(env));
   },
 };
+
+async function checkStrapiConnection(env: Env): Promise<boolean> {
+  try {
+    const response = await fetch(`${env.STRAPI_API_URL}/api/posts?pagination[limit]=1`, {
+      headers: { Authorization: `Bearer ${env.STRAPI_NEWSLETTER_TOKEN}` },
+    });
+    return response.ok;
+  } catch {
+    return false;
+  }
+}
 
 async function sendConfirmationEmail(env: Env, email: string, token: string): Promise<void> {
   const confirmUrl = `https://hillpeople-newsletter.workers.dev/confirm/${token}`;
