@@ -175,16 +175,20 @@ async function sendConfirmationEmail(env: Env, email: string, token: string): Pr
 
 async function confirmSubscriber(env: Env, token: string): Promise<{ success: boolean; error?: string }> {
   // Find subscriber by confirmation token
-  const response = await fetch(
-    `${env.STRAPI_API_URL}/api/subscribers?filters[confirmationToken][$eq]=${token}`,
-    {
-      headers: {
-        Authorization: `Bearer ${env.STRAPI_NEWSLETTER_TOKEN}`,
-      },
-    }
-  );
+  const url = `${env.STRAPI_API_URL}/api/subscribers?filters[confirmationToken][$eq]=${token}`;
+  console.log(`Looking up subscriber with token: ${token.substring(0, 8)}...`);
+  console.log(`Strapi URL: ${url}`);
 
+  const response = await fetch(url, {
+    headers: {
+      Authorization: `Bearer ${env.STRAPI_NEWSLETTER_TOKEN}`,
+    },
+  });
+
+  console.log(`Strapi response status: ${response.status}`);
   const data = await response.json() as StrapiResponse<Subscriber[]>;
+  console.log(`Strapi response data: ${JSON.stringify(data)}`);
+
   if (!data.data || data.data.length === 0) {
     return { success: false, error: 'Invalid or expired confirmation token' };
   }
