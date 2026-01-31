@@ -4,7 +4,8 @@ import { getLargestImage, getMediaUrl } from "../lib/imageUrl";
 const { post } = Astro.props;
 
 const { title, slug, publishedDate } = post;
-const imageUrl = getMediaUrl(getLargestImage(post).url);
+const largestImage = getLargestImage(post);
+const imageUrl = largestImage ? getMediaUrl(largestImage.url) : null;
 const postUrl = `/blog/${slug}`;
 ---
 

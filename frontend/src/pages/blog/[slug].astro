@@ -15,7 +15,11 @@ const post = await fetchPostBySlug(slug!, previewMode);
 if (!post) {
     return Astro.rewrite("/404");
 }
-const htmlContent = await marked(post.content);
+
+// Use CKEditor richContent if available, fallback to markdown content
+const useRichContent = !!post.richContent;
+const htmlContent = useRichContent ? post.richContent : await marked(post.content);
+
 const image = getLargestImage(post);
 const imageUrl = getMediaUrl(image?.url);
 ---
