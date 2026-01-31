@@ -8,7 +8,6 @@ crons = ["0 9 * * *"]  # Daily at 9 AM UTC
 
 [[send_email]]
 name = "EMAIL"
-allowed_sender_addresses = ["web@hillpeople.net"]
 
 [vars]
 STRAPI_API_URL = "https://journal.hillpeople.net"
