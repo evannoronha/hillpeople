@@ -1,4 +1,4 @@
-.PHONY: dev dev-prod sync-data backend migrate-ckeditor migrate-ckeditor-dry upgrade-strapi
+.PHONY: dev dev-prod sync-data backend migrate-ckeditor migrate-ckeditor-dry upgrade-strapi newsletter-dev newsletter-deploy newsletter-send newsletter-send-to newsletter-send-posts newsletter-send-force
 
 # Run frontend against local Strapi (http://localhost:1337)
 dev:
@@ -27,3 +27,30 @@ migrate-ckeditor-dry:
 # Upgrade Strapi to latest version
 upgrade-strapi:
 	cd backend && npx @strapi/upgrade minor
+
+# Newsletter Worker commands
+newsletter-dev:
+	cd newsletter-worker && npm run dev
+
+newsletter-deploy:
+	cd newsletter-worker && npm run deploy
+
+# Trigger newsletter manually (sends eligible posts to all subscribers)
+newsletter-send:
+	curl -X POST https://hillpeople-newsletter.workers.dev/trigger-newsletter
+
+# Send to specific email only
+newsletter-send-to:
+	@test -n "$(TO)" || (echo "Usage: make newsletter-send-to TO=email@example.com" && exit 1)
+	curl -X POST https://hillpeople-newsletter.workers.dev/trigger-newsletter -H "Content-Type: application/json" -d '{"to": "$(TO)"}'
+
+# Send specific posts only
+newsletter-send-posts:
+	@test -n "$(POSTS)" || (echo "Usage: make newsletter-send-posts POSTS=1,2,3" && exit 1)
+	curl -X POST https://hillpeople-newsletter.workers.dev/trigger-newsletter -H "Content-Type: application/json" -d '{"posts": [$(POSTS)]}'
+
+# Override both recipient and posts
+newsletter-send-force:
+	@test -n "$(TO)" || (echo "Usage: make newsletter-send-force TO=email POSTS=1,2,3" && exit 1)
+	@test -n "$(POSTS)" || (echo "Usage: make newsletter-send-force TO=email POSTS=1,2,3" && exit 1)
+	curl -X POST https://hillpeople-newsletter.workers.dev/trigger-newsletter -H "Content-Type: application/json" -d '{"to": "$(TO)", "posts": [$(POSTS)]}'
