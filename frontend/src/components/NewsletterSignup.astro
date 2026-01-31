@@ -1,34 +1,84 @@
 ---
-// Newsletter signup form component
-// Only rendered when ?newsletter=enabled query param is present
+// Newsletter signup as floating action button with modal
+interface Props {
+    title: string;
+    description?: string;
+    buttonText?: string;
+}
+
+const { title, description, buttonText = "Subscribe" } = Astro.props;
 const strapiUrl = import.meta.env.STRAPI_API_URL;
 ---
 
-<div id="newsletter-signup" class="bg-inverse p-6 rounded-lg max-w-md mx-auto my-8">
-  <h3 class="text-xl font-bold mb-2">Subscribe to Hill People</h3>
-  <p class="text-sm mb-4 opacity-80">Get notified when we publish new posts.</p>
+<!-- Floating Action Button -->
+<button
+    id="newsletter-fab"
+    type="button"
+    class="fixed bottom-4 right-4 sm:bottom-6 sm:right-6 z-40 w-14 h-14 rounded-full bg-[var(--color-accent)] text-[var(--color-inverse-text)] shadow-lg hover:opacity-90 transition flex items-center justify-center"
+    aria-label="Subscribe to newsletter"
+>
+    <svg xmlns="http://www.w3.org/2000/svg" class="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+        <path stroke-linecap="round" stroke-linejoin="round" d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
+    </svg>
+</button>
 
-  <form id="newsletter-form" class="flex flex-col gap-3" data-strapi-url={strapiUrl}>
-    <input
-      type="email"
-      name="email"
-      placeholder="your@email.com"
-      required
-      class="px-4 py-2 rounded text-[var(--color-text)] bg-[var(--color-bg)] border border-[var(--color-accent)] focus:outline-none focus:ring-2 focus:ring-[var(--color-accent)]"
-    />
-    <button
-      type="submit"
-      class="bg-[var(--color-accent)] text-[var(--color-inverse-text)] px-4 py-2 rounded font-semibold hover:opacity-90 transition"
-    >
-      Subscribe
-    </button>
-  </form>
+<!-- Modal Overlay -->
+<div id="newsletter-modal" class="fixed inset-0 z-50 hidden items-center justify-center p-4 bg-black/50">
+    <div id="newsletter-modal-content" class="bg-inverse p-6 rounded-lg w-full max-w-md relative animate-fade-in">
+        <!-- Close Button -->
+        <button
+            id="newsletter-close"
+            type="button"
+            class="absolute top-3 right-3 w-8 h-8 flex items-center justify-center rounded-full hover:bg-black/10 transition"
+            aria-label="Close"
+        >
+            <svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                <path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12" />
+            </svg>
+        </button>
 
-  <p id="newsletter-message" class="mt-3 text-sm hidden"></p>
+        <h3 class="text-xl font-bold mb-2 pr-8">{title}</h3>
+        {description && <p class="text-sm mb-4 opacity-80">{description}</p>}
 
-  <p class="text-xs mt-4 opacity-60">
-    By subscribing, you agree to our <a href="/privacy" class="underline hover:opacity-80">Privacy Policy</a>.
-  </p>
+        <form id="newsletter-form" class="flex flex-col gap-3" data-strapi-url={strapiUrl}>
+            <input
+                type="email"
+                name="email"
+                placeholder="your@email.com"
+                required
+                class="px-4 py-2 rounded text-[var(--color-text)] bg-[var(--color-bg)] border border-[var(--color-accent)] focus:outline-none focus:ring-2 focus:ring-[var(--color-accent)]"
+            />
+            <button
+                type="submit"
+                class="bg-[var(--color-accent)] text-[var(--color-inverse-text)] px-4 py-2 rounded font-semibold hover:opacity-90 transition"
+            >
+                {buttonText}
+            </button>
+        </form>
+
+        <p id="newsletter-message" class="mt-3 text-sm hidden"></p>
+
+        <p class="text-xs mt-4 opacity-60">
+            By subscribing, you agree to our <a href="/privacy" class="underline hover:opacity-80">Privacy Policy</a>.
+        </p>
+    </div>
 </div>
+
+<style>
+    @keyframes fade-in {
+        from {
+            opacity: 0;
+            transform: scale(0.95);
+        }
+        to {
+            opacity: 1;
+            transform: scale(1);
+        }
+    }
+
+    .animate-fade-in {
+        animation: fade-in 0.2s ease-out;
+    }
+</style>
 
 <script src="../scripts/newsletter-signup.ts"></script>

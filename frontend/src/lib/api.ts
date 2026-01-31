@@ -1,5 +1,41 @@
 const STRAPI_URL = import.meta.env.STRAPI_API_URL
 
+export interface PaginationMeta {
+    page: number;
+    pageSize: number;
+    pageCount: number;
+    total: number;
+}
+
+export interface PaginatedPostsResponse {
+    posts: any[];
+    pagination: PaginationMeta;
+}
+
+export async function fetchPostsPaginated(page: number = 1, pageSize: number = 6): Promise<PaginatedPostsResponse> {
+    try {
+        const reqUrl = `${STRAPI_URL}/api/posts?populate=*&sort=publishedDate:desc&pagination[page]=${page}&pagination[pageSize]=${pageSize}`
+        console.debug("Fetching paginated posts from:", reqUrl)
+        const response = await fetch(reqUrl)
+
+        if (!response.ok) {
+            throw new Error(`Failed to fetch posts: ${response.status}`)
+        }
+
+        const data = await response.json()
+        return {
+            posts: data.data || [],
+            pagination: data.meta?.pagination || { page: 1, pageSize, pageCount: 1, total: 0 }
+        }
+    } catch (error) {
+        console.error("Error fetching paginated posts:", error)
+        return {
+            posts: [],
+            pagination: { page: 1, pageSize, pageCount: 1, total: 0 }
+        }
+    }
+}
+
 export async function fetchPosts() {
     try {
         const reqUrl = `${STRAPI_URL}/api/posts?populate=*&sort=publishedDate:desc`

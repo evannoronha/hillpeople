@@ -1,15 +1,44 @@
 ---
 import PostCard from "../components/PostCard.astro";
 import Layout from "../layouts/Layout.astro";
-import { fetchPosts } from "../lib/api";
+import Hero from "../components/Hero.astro";
+import { fetchPostsPaginated, fetchSingleType } from "../lib/api";
 
-const posts = await fetchPosts();
+const PAGE_SIZE = 6;
+
+const [{ posts, pagination }, homePage] = await Promise.all([
+	fetchPostsPaginated(1, PAGE_SIZE),
+	fetchSingleType("home-page"),
+]);
+
+const hasMore = pagination.pageCount > 1;
 ---
 
 <Layout pageTitle="Home">
-	<section class="max-w-6xl mx-auto px-4 py-10">
-		<div class="grid gap-8 sm:grid-cols-2 lg:grid-cols-3">
+	{homePage && (
+		<Hero
+			title={homePage.heroTitle}
+			subtitle={homePage.heroSubtitle}
+		/>
+	)}
+	<section class="max-w-6xl mx-auto px-4 pb-10">
+		<div id="posts-grid" class="grid gap-8 sm:grid-cols-2 lg:grid-cols-3">
 			{posts.map((post: any) => <PostCard post={post} />)}
 		</div>
+		{hasMore && (
+			<div class="text-center mt-10">
+				<button
+					id="load-more"
+					type="button"
+					data-page="2"
+					data-page-size={PAGE_SIZE}
+					class="bg-[var(--color-accent)] text-[var(--color-inverse-text)] px-6 py-3 rounded-lg font-semibold hover:opacity-90 transition w-full sm:w-auto"
+				>
+					{homePage?.loadMoreButtonText || "Load more posts"}
+				</button>
+			</div>
+		)}
 	</section>
 </Layout>
+
+<script src="../scripts/load-more.ts"></script>
