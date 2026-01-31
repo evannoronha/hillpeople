@@ -5,6 +5,7 @@ interface Env {
   FRONTEND_URL: string;
   SENDER_EMAIL: string;
   WORKER_URL: string;
+  GODMODE_TOKEN: string;
 }
 
 interface Subscriber {
@@ -40,6 +41,18 @@ interface ResendResponse {
     message: string;
     name: string;
   };
+}
+
+interface NewsletterOptions {
+  // How to select posts
+  slugs?: string[];           // Fetch specific posts by slug
+  applyEligibilityFilters?: boolean;  // Apply newsletterSent=false and updatedAt filters
+
+  // Recipient options
+  toOverride?: string;        // Send to specific email instead of subscribers
+
+  // Side effects
+  markPostsAsSent?: boolean;  // Update posts in Strapi after sending
 }
 
 export default {
@@ -103,14 +116,42 @@ export default {
         return Response.redirect(`${env.FRONTEND_URL}/newsletter/error?message=${encodeURIComponent(result.error || 'Invalid token')}`, 302);
       }
 
-      // POST /trigger-newsletter - Manual trigger for testing
+      // POST /trigger-newsletter - Normal newsletter trigger (cron or manual)
       if (path === '/trigger-newsletter' && request.method === 'POST') {
-        // Parse optional overrides from request body
-        const body = await request.json().catch(() => ({})) as {
-          to?: string;
-          posts?: number[];
-        };
-        await sendNewsletter(env, body.to, body.posts);
+        await sendNewsletter(env, {
+          applyEligibilityFilters: true,
+          markPostsAsSent: true,
+        });
+        return new Response(JSON.stringify({ success: true }), {
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+        });
+      }
+
+      // POST /godmode - Bypass all filters, requires auth token
+      if (path === '/godmode' && request.method === 'POST') {
+        const authHeader = request.headers.get('Authorization');
+        if (!authHeader || authHeader !== `Bearer ${env.GODMODE_TOKEN}`) {
+          return new Response(JSON.stringify({ error: 'Unauthorized' }), {
+            status: 401,
+            headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+          });
+        }
+
+        const body = await request.json() as { to?: string; slugs: string[] };
+
+        if (!body.slugs || body.slugs.length === 0) {
+          return new Response(JSON.stringify({ error: 'slugs array is required' }), {
+            status: 400,
+            headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+          });
+        }
+
+        await sendNewsletter(env, {
+          slugs: body.slugs,
+          toOverride: body.to,
+          applyEligibilityFilters: false,
+          markPostsAsSent: false,
+        });
         return new Response(JSON.stringify({ success: true }), {
           headers: { ...corsHeaders, 'Content-Type': 'application/json' },
         });
@@ -128,7 +169,10 @@ export default {
 
   // Cron trigger - runs daily at 9 AM UTC
   async scheduled(event: ScheduledEvent, env: Env, ctx: ExecutionContext): Promise<void> {
-    ctx.waitUntil(sendNewsletter(env));
+    ctx.waitUntil(sendNewsletter(env, {
+      applyEligibilityFilters: true,
+      markPostsAsSent: true,
+    }));
   },
 };
 
@@ -274,44 +318,55 @@ async function unsubscribeUser(env: Env, token: string): Promise<{ success: bool
   return { success: true };
 }
 
-async function sendNewsletter(env: Env, toOverride?: string, postIdsOverride?: number[]): Promise<void> {
-  console.log('Starting newsletter send...');
+async function sendNewsletter(env: Env, options: NewsletterOptions): Promise<void> {
+  const {
+    slugs,
+    applyEligibilityFilters = true,
+    toOverride,
+    markPostsAsSent = true,
+  } = options;
 
-  // Get eligible posts (published, not sent, not updated in last 12 hours)
-  const twelveHoursAgo = new Date(Date.now() - 12 * 60 * 60 * 1000).toISOString();
+  const logPrefix = slugs ? '[GODMODE]' : '';
+  console.log(`${logPrefix} Starting newsletter send...`);
 
+  // Fetch posts
   let posts: Post[];
-  if (postIdsOverride && postIdsOverride.length > 0) {
-    // Fetch specific posts by ID (Strapi 5 requires indexed array syntax for $in)
-    const postFilters = postIdsOverride.map((id, i) => `filters[id][$in][${i}]=${id}`).join('&');
-    const url = `${env.STRAPI_API_URL}/api/posts?${postFilters}&filters[publishedAt][$notNull]=true`;
-    console.log(`Fetching posts with URL: ${url}`);
+
+  if (slugs && slugs.length > 0) {
+    // Fetch specific posts by slug
+    const slugFilters = slugs.map((slug, i) => `filters[slug][$in][${i}]=${encodeURIComponent(slug)}`).join('&');
+    const url = `${env.STRAPI_API_URL}/api/posts?${slugFilters}`;
+    console.log(`${logPrefix} Fetching posts by slug: ${url}`);
+
     const response = await fetch(url, {
       headers: { Authorization: `Bearer ${env.STRAPI_NEWSLETTER_TOKEN}` },
     });
     const data = await response.json() as StrapiResponse<Post[]>;
-    console.log(`Strapi response: ${JSON.stringify(data)}`);
     posts = data.data || [];
-  } else {
-    // Fetch posts that haven't been sent and weren't recently updated
-    const response = await fetch(
-      `${env.STRAPI_API_URL}/api/posts?filters[publishedAt][$notNull]=true&filters[newsletterSent][$eq]=false&filters[updatedAt][$lt]=${twelveHoursAgo}&sort=publishedDate:desc`,
-      {
-        headers: { Authorization: `Bearer ${env.STRAPI_NEWSLETTER_TOKEN}` },
-      }
-    );
+  } else if (applyEligibilityFilters) {
+    // Fetch eligible posts (published, not sent, not updated in last 12 hours)
+    const twelveHoursAgo = new Date(Date.now() - 12 * 60 * 60 * 1000).toISOString();
+    const url = `${env.STRAPI_API_URL}/api/posts?filters[publishedAt][$notNull]=true&filters[newsletterSent][$eq]=false&filters[updatedAt][$lt]=${twelveHoursAgo}&sort=publishedDate:desc`;
+    console.log(`${logPrefix} Fetching eligible posts: ${url}`);
+
+    const response = await fetch(url, {
+      headers: { Authorization: `Bearer ${env.STRAPI_NEWSLETTER_TOKEN}` },
+    });
     const data = await response.json() as StrapiResponse<Post[]>;
     posts = data.data || [];
-  }
-
-  if (posts.length === 0) {
-    console.log('No posts to send');
+  } else {
+    console.log(`${logPrefix} No post selection criteria provided`);
     return;
   }
 
-  console.log(`Found ${posts.length} posts to send`);
+  if (posts.length === 0) {
+    console.log(`${logPrefix} No posts to send`);
+    return;
+  }
 
-  // Get confirmed subscribers
+  console.log(`${logPrefix} Found ${posts.length} posts to send`);
+
+  // Get subscribers
   let subscribers: Subscriber[];
   if (toOverride) {
     // Send to specific email only
@@ -328,11 +383,11 @@ async function sendNewsletter(env: Env, toOverride?: string, postIdsOverride?: n
   }
 
   if (subscribers.length === 0) {
-    console.log('No confirmed subscribers');
+    console.log(`${logPrefix} No confirmed subscribers`);
     return;
   }
 
-  console.log(`Sending to ${subscribers.length} subscribers`);
+  console.log(`${logPrefix} Sending to ${subscribers.length} subscribers`);
 
   // Generate newsletter HTML
   const postsHtml = posts.map(post => `
@@ -373,14 +428,14 @@ async function sendNewsletter(env: Env, toOverride?: string, postIdsOverride?: n
         `New from Hill People: ${posts.length} new post${posts.length > 1 ? 's' : ''}`,
         html
       );
-      console.log(`Sent to ${subscriber.email}`);
+      console.log(`${logPrefix} Sent to ${subscriber.email}`);
     } catch (error) {
-      console.error(`Failed to send to ${subscriber.email}:`, error);
+      console.error(`${logPrefix} Failed to send to ${subscriber.email}:`, error);
     }
   }
 
-  // Mark posts as sent (skip if using override)
-  if (!postIdsOverride) {
+  // Mark posts as sent
+  if (markPostsAsSent) {
     for (const post of posts) {
       try {
         await fetch(`${env.STRAPI_API_URL}/api/posts/${post.documentId}`, {
@@ -393,12 +448,14 @@ async function sendNewsletter(env: Env, toOverride?: string, postIdsOverride?: n
             data: { newsletterSent: true },
           }),
         });
-        console.log(`Marked post ${post.id} as sent`);
+        console.log(`${logPrefix} Marked post ${post.slug} as sent`);
       } catch (error) {
-        console.error(`Failed to mark post ${post.id} as sent:`, error);
+        console.error(`${logPrefix} Failed to mark post ${post.slug} as sent:`, error);
       }
     }
+  } else {
+    console.log(`${logPrefix} Skipping mark-as-sent (disabled)`);
   }
 
-  console.log('Newsletter send complete');
+  console.log(`${logPrefix} Newsletter send complete`);
 }
