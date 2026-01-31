@@ -6,9 +6,6 @@ compatibility_flags = ["nodejs_compat"]
 [triggers]
 crons = ["0 9 * * *"]  # Daily at 9 AM UTC
 
-[[send_email]]
-name = "EMAIL"
-
 [vars]
 STRAPI_API_URL = "https://journal.hillpeople.net"
 FRONTEND_URL = "https://hillpeople.net"
@@ -17,3 +14,4 @@ WORKER_URL = "https://hillpeople-newsletter.evannoronha.workers.dev"
 
 # Secrets (set via `wrangler secret put`):
 # - STRAPI_NEWSLETTER_TOKEN: API token for reading subscribers and updating posts
+# - RESEND_API_KEY: API key from Resend (https://resend.com)

@@ -1,17 +1,10 @@
-import { EmailMessage } from 'cloudflare:email';
-import { createMimeMessage } from 'mimetext';
-
 interface Env {
-  EMAIL: SendEmail;
+  RESEND_API_KEY: string;
   STRAPI_API_URL: string;
   STRAPI_NEWSLETTER_TOKEN: string;
   FRONTEND_URL: string;
   SENDER_EMAIL: string;
   WORKER_URL: string;
-}
-
-interface SendEmail {
-  send(message: EmailMessage): Promise<void>;
 }
 
 interface Subscriber {
@@ -38,6 +31,14 @@ interface StrapiResponse<T> {
     pagination?: {
       total: number;
     };
+  };
+}
+
+interface ResendResponse {
+  id?: string;
+  error?: {
+    message: string;
+    name: string;
   };
 }
 
@@ -142,34 +143,49 @@ async function checkStrapiConnection(env: Env): Promise<boolean> {
   }
 }
 
+async function sendEmail(env: Env, to: string, subject: string, html: string): Promise<void> {
+  const response = await fetch('https://api.resend.com/emails', {
+    method: 'POST',
+    headers: {
+      'Authorization': `Bearer ${env.RESEND_API_KEY}`,
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify({
+      from: `Hill People <${env.SENDER_EMAIL}>`,
+      to: [to],
+      subject,
+      html,
+    }),
+  });
+
+  const data = await response.json() as ResendResponse;
+
+  if (!response.ok) {
+    throw new Error(`Resend API error: ${data.error?.message || response.statusText}`);
+  }
+
+  console.log(`Email sent successfully, id: ${data.id}`);
+}
+
 async function sendConfirmationEmail(env: Env, email: string, token: string): Promise<void> {
   console.log(`Sending confirmation email to ${email}`);
   const confirmUrl = `${env.WORKER_URL}/confirm/${token}`;
 
-  const msg = createMimeMessage();
-  msg.setSender({ name: 'Hill People', addr: env.SENDER_EMAIL });
-  msg.setRecipient(email);
-  msg.setSubject('Confirm your subscription to Hill People');
-  msg.addMessage({
-    contentType: 'text/html',
-    data: `
-      <div style="max-width: 600px; margin: 0 auto; font-family: Georgia, serif; padding: 20px;">
-        <h1 style="color: #643f41;">Welcome to Hill People!</h1>
-        <p>Thanks for subscribing to our newsletter. Please confirm your subscription by clicking the link below:</p>
-        <p style="margin: 30px 0;">
-          <a href="${confirmUrl}" style="background-color: #627f7c; color: #f4f2ec; padding: 12px 24px; text-decoration: none; border-radius: 4px;">
-            Confirm Subscription
-          </a>
-        </p>
-        <p style="color: #666; font-size: 14px;">This link expires in 24 hours.</p>
-        <p style="color: #666; font-size: 14px;">If you didn't request this, you can safely ignore this email.</p>
-      </div>
-    `,
-  });
+  const html = `
+    <div style="max-width: 600px; margin: 0 auto; font-family: Georgia, serif; padding: 20px;">
+      <h1 style="color: #643f41;">Welcome to Hill People!</h1>
+      <p>Thanks for subscribing to our newsletter. Please confirm your subscription by clicking the link below:</p>
+      <p style="margin: 30px 0;">
+        <a href="${confirmUrl}" style="background-color: #627f7c; color: #f4f2ec; padding: 12px 24px; text-decoration: none; border-radius: 4px;">
+          Confirm Subscription
+        </a>
+      </p>
+      <p style="color: #666; font-size: 14px;">This link expires in 24 hours.</p>
+      <p style="color: #666; font-size: 14px;">If you didn't request this, you can safely ignore this email.</p>
+    </div>
+  `;
 
-  const message = new EmailMessage(env.SENDER_EMAIL, email, msg.asRaw());
-  console.log(`Sending email from ${env.SENDER_EMAIL} to ${email}`);
-  await env.EMAIL.send(message);
+  await sendEmail(env, email, 'Confirm your subscription to Hill People', html);
   console.log(`Confirmation email sent successfully to ${email}`);
 }
 
@@ -339,27 +355,24 @@ async function sendNewsletter(env: Env, toOverride?: string, postIdsOverride?: n
         ? `${env.WORKER_URL}/unsubscribe/${subscriber.unsubscribeToken}`
         : `${env.FRONTEND_URL}/newsletter/unsubscribe`;
 
-      const msg = createMimeMessage();
-      msg.setSender({ name: 'Hill People', addr: env.SENDER_EMAIL });
-      msg.setRecipient(subscriber.email);
-      msg.setSubject(`New from Hill People: ${posts.length} new post${posts.length > 1 ? 's' : ''}`);
-      msg.addMessage({
-        contentType: 'text/html',
-        data: `
-          <div style="max-width: 600px; margin: 0 auto; font-family: Georgia, serif; padding: 20px;">
-            <h1 style="color: #643f41; margin-bottom: 30px;">New from Hill People</h1>
-            ${postsHtml}
-            <hr style="border: none; border-top: 1px solid #e0e0e0; margin: 30px 0;" />
-            <p style="font-size: 12px; color: #999;">
-              You received this because you subscribed to Hill People newsletter.
-              <a href="${unsubscribeUrl}" style="color: #999;">Unsubscribe</a>
-            </p>
-          </div>
-        `,
-      });
+      const html = `
+        <div style="max-width: 600px; margin: 0 auto; font-family: Georgia, serif; padding: 20px;">
+          <h1 style="color: #643f41; margin-bottom: 30px;">New from Hill People</h1>
+          ${postsHtml}
+          <hr style="border: none; border-top: 1px solid #e0e0e0; margin: 30px 0;" />
+          <p style="font-size: 12px; color: #999;">
+            You received this because you subscribed to Hill People newsletter.
+            <a href="${unsubscribeUrl}" style="color: #999;">Unsubscribe</a>
+          </p>
+        </div>
+      `;
 
-      const message = new EmailMessage(env.SENDER_EMAIL, subscriber.email, msg.asRaw());
-      await env.EMAIL.send(message);
+      await sendEmail(
+        env,
+        subscriber.email,
+        `New from Hill People: ${posts.length} new post${posts.length > 1 ? 's' : ''}`,
+        html
+      );
       console.log(`Sent to ${subscriber.email}`);
     } catch (error) {
       console.error(`Failed to send to ${subscriber.email}:`, error);
