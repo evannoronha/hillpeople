@@ -3,13 +3,15 @@ import Layout from "../layouts/Layout.astro";
 import Prose from "../components/Prose.astro";
 import { marked } from "marked";
 import { fetchSingleType } from "../lib/api";
-import { getLargestImage, getMediaUrl } from "../lib/imageUrl";
+import { getLargestImage, getMediaUrl, transformContentUrls } from "../lib/imageUrl";
 
 const about = await fetchSingleType("about");
 
 // Use CKEditor richContent if available, fallback to markdown content
 const useRichContent = !!about.richContent;
-const htmlContent = useRichContent ? about.richContent : await marked(about.content);
+const rawHtml = useRichContent ? about.richContent : await marked(about.content);
+// Transform relative /uploads/ URLs to absolute Strapi URLs
+const htmlContent = transformContentUrls(rawHtml);
 
 const image = about.images[0];
 const imageUrl = getMediaUrl(image.url);
