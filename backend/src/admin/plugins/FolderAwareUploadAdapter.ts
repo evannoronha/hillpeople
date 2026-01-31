@@ -65,29 +65,31 @@ class FolderAwareAdapter {
   /**
    * Starts the upload process
    */
-  async upload(): Promise<{ alt?: string; urls?: Record<string | number, string> }> {
-    const file = await this.loader.file;
+  upload(): Promise<{ alt?: string; urls?: Record<string | number, string> }> {
+    return this.loader.file.then((file) => {
+      return this.getFolderId().then((folderId) => {
+        return new Promise<{ alt?: string; urls?: Record<string | number, string> }>((resolve, reject) => {
+          this.initRequest();
+          this.initListeners(resolve, reject, file);
+          this.sendRequest(file, folderId);
+        });
+      });
+    });
+  }
 
-    // Determine the target folder based on current article context
-    let folderId: number | null = null;
-    try {
-      const context = getArticleContext();
-      if (context) {
-        const folderPath = getFolderPath(context);
-        folderId = await ensureFolderPath(folderPath);
-        console.log(`[FolderAwareUploadAdapter] Uploading to folder: ${folderPath.join('/')} (ID: ${folderId})`);
-      } else {
-        console.log('[FolderAwareUploadAdapter] No article context found, uploading to root');
-      }
-    } catch (err) {
-      console.warn('[FolderAwareUploadAdapter] Failed to determine folder, uploading to root:', err);
+  /**
+   * Gets the folder ID for the current article context
+   */
+  private getFolderId(): Promise<number | null> {
+    const context = getArticleContext();
+
+    if (!context) {
+      return Promise.resolve(null);
     }
 
-    return new Promise((resolve, reject) => {
-      this.initRequest();
-      this.initListeners(resolve, reject, file);
-      this.sendRequest(file, folderId);
-    });
+    const folderPath = getFolderPath(context);
+
+    return ensureFolderPath(folderPath).catch(() => null);
   }
 
   /**
@@ -186,7 +188,10 @@ class FolderAwareAdapter {
 }
 
 /**
- * CKEditor plugin that registers the folder-aware upload adapter
+ * CKEditor plugin that registers the folder-aware upload adapter.
+ *
+ * Named "StrapiUploadAdapter" so the CKEditor plugin's setup code
+ * finds it and calls initAdapter() with the config.
  */
 export class FolderAwareUploadAdapter extends Plugin {
   static get requires() {
@@ -194,31 +199,26 @@ export class FolderAwareUploadAdapter extends Plugin {
   }
 
   static get pluginName() {
-    return 'FolderAwareUploadAdapter' as const;
+    // Use the same name as the original so the setup code finds us
+    return 'StrapiUploadAdapter' as const;
   }
 
-  private config: UploadConfig | null = null;
-
   init(): void {
-    // Configuration will be set by initAdapter
+    // Empty - initAdapter will be called by the CKEditor plugin's setup code
   }
 
   /**
-   * Initializes the adapter with the upload configuration.
-   * This is called by the CKEditor field component.
+   * Called by the CKEditor plugin's Field component setup code
    */
   initAdapter(config: UploadConfig): void {
     if (!config.uploadUrl) {
-      console.warn('[FolderAwareUploadAdapter] Missing uploadUrl configuration');
       return;
     }
-
-    this.config = config;
 
     // Register our custom adapter factory with the FileRepository
     const fileRepository = this.editor.plugins.get(FileRepository);
     fileRepository.createUploadAdapter = (loader) => {
-      return new FolderAwareAdapter(loader as FileLoader, this.config!);
+      return new FolderAwareAdapter(loader as FileLoader, config);
     };
   }
 }

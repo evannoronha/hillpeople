@@ -24,22 +24,31 @@ let folderCache: FolderCache = {
 const CACHE_TTL = 30000; // 30 seconds
 
 /**
- * Gets the auth token from Strapi's session storage
+ * Gets a cookie value by name
+ */
+function getCookieValue(name: string): string | null {
+  const match = document.cookie.match(new RegExp('(^| )' + name + '=([^;]+)'));
+  return match ? match[2] : null;
+}
+
+/**
+ * Gets the auth token from Strapi's storage (matching the CKEditor plugin's approach)
  */
 function getAuthToken(): string | null {
   try {
-    const authData = sessionStorage.getItem('jwtToken');
-    if (authData) {
-      // Remove surrounding quotes if present
-      return authData.replace(/^"|"$/g, '');
+    // Match the exact approach used by @_sh/strapi-plugin-ckeditor
+    const tokenFromStorage =
+      localStorage.getItem('jwtToken') ?? sessionStorage.getItem('jwtToken');
+    if (tokenFromStorage) {
+      return JSON.parse(tokenFromStorage);
     }
-    // Fallback: try localStorage
-    const localData = localStorage.getItem('jwtToken');
-    if (localData) {
-      return localData.replace(/^"|"$/g, '');
+    // Fallback to cookie (Strapi v5 may use cookies)
+    const tokenFromCookie = getCookieValue('jwtToken');
+    if (tokenFromCookie) {
+      return tokenFromCookie;
     }
-  } catch {
-    // Ignore storage access errors
+  } catch (err) {
+    console.warn('[FolderManager] Failed to get auth token:', err);
   }
   return null;
 }
@@ -108,8 +117,7 @@ async function createFolder(name: string, parentId: number | null): Promise<Fold
   });
 
   if (!response.ok) {
-    const text = await response.text();
-    throw new Error(`Failed to create folder "${name}": ${response.status} ${text}`);
+    throw new Error(`Failed to create folder "${name}": ${response.status}`);
   }
 
   const data = await response.json() as { data: Folder };

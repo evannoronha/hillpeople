@@ -3,9 +3,15 @@ import {
   setPluginConfig,
   defaultHtmlPreset,
   StrapiMediaLib,
+  StrapiUploadAdapter,
 } from '@_sh/strapi-plugin-ckeditor';
 import { Plugin } from 'ckeditor5';
 import { FolderAwareUploadAdapter } from './plugins/FolderAwareUploadAdapter';
+
+// Filter out StrapiUploadAdapter from base plugins - we replace it with FolderAwareUploadAdapter
+const basePlugins = (defaultHtmlPreset.editorConfig.plugins || []).filter(
+  (plugin: unknown) => plugin !== StrapiUploadAdapter
+);
 
 /**
  * Plugin to fix video playback in CKEditor.
@@ -301,8 +307,10 @@ const config: PluginConfig = {
       ...defaultHtmlPreset,
       editorConfig: {
         ...defaultHtmlPreset.editorConfig,
-        // Add Strapi media library integration, folder-aware uploads, and video MIME type fixer
-        extraPlugins: [StrapiMediaLib, FolderAwareUploadAdapter, VideoFixer],
+        // Replace base plugins (excluding StrapiUploadAdapter) with our folder-aware version
+        plugins: [...basePlugins, FolderAwareUploadAdapter],
+        // Extra plugins for media library and video fixes
+        extraPlugins: [StrapiMediaLib, VideoFixer],
         mediaEmbed: {
           previewsInData: true,
         },
