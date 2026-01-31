@@ -13,6 +13,7 @@ name = "EMAIL"
 STRAPI_API_URL = "https://journal.hillpeople.net"
 FRONTEND_URL = "https://hillpeople.net"
 SENDER_EMAIL = "web@hillpeople.net"
+WORKER_URL = "https://hillpeople-newsletter.evannoronha.workers.dev"
 
 # Secrets (set via `wrangler secret put`):
 # - STRAPI_NEWSLETTER_TOKEN: API token for reading subscribers and updating posts

@@ -7,6 +7,7 @@ interface Env {
   STRAPI_NEWSLETTER_TOKEN: string;
   FRONTEND_URL: string;
   SENDER_EMAIL: string;
+  WORKER_URL: string;
 }
 
 interface SendEmail {
@@ -73,6 +74,7 @@ export default {
       // POST /send-confirmation - Called by Strapi when a new subscriber is created
       if (path === '/send-confirmation' && request.method === 'POST') {
         const body = await request.json() as { email: string; confirmationToken: string };
+        console.log('Received /send-confirmation request:', JSON.stringify(body));
         await sendConfirmationEmail(env, body.email, body.confirmationToken);
         return new Response(JSON.stringify({ success: true }), {
           headers: { ...corsHeaders, 'Content-Type': 'application/json' },
@@ -141,7 +143,8 @@ async function checkStrapiConnection(env: Env): Promise<boolean> {
 }
 
 async function sendConfirmationEmail(env: Env, email: string, token: string): Promise<void> {
-  const confirmUrl = `https://hillpeople-newsletter.workers.dev/confirm/${token}`;
+  console.log(`Sending confirmation email to ${email}`);
+  const confirmUrl = `${env.WORKER_URL}/confirm/${token}`;
 
   const msg = createMimeMessage();
   msg.setSender({ name: 'Hill People', addr: env.SENDER_EMAIL });
@@ -165,7 +168,9 @@ async function sendConfirmationEmail(env: Env, email: string, token: string): Pr
   });
 
   const message = new EmailMessage(env.SENDER_EMAIL, email, msg.asRaw());
+  console.log(`Sending email from ${env.SENDER_EMAIL} to ${email}`);
   await env.EMAIL.send(message);
+  console.log(`Confirmation email sent successfully to ${email}`);
 }
 
 async function confirmSubscriber(env: Env, token: string): Promise<{ success: boolean; error?: string }> {
@@ -313,7 +318,7 @@ async function sendNewsletter(env: Env, toOverride?: string, postIdsOverride?: n
   for (const subscriber of subscribers) {
     try {
       const unsubscribeUrl = subscriber.unsubscribeToken
-        ? `https://hillpeople-newsletter.workers.dev/unsubscribe/${subscriber.unsubscribeToken}`
+        ? `${env.WORKER_URL}/unsubscribe/${subscriber.unsubscribeToken}`
         : `${env.FRONTEND_URL}/newsletter/unsubscribe`;
 
       const msg = createMimeMessage();
