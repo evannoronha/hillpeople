@@ -5,6 +5,60 @@ html {
     font-family: "Libre Baskerville", serif;
 }
 
+/* CKEditor image positioning styles (minimal subset - not loading full CDN stylesheet to preserve site typography) */
+.ck-content .image {
+    display: table;
+    clear: both;
+    text-align: center;
+    margin: 0.9em auto;
+    min-width: 50px;
+}
+
+.ck-content .image img {
+    display: block;
+    margin: 0 auto;
+    max-width: 100%;
+    min-width: 100%;
+    height: auto;
+}
+
+.ck-content .image-style-side {
+    float: right;
+    margin-left: 1.5em;
+    max-width: 50%;
+}
+
+.ck-content .image-style-align-left {
+    float: left;
+    margin-right: 1.5em;
+}
+
+.ck-content .image-style-align-right {
+    float: right;
+    margin-left: 1.5em;
+}
+
+.ck-content .image.image_resized {
+    max-width: 100%;
+    display: block;
+    box-sizing: border-box;
+}
+
+.ck-content .image.image_resized img {
+    width: 100%;
+}
+
+.ck-content .image > figcaption {
+    display: table-caption;
+    caption-side: bottom;
+    word-break: break-word;
+    color: var(--color-text);
+    background-color: transparent;
+    padding: 0.6em;
+    font-size: 0.75em;
+    outline-offset: -1px;
+}
+
 @layer base {
     :root {
         --color-bg: #f4f2ec;
