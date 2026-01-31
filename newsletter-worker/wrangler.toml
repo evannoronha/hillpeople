@@ -4,7 +4,7 @@ compatibility_date = "2025-04-15"
 compatibility_flags = ["nodejs_compat"]
 
 [triggers]
-crons = ["0 9 * * *"]  # Daily at 9 AM UTC
+crons = ["*/30 * * * *"]  # Every 30 minutes
 
 [vars]
 STRAPI_API_URL = "https://journal.hillpeople.net"

@@ -344,9 +344,9 @@ async function sendNewsletter(env: Env, options: NewsletterOptions): Promise<voi
     const data = await response.json() as StrapiResponse<Post[]>;
     posts = data.data || [];
   } else if (applyEligibilityFilters) {
-    // Fetch eligible posts (published, not sent, not updated in last 12 hours)
-    const twelveHoursAgo = new Date(Date.now() - 12 * 60 * 60 * 1000).toISOString();
-    const url = `${env.STRAPI_API_URL}/api/posts?filters[publishedAt][$notNull]=true&filters[newsletterSent][$eq]=false&filters[updatedAt][$lt]=${twelveHoursAgo}&sort=publishedDate:desc`;
+    // Fetch eligible posts (published, not sent, not updated in last 30 minutes)
+    const thirtyMinutesAgo = new Date(Date.now() - 30 * 60 * 1000).toISOString();
+    const url = `${env.STRAPI_API_URL}/api/posts?filters[publishedAt][$notNull]=true&filters[newsletterSent][$eq]=false&filters[updatedAt][$lt]=${thirtyMinutesAgo}&sort=publishedDate:desc`;
     console.log(`${logPrefix} Fetching eligible posts: ${url}`);
 
     const response = await fetch(url, {
