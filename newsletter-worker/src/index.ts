@@ -194,23 +194,37 @@ async function confirmSubscriber(env: Env, token: string): Promise<{ success: bo
   }
 
   const subscriber = data.data[0];
+  console.log(`Found subscriber: ${subscriber.documentId}`);
 
   // Update subscriber to confirmed
-  await fetch(`${env.STRAPI_API_URL}/api/subscribers/${subscriber.documentId}`, {
+  const updateUrl = `${env.STRAPI_API_URL}/api/subscribers/${subscriber.documentId}`;
+  const updateBody = {
+    data: {
+      confirmed: true,
+      subscribedAt: new Date().toISOString(),
+      confirmationToken: null,
+      tokenExpiry: null,
+    },
+  };
+  console.log(`Updating subscriber at: ${updateUrl}`);
+  console.log(`Update body: ${JSON.stringify(updateBody)}`);
+
+  const updateResponse = await fetch(updateUrl, {
     method: 'PUT',
     headers: {
       'Content-Type': 'application/json',
       Authorization: `Bearer ${env.STRAPI_NEWSLETTER_TOKEN}`,
     },
-    body: JSON.stringify({
-      data: {
-        confirmed: true,
-        subscribedAt: new Date().toISOString(),
-        confirmationToken: null,
-        tokenExpiry: null,
-      },
-    }),
+    body: JSON.stringify(updateBody),
   });
+
+  console.log(`Update response status: ${updateResponse.status}`);
+  const updateData = await updateResponse.text();
+  console.log(`Update response: ${updateData}`);
+
+  if (!updateResponse.ok) {
+    return { success: false, error: `Failed to update subscriber: ${updateResponse.status}` };
+  }
 
   return { success: true };
 }
