@@ -4,8 +4,6 @@ import Favicons from "../components/Favicons.astro";
 import Header from "../components/Header.astro";
 import GoogleAnalytics from "../components/GoogleAnalytics.astro";
 import NewsletterSignup from "../components/NewsletterSignup.astro";
-
-const showNewsletter = Astro.url.searchParams.get("newsletter") === "enabled";
 ---
 
 <!doctype html>
@@ -27,6 +25,6 @@ const showNewsletter = Astro.url.searchParams.get("newsletter") === "enabled";
 	<body>
 		<Header />
 		<slot />
-		{showNewsletter && <NewsletterSignup />}
+		<NewsletterSignup />
 	</body>
 </html>
