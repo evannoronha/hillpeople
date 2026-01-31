@@ -20,20 +20,14 @@ export function initNewsletterSignup() {
     submitButton.textContent = 'Subscribing...';
 
     try {
-      const strapiUrl = import.meta.env.PUBLIC_STRAPI_API_URL || 'https://journal.hillpeople.net';
-      const subscribeToken = import.meta.env.PUBLIC_STRAPI_SUBSCRIBE_TOKEN;
-
-      const headers: Record<string, string> = {
-        'Content-Type': 'application/json',
-      };
-
-      if (subscribeToken) {
-        headers['Authorization'] = `Bearer ${subscribeToken}`;
+      const strapiUrl = form.dataset.strapiUrl;
+      if (!strapiUrl) {
+        throw new Error('Strapi URL not configured');
       }
 
       const res = await fetch(`${strapiUrl}/api/subscribers`, {
         method: 'POST',
-        headers,
+        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ data: { email } }),
       });
 

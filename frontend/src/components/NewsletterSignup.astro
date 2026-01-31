@@ -1,13 +1,14 @@
 ---
 // Newsletter signup form component
 // Only rendered when ?newsletter=enabled query param is present
+const strapiUrl = import.meta.env.STRAPI_API_URL;
 ---
 
 <div id="newsletter-signup" class="bg-inverse p-6 rounded-lg max-w-md mx-auto my-8">
   <h3 class="text-xl font-bold mb-2">Subscribe to Hill People</h3>
   <p class="text-sm mb-4 opacity-80">Get notified when we publish new posts.</p>
 
-  <form id="newsletter-form" class="flex flex-col gap-3">
+  <form id="newsletter-form" class="flex flex-col gap-3" data-strapi-url={strapiUrl}>
     <input
       type="email"
       name="email"
