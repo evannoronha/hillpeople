@@ -12,6 +12,7 @@ export default defineConfig({
 
   env: {
     schema: {
+      STRAPI_API_URL: envField.string({ context: 'server', access: 'public', default: 'https://journal.hillpeople.net' }),
       STRAPI_API_TOKEN: envField.string({ context: 'server', access: 'secret', optional: true }),
     }
   },

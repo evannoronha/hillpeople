@@ -1,6 +1,6 @@
-import { getSecret } from 'astro:env/server'
+import { getSecret, STRAPI_API_URL } from 'astro:env/server'
 
-const STRAPI_URL = import.meta.env.STRAPI_API_URL
+const STRAPI_URL = STRAPI_API_URL
 
 // Helper to make authenticated requests to Strapi
 async function strapiFetch(url: string): Promise<Response> {
