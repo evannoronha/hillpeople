@@ -4,13 +4,30 @@ import Favicons from "../components/Favicons.astro";
 import Header from "../components/Header.astro";
 import GoogleAnalytics from "../components/GoogleAnalytics.astro";
 import NewsletterSignup from "../components/NewsletterSignup.astro";
+import SEO from "../components/SEO.astro";
 import { fetchSingleType } from "../lib/api";
 
 interface Props {
 	pageTitle: string;
+	description?: string;
+	ogImage?: string;
+	ogType?: 'website' | 'article';
+	publishedTime?: string;
+	authorName?: string;
+	noindex?: boolean;
+	siteName?: string;
 }
 
-const { pageTitle } = Astro.props;
+const {
+	pageTitle,
+	description = '',
+	ogImage,
+	ogType = 'website',
+	publishedTime,
+	authorName,
+	noindex = false,
+	siteName,
+} = Astro.props;
 
 // Fetch home page content for newsletter FAB (shown on all pages)
 const homePage = await fetchSingleType("home-page");
@@ -21,6 +38,16 @@ const homePage = await fetchSingleType("home-page");
 	<head>
 		<meta charset="UTF-8" />
 		<meta name="viewport" content="width=device-width" />
+		<SEO
+			title={pageTitle}
+			description={description}
+			ogImage={ogImage}
+			ogType={ogType}
+			publishedTime={publishedTime}
+			authorName={authorName}
+			noindex={noindex}
+			siteName={siteName}
+		/>
 		<GoogleAnalytics />
 		<Favicons />
 		<link rel="preconnect" href="https://fonts.googleapis.com" />
@@ -30,7 +57,6 @@ const homePage = await fetchSingleType("home-page");
 			rel="stylesheet"
 		/>
 		<meta name="generator" content={Astro.generator} />
-		<title>Hill People - {pageTitle}</title>
 	</head>
 	<body>
 		<Header />

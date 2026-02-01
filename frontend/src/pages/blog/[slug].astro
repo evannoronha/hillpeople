@@ -2,7 +2,7 @@
 import { marked } from "marked";
 import Layout from "../../layouts/Layout.astro";
 import Prose from "../../components/Prose.astro";
-import { fetchPostBySlug } from "../../lib/api";
+import { fetchPostBySlug, fetchSiteSettings } from "../../lib/api";
 import { getMediaUrl, getLargestImage, transformContentUrls } from "../../lib/imageUrl";
 import StravaEmbed from "../../components/StravaEmbed.astro";
 
@@ -10,7 +10,10 @@ const { slug } = Astro.params;
 
 // extract query params
 const previewMode = Astro.url.searchParams.get("status") == "draft";
-const post = await fetchPostBySlug(slug!, previewMode);
+const [post, siteSettings] = await Promise.all([
+    fetchPostBySlug(slug!, previewMode),
+    fetchSiteSettings(),
+]);
 
 if (!post) {
     return Astro.rewrite("/404");
@@ -24,9 +27,23 @@ const htmlContent = transformContentUrls(rawHtml);
 
 const image = getLargestImage(post);
 const imageUrl = getMediaUrl(image?.url);
+
+// SEO data (fields are nested under post.seo component)
+const seoTitle = post.seo?.metaTitle || post.title;
+const seoDescription = post.seo?.metaDescription || post.seo?.excerpt || "";
+const authorName = post.authorName || `${post.createdBy?.firstname || ""} ${post.createdBy?.lastname || ""}`.trim();
+const siteName = siteSettings?.siteName || "Hill People";
 ---
 
-<Layout pageTitle={post.title}>
+<Layout
+    pageTitle={seoTitle}
+    description={seoDescription}
+    ogImage={imageUrl}
+    ogType="article"
+    publishedTime={post.publishedDate}
+    authorName={authorName}
+    siteName={siteName}
+>
     <article class="max-w-3xl mx-auto px-4 py-10">
         {
             imageUrl && (
@@ -42,8 +59,7 @@ const imageUrl = getMediaUrl(image?.url);
 
         <h1 class="text-4xl font-bold mb-4">{post.title}</h1>
         <h2 class="text-2xl font-bold mb-3 mt-12">
-            Written by {post.author_override ? post.author_override[0] : post.createdBy?.firstname}
-            {post.createdBy?.lastname} on {
+            Written by {authorName} on {
                 new Date(post.publishedDate).toLocaleDateString()
             }
         </h2>

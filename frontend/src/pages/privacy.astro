@@ -2,10 +2,13 @@
 import Layout from "../layouts/Layout.astro";
 import Prose from "../components/Prose.astro";
 import { marked } from "marked";
-import { fetchSingleType } from "../lib/api";
+import { fetchSingleType, fetchSiteSettings } from "../lib/api";
 import { transformContentUrls } from "../lib/imageUrl";
 
-const privacy = await fetchSingleType("privacy-policy");
+const [privacy, siteSettings] = await Promise.all([
+    fetchSingleType("privacy-policy"),
+    fetchSiteSettings(),
+]);
 
 // Use CKEditor richContent if available, fallback to markdown content
 const useRichContent = !!privacy?.richContent;
@@ -25,9 +28,18 @@ const lastUpdated = privacy?.lastUpdated
       day: 'numeric'
     })
   : null;
+
+// SEO data
+const siteName = siteSettings?.siteName || "Hill People";
+const description = `Privacy policy for ${siteName}`;
 ---
 
-<Layout pageTitle={title}>
+<Layout
+    pageTitle={title}
+    description={description}
+    siteName={siteName}
+    noindex={true}
+>
   <div class="max-w-3xl mx-auto px-4 py-10">
     <h1 class="text-4xl font-bold mb-4">{title}</h1>
     {lastUpdated && (

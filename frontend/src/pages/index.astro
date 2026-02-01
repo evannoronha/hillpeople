@@ -2,19 +2,31 @@
 import PostCard from "../components/PostCard.astro";
 import Layout from "../layouts/Layout.astro";
 import Hero from "../components/Hero.astro";
-import { fetchPostsPaginated, fetchSingleType } from "../lib/api";
+import { fetchPostsPaginated, fetchSingleType, fetchSiteSettings } from "../lib/api";
+import { getMediaUrl } from "../lib/imageUrl";
 
 const PAGE_SIZE = 6;
 
-const [{ posts, pagination }, homePage] = await Promise.all([
+const [{ posts, pagination }, homePage, siteSettings] = await Promise.all([
 	fetchPostsPaginated(1, PAGE_SIZE),
 	fetchSingleType("home-page"),
+	fetchSiteSettings(),
 ]);
 
 const hasMore = pagination.pageCount > 1;
+
+// SEO data
+const siteName = siteSettings?.siteName || "Hill People";
+const description = siteSettings?.siteDescription || "Stories from the hills";
+const ogImage = siteSettings?.defaultOgImage ? getMediaUrl(siteSettings.defaultOgImage.url) : undefined;
 ---
 
-<Layout pageTitle="Home">
+<Layout
+	pageTitle="Home"
+	description={description}
+	ogImage={ogImage}
+	siteName={siteName}
+>
 	{homePage && (
 		<Hero
 			title={homePage.heroTitle}

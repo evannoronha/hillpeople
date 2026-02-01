@@ -3,7 +3,8 @@ import { getLargestImage, getMediaUrl } from "../lib/imageUrl";
 
 const { post } = Astro.props;
 
-const { title, slug, publishedDate } = post;
+const { title, slug, publishedDate, seo } = post;
+const excerpt = seo?.excerpt;
 const largestImage = getLargestImage(post);
 const imageUrl = largestImage ? getMediaUrl(largestImage.url) : null;
 const postUrl = `/blog/${slug}`;
@@ -34,7 +35,12 @@ const postUrl = `/blog/${slug}`;
         <h3 class="text-xl font-semibold leading-tight">
             {title}
         </h3>
-        <p class="text-sm mt-1">
+        {excerpt && (
+            <p class="text-sm mt-2 line-clamp-2">
+                {excerpt}
+            </p>
+        )}
+        <p class="text-sm mt-2 opacity-70">
             {
                 new Date(publishedDate).toLocaleDateString(undefined, {
                     year: "numeric",
