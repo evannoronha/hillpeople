@@ -25,9 +25,6 @@
         "audios"
       ]
     },
-    "content": {
-      "type": "richtext"
-    },
     "richContent": {
       "type": "customField",
       "options": {

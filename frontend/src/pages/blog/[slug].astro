@@ -1,5 +1,4 @@
 ---
-import { marked } from "marked";
 import Layout from "../../layouts/Layout.astro";
 import Prose from "../../components/Prose.astro";
 import { fetchPostBySlug, fetchSiteSettings } from "../../lib/api";
@@ -19,11 +18,8 @@ if (!post) {
     return Astro.rewrite("/404");
 }
 
-// Use CKEditor richContent if available, fallback to markdown content
-const useRichContent = !!post.richContent;
-const rawHtml = useRichContent ? post.richContent : await marked(post.content);
 // Transform relative /uploads/ URLs to absolute Strapi URLs
-const htmlContent = transformContentUrls(rawHtml);
+const htmlContent = transformContentUrls(post.richContent);
 
 const image = getLargestImage(post);
 const imageUrl = getMediaUrl(image?.url);

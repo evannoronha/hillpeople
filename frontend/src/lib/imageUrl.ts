@@ -14,7 +14,7 @@ export const getMediaUrl = (url?: string): string => {
 
 /**
  * Transforms relative /uploads/ URLs in HTML content to absolute Strapi URLs.
- * This is needed for CKEditor richContent which embeds relative URLs.
+ * This is needed for CKEditor content which embeds relative URLs.
  */
 export const transformContentUrls = (html: string): string => {
     if (!html) return '';

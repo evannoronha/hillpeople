@@ -14,8 +14,6 @@ make dev                   # Frontend against local Strapi (localhost:1337)
 make dev-prod              # Frontend against production Strapi
 make backend               # Run local Strapi backend
 make sync-data             # Pull production data to local Strapi
-make migrate-ckeditor      # Migrate markdown content to CKEditor HTML (requires STRAPI_TOKEN)
-make migrate-ckeditor-dry  # Preview migration without writing (requires STRAPI_TOKEN)
 make upgrade-strapi        # Upgrade Strapi to latest version
 ```
 
@@ -38,7 +36,7 @@ npm run upgrade    # Upgrade Strapi to latest version
 
 ### Data Flow
 1. Frontend fetches posts from Strapi API (`/api/posts?populate=*`)
-2. Post content is stored as markdown in Strapi, converted to HTML using `marked` library
+2. Post content is stored as HTML in Strapi using CKEditor
 3. Images are served with responsive formats (xlarge, large, medium, small, xsmall)
 
 ### Frontend (`frontend/src/`)
