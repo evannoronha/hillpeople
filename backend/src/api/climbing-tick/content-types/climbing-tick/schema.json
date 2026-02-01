@@ -1,0 +1,59 @@
+{
+  "kind": "collectionType",
+  "collectionName": "climbing_ticks",
+  "info": {
+    "singularName": "climbing-tick",
+    "pluralName": "climbing-ticks",
+    "displayName": "Climbing Tick",
+    "description": "Individual climbing ascents logged from Mountain Project"
+  },
+  "options": {
+    "draftAndPublish": false
+  },
+  "attributes": {
+    "tickDate": {
+      "type": "date",
+      "required": true
+    },
+    "route": {
+      "type": "relation",
+      "relation": "manyToOne",
+      "target": "api::climbing-route.climbing-route",
+      "inversedBy": "ticks"
+    },
+    "person": {
+      "type": "relation",
+      "relation": "manyToOne",
+      "target": "api::person.person",
+      "inversedBy": "ticks"
+    },
+    "style": {
+      "type": "string"
+    },
+    "leadStyle": {
+      "type": "string"
+    },
+    "yourStars": {
+      "type": "integer"
+    },
+    "yourRating": {
+      "type": "string"
+    },
+    "mpNotes": {
+      "type": "text"
+    },
+    "notes": {
+      "type": "text"
+    },
+    "photos": {
+      "type": "media",
+      "multiple": true,
+      "allowedTypes": ["images"]
+    },
+    "mountainProjectTickId": {
+      "type": "string",
+      "unique": true,
+      "required": true
+    }
+  }
+}

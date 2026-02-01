@@ -1,0 +1,51 @@
+{
+  "kind": "collectionType",
+  "collectionName": "climbing_routes",
+  "info": {
+    "singularName": "climbing-route",
+    "pluralName": "climbing-routes",
+    "displayName": "Climbing Route",
+    "description": "Climbing routes from Mountain Project"
+  },
+  "options": {
+    "draftAndPublish": false
+  },
+  "attributes": {
+    "name": {
+      "type": "string",
+      "required": true
+    },
+    "mountainProjectUrl": {
+      "type": "string",
+      "unique": true,
+      "required": true
+    },
+    "rating": {
+      "type": "string"
+    },
+    "ratingCode": {
+      "type": "integer"
+    },
+    "routeType": {
+      "type": "string"
+    },
+    "location": {
+      "type": "text"
+    },
+    "avgStars": {
+      "type": "decimal"
+    },
+    "pitches": {
+      "type": "integer"
+    },
+    "length": {
+      "type": "integer"
+    },
+    "ticks": {
+      "type": "relation",
+      "relation": "oneToMany",
+      "target": "api::climbing-tick.climbing-tick",
+      "mappedBy": "route"
+    }
+  }
+}
