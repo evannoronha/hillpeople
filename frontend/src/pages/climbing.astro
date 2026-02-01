@@ -1,0 +1,168 @@
+---
+import Layout from "../layouts/Layout.astro";
+import { fetchClimbingTicksPaginated, fetchSiteSettings, type ClimbingTick } from "../lib/api";
+
+const PAGE_SIZE = 50;
+
+const [{ ticks, pagination }, siteSettings] = await Promise.all([
+    fetchClimbingTicksPaginated(1, PAGE_SIZE),
+    fetchSiteSettings(),
+]);
+
+const hasMore = pagination.pageCount > 1;
+
+// SEO data
+const siteName = siteSettings?.siteName || "Hill People";
+const description = "Our climbing log - routes we've climbed, organized by date.";
+
+// Helper function to format route type
+function formatRouteType(routeType: string): string {
+    if (!routeType) return "";
+    return routeType;
+}
+
+// Grouped route entry - dedupes multiple climbers on same route/date
+interface GroupedRoute {
+    route: ClimbingTick['route'];
+    climbers: string[];
+    bestStars: number;
+}
+
+// Group ticks by date, then by route (deduping multiple climbers)
+interface TicksByDate {
+    date: string;
+    formattedDate: string;
+    routes: GroupedRoute[];
+}
+
+function groupTicksByDateAndRoute(tickList: ClimbingTick[]): TicksByDate[] {
+    const byDate = new Map<string, Map<string, GroupedRoute>>();
+
+    for (const tick of tickList) {
+        const date = tick.tickDate;
+        const routeUrl = tick.route?.mountainProjectUrl || 'unknown';
+
+        if (!byDate.has(date)) {
+            byDate.set(date, new Map());
+        }
+
+        const dateRoutes = byDate.get(date)!;
+
+        if (!dateRoutes.has(routeUrl)) {
+            dateRoutes.set(routeUrl, {
+                route: tick.route,
+                climbers: [],
+                bestStars: 0,
+            });
+        }
+
+        const groupedRoute = dateRoutes.get(routeUrl)!;
+
+        // Add climber if not already in list
+        if (tick.person?.name && !groupedRoute.climbers.includes(tick.person.name)) {
+            groupedRoute.climbers.push(tick.person.name);
+        }
+
+        // Track best star rating
+        if (tick.yourStars && tick.yourStars > groupedRoute.bestStars) {
+            groupedRoute.bestStars = tick.yourStars;
+        }
+    }
+
+    return Array.from(byDate.entries()).map(([date, routesMap]) => ({
+        date,
+        formattedDate: new Date(date + 'T00:00:00').toLocaleDateString(undefined, {
+            weekday: 'long',
+            year: 'numeric',
+            month: 'long',
+            day: 'numeric',
+        }),
+        routes: Array.from(routesMap.values()),
+    }));
+}
+
+const ticksByDate = groupTicksByDateAndRoute(ticks);
+
+// Count unique routes for display
+const uniqueRouteCount = ticksByDate.reduce((sum, day) => sum + day.routes.length, 0);
+---
+
+<Layout
+    pageTitle="Climbing Log"
+    description={description}
+    siteName={siteName}
+>
+    <div class="max-w-4xl mx-auto px-4 py-10">
+        <h1 class="text-4xl font-bold mb-2">Climbing Log</h1>
+        <p class="text-lg mb-8 opacity-80">
+            {uniqueRouteCount} routes climbed
+        </p>
+
+        <div id="ticks-container">
+            {ticksByDate.map(({ date, formattedDate, routes }) => (
+                <div class="mb-8" data-date={date}>
+                    <h2 class="text-xl font-semibold mb-3 sticky top-0 bg-[var(--color-bg)] py-2 border-b border-[var(--color-accent)]">
+                        {formattedDate}
+                    </h2>
+                    <div class="space-y-2">
+                        {routes.map((groupedRoute) => (
+                            <div class="tick-item flex items-start gap-4 p-3 rounded-lg border border-[var(--color-accent)] hover:border-[var(--color-header)] transition">
+                                <div class="flex-1 min-w-0">
+                                    <div class="flex items-baseline gap-2 flex-wrap">
+                                        <a
+                                            href={groupedRoute.route?.mountainProjectUrl}
+                                            target="_blank"
+                                            rel="noopener noreferrer"
+                                            class="font-semibold hover:underline text-[var(--color-header)]"
+                                        >
+                                            {groupedRoute.route?.name || "Unknown Route"}
+                                        </a>
+                                        {groupedRoute.route?.rating && (
+                                            <span class="text-sm font-mono">{groupedRoute.route.rating}</span>
+                                        )}
+                                        {groupedRoute.route?.routeType && (
+                                            <span class="text-xs opacity-70">{formatRouteType(groupedRoute.route.routeType)}</span>
+                                        )}
+                                    </div>
+                                    {groupedRoute.route?.location && (
+                                        <p class="text-sm truncate">{groupedRoute.route.location}</p>
+                                    )}
+                                    {groupedRoute.climbers.length > 0 && (
+                                        <p class="text-xs mt-1 opacity-70">
+                                            {groupedRoute.climbers.join(" & ")}
+                                        </p>
+                                    )}
+                                </div>
+                                {groupedRoute.bestStars > 0 && (
+                                    <div class="flex-shrink-0 text-sm text-[var(--color-header)]" title={`${groupedRoute.bestStars} stars`}>
+                                        {"★".repeat(groupedRoute.bestStars)}{"☆".repeat(4 - groupedRoute.bestStars)}
+                                    </div>
+                                )}
+                            </div>
+                        ))}
+                    </div>
+                </div>
+            ))}
+        </div>
+
+        {ticks.length === 0 && (
+            <p class="text-center opacity-60 py-10">No climbing ticks yet.</p>
+        )}
+
+        {hasMore && (
+            <div class="text-center mt-10">
+                <button
+                    id="load-more-ticks"
+                    type="button"
+                    data-page="2"
+                    data-page-size={PAGE_SIZE}
+                    class="bg-[var(--color-fab-bg)] text-[var(--color-fab-text)] border-2 border-[var(--color-fab-text)] px-6 py-3 rounded-lg font-semibold hover:opacity-90 transition w-full sm:w-auto"
+                >
+                    Load more
+                </button>
+            </div>
+        )}
+    </div>
+</Layout>
+
+<script src="../scripts/load-more-ticks.ts"></script>

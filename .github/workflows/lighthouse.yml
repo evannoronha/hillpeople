@@ -52,6 +52,7 @@ jobs:
                 "startServerReadyPattern": "Ready on",
                 "url": [
                   "http://localhost:8788/",
+                  "http://localhost:8788/climbing",
                   "http://localhost:8788/blog/${{ steps.slugs.outputs.slug1 }}",
                   "http://localhost:8788/blog/${{ steps.slugs.outputs.slug2 }}",
                   "http://localhost:8788/blog/${{ steps.slugs.outputs.slug3 }}"

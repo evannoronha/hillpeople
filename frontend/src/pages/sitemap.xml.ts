@@ -17,6 +17,7 @@ export async function GET() {
             })
             .join('\n')}
     <url><loc>${siteUrl}/about</loc></url>
+    <url><loc>${siteUrl}/climbing</loc></url>
 </urlset>
   `.trim();
 
