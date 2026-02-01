@@ -616,7 +616,7 @@ export interface ApiPersonPerson extends Struct.CollectionTypeSchema {
       'api::person.person'
     > &
       Schema.Attribute.Private;
-    mountainProjectUserId: Schema.Attribute.String & Schema.Attribute.Unique;
+    mountainProjectUrl: Schema.Attribute.String & Schema.Attribute.Unique;
     name: Schema.Attribute.String & Schema.Attribute.Required;
     publishedAt: Schema.Attribute.DateTime;
     ticks: Schema.Attribute.Relation<

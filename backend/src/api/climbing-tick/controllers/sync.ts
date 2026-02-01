@@ -71,7 +71,8 @@ async function syncPersonTicks(strapi: Core.Strapi, personDocumentId: string): P
   }
 
   // Fetch CSV from Mountain Project
-  const csvUrl = `https://www.mountainproject.com/user/${person.mountainProjectUserId}/tick-export`;
+  // URL requires a slug after user ID, but it can be anything - using underscore placeholder
+  const csvUrl = `https://www.mountainproject.com/user/${person.mountainProjectUserId}/_/tick-export`;
   strapi.log.info(`Fetching ticks from ${csvUrl}`);
 
   let csvText: string;
