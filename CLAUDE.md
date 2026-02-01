@@ -59,6 +59,12 @@ Strapi admin generates preview URLs like `/blog/{slug}?status=draft`. The fronte
 - PRs are merged via the GitHub UI (not via CLI)
 - Never push directly to `main`
 
+## Lighthouse CI
+
+All frontend pages must be included in Lighthouse CI audits. When adding a new page:
+1. Add the URL to `.github/workflows/lighthouse.yml` in the `url` array
+2. The workflow runs on PRs that modify `frontend/` files
+
 ## Deployment
 
 Both services auto-deploy on merge to main:
