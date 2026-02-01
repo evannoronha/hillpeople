@@ -16,9 +16,6 @@
       "required": true,
       "default": "Privacy Policy"
     },
-    "content": {
-      "type": "richtext"
-    },
     "richContent": {
       "type": "customField",
       "options": {

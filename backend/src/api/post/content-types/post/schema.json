@@ -22,10 +22,6 @@
       "targetField": "title",
       "required": true
     },
-    "content": {
-      "type": "richtext",
-      "required": true
-    },
     "coverImage": {
       "type": "media",
       "multiple": false,
