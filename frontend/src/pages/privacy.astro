@@ -1,7 +1,6 @@
 ---
 import Layout from "../layouts/Layout.astro";
 import Prose from "../components/Prose.astro";
-import { marked } from "marked";
 import { fetchSingleType, fetchSiteSettings } from "../lib/api";
 import { transformContentUrls } from "../lib/imageUrl";
 
@@ -10,15 +9,8 @@ const [privacy, siteSettings] = await Promise.all([
     fetchSiteSettings(),
 ]);
 
-// Use CKEditor richContent if available, fallback to markdown content
-const useRichContent = !!privacy?.richContent;
-const rawHtml = useRichContent
-  ? privacy.richContent
-  : privacy?.content
-    ? await marked(privacy.content)
-    : "";
 // Transform relative /uploads/ URLs to absolute Strapi URLs
-const htmlContent = transformContentUrls(rawHtml);
+const htmlContent = privacy?.richContent ? transformContentUrls(privacy.richContent) : "";
 
 const title = privacy?.title || "Privacy Policy";
 const lastUpdated = privacy?.lastUpdated
