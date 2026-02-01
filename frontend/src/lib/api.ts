@@ -96,3 +96,7 @@ export async function fetchSingleType(pageName: string) {
         return null
     }
 }
+
+export async function fetchSiteSettings() {
+    return fetchSingleType("site-settings")
+}

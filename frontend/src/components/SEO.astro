@@ -1,0 +1,44 @@
+---
+interface Props {
+  title: string;
+  description: string;
+  canonicalUrl?: string;
+  ogImage?: string;
+  ogType?: 'website' | 'article';
+  publishedTime?: string;
+  authorName?: string;
+  noindex?: boolean;
+  siteName?: string;
+}
+
+const {
+  title,
+  description,
+  canonicalUrl,
+  ogImage,
+  ogType = 'website',
+  publishedTime,
+  authorName,
+  noindex = false,
+  siteName = 'Hill People',
+} = Astro.props;
+
+const fullTitle = title === 'Home' ? siteName : `${title} - ${siteName}`;
+const url = canonicalUrl || Astro.url.href;
+---
+
+<!-- Primary Meta Tags -->
+<title>{fullTitle}</title>
+<meta name="description" content={description} />
+{noindex && <meta name="robots" content="noindex, nofollow" />}
+<link rel="canonical" href={url} />
+
+<!-- Open Graph -->
+<meta property="og:type" content={ogType} />
+<meta property="og:url" content={url} />
+<meta property="og:title" content={fullTitle} />
+<meta property="og:description" content={description} />
+<meta property="og:site_name" content={siteName} />
+{ogImage && <meta property="og:image" content={ogImage} />}
+{publishedTime && <meta property="article:published_time" content={publishedTime} />}
+{authorName && <meta property="article:author" content={authorName} />}
