@@ -1,4 +1,4 @@
-.PHONY: dev dev-prod sync-data backend migrate-ckeditor migrate-ckeditor-dry upgrade-strapi newsletter-dev newsletter-deploy newsletter-send newsletter-send-to newsletter-send-posts newsletter-send-force newsletter-godmode-send
+.PHONY: dev dev-prod sync-data backend upgrade-strapi newsletter-dev newsletter-deploy newsletter-send newsletter-send-to newsletter-send-posts newsletter-send-force newsletter-godmode-send
 
 # Run frontend against local Strapi (http://localhost:1337)
 dev:
@@ -15,14 +15,6 @@ sync-data:
 # Run local Strapi backend
 backend:
 	cd backend && npm run develop
-
-# Migrate markdown content to CKEditor HTML (requires STRAPI_TOKEN env var)
-migrate-ckeditor:
-	cd backend && npx tsx scripts/migrate-richtext-to-ckeditor.ts
-
-# Preview migration output without writing (requires STRAPI_TOKEN env var)
-migrate-ckeditor-dry:
-	cd backend && npx tsx scripts/migrate-richtext-to-ckeditor.ts --dry-run
 
 # Upgrade Strapi to latest version
 upgrade-strapi:

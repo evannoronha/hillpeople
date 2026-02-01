@@ -14,8 +14,6 @@ make dev                   # Frontend against local Strapi (localhost:1337)
 make dev-prod              # Frontend against production Strapi
 make backend               # Run local Strapi backend
 make sync-data             # Pull production data to local Strapi
-make migrate-ckeditor      # Migrate markdown content to CKEditor HTML (requires STRAPI_TOKEN)
-make migrate-ckeditor-dry  # Preview migration without writing (requires STRAPI_TOKEN)
 make upgrade-strapi        # Upgrade Strapi to latest version
 ```
 
