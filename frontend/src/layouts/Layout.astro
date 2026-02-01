@@ -4,8 +4,9 @@ import Favicons from "../components/Favicons.astro";
 import Header from "../components/Header.astro";
 import GoogleAnalytics from "../components/GoogleAnalytics.astro";
 import NewsletterSignup from "../components/NewsletterSignup.astro";
+import Footer from "../components/Footer.astro";
 import SEO from "../components/SEO.astro";
-import { fetchSingleType } from "../lib/api";
+import { fetchSingleType, fetchSiteSettings } from "../lib/api";
 
 interface Props {
 	pageTitle: string;
@@ -31,6 +32,7 @@ const {
 
 // Fetch home page content for newsletter FAB (shown on all pages)
 const homePage = await fetchSingleType("home-page");
+const siteSettings = await fetchSiteSettings();
 ---
 
 <!doctype html>
@@ -61,6 +63,10 @@ const homePage = await fetchSingleType("home-page");
 	<body>
 		<Header />
 		<slot />
+		<Footer
+			tagline={siteSettings?.footerTagline}
+			copyrightText={siteSettings?.copyrightText}
+		/>
 		<NewsletterSignup
 			title={homePage?.newsletterTitle || "Subscribe to Hill People"}
 			description={homePage?.newsletterDescription}

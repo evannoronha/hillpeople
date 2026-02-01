@@ -1,0 +1,19 @@
+---
+interface Props {
+	tagline?: string;
+	copyrightText?: string;
+}
+
+const { tagline, copyrightText = "Hill People" } = Astro.props;
+const currentYear = new Date().getFullYear();
+---
+
+<footer class="mx-10 mt-16 pb-10">
+	<hr class="mb-4" />
+	{tagline && <p class="text-center text-[var(--color-sub-header)] mb-2">{tagline}</p>}
+	<div class="flex flex-wrap justify-center gap-4 text-sm opacity-70">
+		<span>© {currentYear} {copyrightText}</span>
+		<span>·</span>
+		<a href="/privacy" class="hover:underline">Privacy Policy</a>
+	</div>
+</footer>
