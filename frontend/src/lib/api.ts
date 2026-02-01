@@ -1,11 +1,13 @@
+import { getSecret } from 'astro:env/server'
+
 const STRAPI_URL = import.meta.env.STRAPI_API_URL
-const STRAPI_API_TOKEN = import.meta.env.STRAPI_API_TOKEN
 
 // Helper to make authenticated requests to Strapi
 async function strapiFetch(url: string): Promise<Response> {
     const headers: HeadersInit = {}
-    if (STRAPI_API_TOKEN) {
-        headers['Authorization'] = `Bearer ${STRAPI_API_TOKEN}`
+    const token = getSecret('STRAPI_API_TOKEN')
+    if (token) {
+        headers['Authorization'] = `Bearer ${token}`
     }
     return fetch(url, { headers })
 }
