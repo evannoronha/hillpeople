@@ -1,4 +1,14 @@
 const STRAPI_URL = import.meta.env.STRAPI_API_URL
+const STRAPI_API_TOKEN = import.meta.env.STRAPI_API_TOKEN
+
+// Helper to make authenticated requests to Strapi
+async function strapiFetch(url: string): Promise<Response> {
+    const headers: HeadersInit = {}
+    if (STRAPI_API_TOKEN) {
+        headers['Authorization'] = `Bearer ${STRAPI_API_TOKEN}`
+    }
+    return fetch(url, { headers })
+}
 
 export interface PaginationMeta {
     page: number;
@@ -16,7 +26,7 @@ export async function fetchPostsPaginated(page: number = 1, pageSize: number = 6
     try {
         const reqUrl = `${STRAPI_URL}/api/posts?populate=*&sort=publishedDate:desc&pagination[page]=${page}&pagination[pageSize]=${pageSize}`
         console.debug("Fetching paginated posts from:", reqUrl)
-        const response = await fetch(reqUrl)
+        const response = await strapiFetch(reqUrl)
 
         if (!response.ok) {
             throw new Error(`Failed to fetch posts: ${response.status}`)
@@ -40,7 +50,7 @@ export async function fetchPosts() {
     try {
         const reqUrl = `${STRAPI_URL}/api/posts?populate=*&sort=publishedDate:desc`
         console.debug("Fetching posts from:", reqUrl)
-        const response = await fetch(reqUrl)
+        const response = await strapiFetch(reqUrl)
 
         if (!response.ok) {
             throw new Error(`Failed to fetch posts: ${response.status}`)
@@ -61,7 +71,7 @@ export async function fetchPostBySlug(slug: string, preview: boolean = false) {
             reqUrl += "&status=draft"
         }
         console.debug("Fetching posts from:", reqUrl)
-        const response = await fetch(reqUrl)
+        const response = await strapiFetch(reqUrl)
 
         if (!response.ok) {
             throw new Error(`Failed to fetch post: ${response.status}`)
@@ -79,7 +89,7 @@ export async function fetchSingleType(pageName: string) {
     try {
         const reqUrl = `${STRAPI_URL}/api/${pageName}?populate=*`
         console.debug("Fetching single type from:", reqUrl)
-        const response = await fetch(reqUrl)
+        const response = await strapiFetch(reqUrl)
 
         if (!response.ok) {
             // 404 is expected if the single type content hasn't been created yet
@@ -145,7 +155,7 @@ export async function fetchClimbingTicksPaginated(page: number = 1, pageSize: nu
     try {
         const reqUrl = `${STRAPI_URL}/api/climbing-ticks?populate=*&sort=tickDate:desc&pagination[page]=${page}&pagination[pageSize]=${pageSize}`
         console.debug("Fetching paginated climbing ticks from:", reqUrl)
-        const response = await fetch(reqUrl)
+        const response = await strapiFetch(reqUrl)
 
         if (!response.ok) {
             throw new Error(`Failed to fetch climbing ticks: ${response.status}`)
@@ -169,7 +179,7 @@ export async function fetchClimbingTicksByDateRange(startDate: string, endDate: 
     try {
         const reqUrl = `${STRAPI_URL}/api/climbing-ticks?populate=*&sort=tickDate:asc&filters[tickDate][$gte]=${startDate}&filters[tickDate][$lte]=${endDate}`
         console.debug("Fetching climbing ticks by date range from:", reqUrl)
-        const response = await fetch(reqUrl)
+        const response = await strapiFetch(reqUrl)
 
         if (!response.ok) {
             throw new Error(`Failed to fetch climbing ticks: ${response.status}`)
