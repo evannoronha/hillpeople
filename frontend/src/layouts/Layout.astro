@@ -4,6 +4,16 @@ import Favicons from "../components/Favicons.astro";
 import Header from "../components/Header.astro";
 import GoogleAnalytics from "../components/GoogleAnalytics.astro";
 import NewsletterSignup from "../components/NewsletterSignup.astro";
+import { fetchSingleType } from "../lib/api";
+
+interface Props {
+	pageTitle: string;
+}
+
+const { pageTitle } = Astro.props;
+
+// Fetch home page content for newsletter FAB (shown on all pages)
+const homePage = await fetchSingleType("home-page");
 ---
 
 <!doctype html>
@@ -20,11 +30,16 @@ import NewsletterSignup from "../components/NewsletterSignup.astro";
 			rel="stylesheet"
 		/>
 		<meta name="generator" content={Astro.generator} />
-		<title>Hill People - {Astro.props.pageTitle}</title>
+		<title>Hill People - {pageTitle}</title>
 	</head>
 	<body>
 		<Header />
 		<slot />
-		<NewsletterSignup />
+		<NewsletterSignup
+			title={homePage?.newsletterTitle || "Subscribe to Hill People"}
+			description={homePage?.newsletterDescription}
+			buttonText={homePage?.newsletterButtonText}
+			fabLabel={homePage?.newsletterFabLabel}
+		/>
 	</body>
 </html>

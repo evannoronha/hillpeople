@@ -1,4 +1,45 @@
-// Newsletter signup form handler
+// Newsletter signup form handler with modal
+
+function initNewsletterModal() {
+  const fab = document.getElementById('newsletter-fab');
+  const modal = document.getElementById('newsletter-modal');
+  const modalContent = document.getElementById('newsletter-modal-content');
+  const closeButton = document.getElementById('newsletter-close');
+
+  if (!fab || !modal) return;
+
+  function openModal() {
+    modal!.classList.remove('hidden');
+    modal!.classList.add('flex');
+    document.body.style.overflow = 'hidden';
+  }
+
+  function closeModal() {
+    modal!.classList.add('hidden');
+    modal!.classList.remove('flex');
+    document.body.style.overflow = '';
+  }
+
+  // Open modal on FAB click
+  fab.addEventListener('click', openModal);
+
+  // Close on close button click
+  closeButton?.addEventListener('click', closeModal);
+
+  // Close on backdrop click (but not modal content)
+  modal.addEventListener('click', (e) => {
+    if (e.target === modal) {
+      closeModal();
+    }
+  });
+
+  // Close on escape key
+  document.addEventListener('keydown', (e) => {
+    if (e.key === 'Escape' && !modal.classList.contains('hidden')) {
+      closeModal();
+    }
+  });
+}
 
 export function initNewsletterSignup() {
   const form = document.getElementById('newsletter-form') as HTMLFormElement | null;
@@ -64,7 +105,11 @@ export function initNewsletterSignup() {
 
 // Auto-initialize when DOM is ready
 if (document.readyState === 'loading') {
-  document.addEventListener('DOMContentLoaded', initNewsletterSignup);
+  document.addEventListener('DOMContentLoaded', () => {
+    initNewsletterModal();
+    initNewsletterSignup();
+  });
 } else {
+  initNewsletterModal();
   initNewsletterSignup();
 }

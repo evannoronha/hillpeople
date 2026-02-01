@@ -1,0 +1,41 @@
+{
+  "kind": "singleType",
+  "collectionName": "home_pages",
+  "info": {
+    "singularName": "home-page",
+    "pluralName": "home-pages",
+    "displayName": "Home Page"
+  },
+  "options": {
+    "draftAndPublish": true
+  },
+  "pluginOptions": {},
+  "attributes": {
+    "heroTitle": {
+      "type": "string",
+      "required": true
+    },
+    "heroSubtitle": {
+      "type": "text"
+    },
+    "newsletterTitle": {
+      "type": "string",
+      "required": true
+    },
+    "newsletterDescription": {
+      "type": "text"
+    },
+    "newsletterButtonText": {
+      "type": "string",
+      "default": "Subscribe"
+    },
+    "newsletterFabLabel": {
+      "type": "string",
+      "default": "Subscribe"
+    },
+    "loadMoreButtonText": {
+      "type": "string",
+      "default": "Load more posts"
+    }
+  }
+}
