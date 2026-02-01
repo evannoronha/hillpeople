@@ -22,6 +22,12 @@ interface TickData {
     person: TickPerson | null;
 }
 
+interface GroupedRoute {
+    route: TickRoute | null;
+    climbers: string[];
+    bestStars: number;
+}
+
 interface ApiResponse {
     ticks: TickData[];
     pagination: {
@@ -30,13 +36,6 @@ interface ApiResponse {
         pageCount: number;
         total: number;
     };
-}
-
-function formatStyle(style: string, leadStyle: string): string {
-    const parts: string[] = [];
-    if (style) parts.push(style);
-    if (leadStyle) parts.push(leadStyle);
-    return parts.join(" · ");
 }
 
 function formatDate(dateStr: string): string {
@@ -48,45 +47,71 @@ function formatDate(dateStr: string): string {
     });
 }
 
-function createTickHtml(tick: TickData): string {
-    const routeName = tick.route?.name || "Unknown Route";
-    const routeUrl = tick.route?.mountainProjectUrl || "#";
-    const rating = tick.route?.rating || "";
-    const routeType = tick.route?.routeType || "";
-    const location = tick.route?.location || "";
-    const style = formatStyle(tick.style, tick.leadStyle);
-    const personName = tick.person?.name || "";
+function groupTicksByRoute(ticks: TickData[]): Map<string, GroupedRoute> {
+    const routeMap = new Map<string, GroupedRoute>();
 
-    const starsHtml = tick.yourStars && tick.yourStars > 0
-        ? `<div class="flex-shrink-0 text-sm" title="${tick.yourStars} stars">${"★".repeat(tick.yourStars)}${"☆".repeat(4 - tick.yourStars)}</div>`
+    for (const tick of ticks) {
+        const routeUrl = tick.route?.mountainProjectUrl || 'unknown';
+
+        if (!routeMap.has(routeUrl)) {
+            routeMap.set(routeUrl, {
+                route: tick.route,
+                climbers: [],
+                bestStars: 0,
+            });
+        }
+
+        const groupedRoute = routeMap.get(routeUrl)!;
+
+        if (tick.person?.name && !groupedRoute.climbers.includes(tick.person.name)) {
+            groupedRoute.climbers.push(tick.person.name);
+        }
+
+        if (tick.yourStars && tick.yourStars > groupedRoute.bestStars) {
+            groupedRoute.bestStars = tick.yourStars;
+        }
+    }
+
+    return routeMap;
+}
+
+function createRouteHtml(groupedRoute: GroupedRoute): string {
+    const routeName = groupedRoute.route?.name || "Unknown Route";
+    const routeUrl = groupedRoute.route?.mountainProjectUrl || "#";
+    const rating = groupedRoute.route?.rating || "";
+    const routeType = groupedRoute.route?.routeType || "";
+    const location = groupedRoute.route?.location || "";
+    const climbers = groupedRoute.climbers.join(" & ");
+
+    const starsHtml = groupedRoute.bestStars > 0
+        ? `<div class="flex-shrink-0 text-sm text-[var(--color-header)]" title="${groupedRoute.bestStars} stars">${"★".repeat(groupedRoute.bestStars)}${"☆".repeat(4 - groupedRoute.bestStars)}</div>`
         : "";
 
     return `
-        <div class="tick-item flex items-start gap-4 p-3 rounded-lg bg-[var(--color-inverse-bg)] bg-opacity-10 hover:bg-opacity-20 transition">
+        <div class="tick-item flex items-start gap-4 p-3 rounded-lg border border-[var(--color-accent)] hover:border-[var(--color-header)] transition">
             <div class="flex-1 min-w-0">
                 <div class="flex items-baseline gap-2 flex-wrap">
-                    <a href="${routeUrl}" target="_blank" rel="noopener noreferrer" class="font-semibold hover:underline">${routeName}</a>
-                    ${rating ? `<span class="text-sm font-mono opacity-75">${rating}</span>` : ""}
-                    ${routeType ? `<span class="text-xs opacity-60">${routeType}</span>` : ""}
+                    <a href="${routeUrl}" target="_blank" rel="noopener noreferrer" class="font-semibold hover:underline text-[var(--color-header)]">${routeName}</a>
+                    ${rating ? `<span class="text-sm font-mono">${rating}</span>` : ""}
+                    ${routeType ? `<span class="text-xs text-[var(--color-accent)]">${routeType}</span>` : ""}
                 </div>
-                ${location ? `<p class="text-sm opacity-60 truncate">${location}</p>` : ""}
-                ${style ? `<p class="text-sm opacity-75 mt-1">${style}</p>` : ""}
-                ${personName ? `<p class="text-xs opacity-50 mt-1">Climbed by ${personName}</p>` : ""}
+                ${location ? `<p class="text-sm truncate">${location}</p>` : ""}
+                ${climbers ? `<p class="text-xs mt-1 text-[var(--color-accent)]">${climbers}</p>` : ""}
             </div>
             ${starsHtml}
         </div>
     `;
 }
 
-function createDateGroupHtml(date: string, formattedDate: string, ticks: TickData[]): string {
-    const ticksHtml = ticks.map(tick => createTickHtml(tick)).join("");
+function createDateGroupHtml(date: string, formattedDate: string, routes: GroupedRoute[]): string {
+    const routesHtml = routes.map(route => createRouteHtml(route)).join("");
     return `
         <div class="mb-8" data-date="${date}">
             <h2 class="text-xl font-semibold mb-3 sticky top-0 bg-[var(--color-bg)] py-2 border-b border-[var(--color-accent)]">
                 ${formattedDate}
             </h2>
-            <div class="space-y-3">
-                ${ticksHtml}
+            <div class="space-y-2">
+                ${routesHtml}
             </div>
         </div>
     `;
@@ -114,7 +139,7 @@ export function initLoadMoreTicks() {
             const response = await fetch(`/api/climbing-ticks?page=${currentPage}&pageSize=${pageSize}`);
             const data: ApiResponse = await response.json();
 
-            // Group ticks by date
+            // Group ticks by date, then by route
             const ticksByDate = new Map<string, TickData[]>();
             for (const tick of data.ticks) {
                 const date = tick.tickDate;
@@ -124,23 +149,30 @@ export function initLoadMoreTicks() {
                 ticksByDate.get(date)!.push(tick);
             }
 
-            // Append ticks to existing date groups or create new ones
-            ticksByDate.forEach((ticks, date) => {
-                // Check if this date group already exists
+            // Process each date group
+            ticksByDate.forEach((dateTicks, date) => {
+                const routeMap = groupTicksByRoute(dateTicks);
                 const existingGroup = container.querySelector(`[data-date="${date}"]`);
 
                 if (existingGroup) {
-                    // Append ticks to existing date group
-                    const ticksContainer = existingGroup.querySelector('.space-y-3');
+                    // Merge into existing date group
+                    const ticksContainer = existingGroup.querySelector('.space-y-2');
                     if (ticksContainer) {
-                        ticks.forEach(tick => {
-                            ticksContainer.insertAdjacentHTML('beforeend', createTickHtml(tick));
+                        // For existing groups, we need to check if routes already exist
+                        routeMap.forEach((groupedRoute, routeUrl) => {
+                            // Check if this route already exists in the DOM
+                            const existingRouteLink = ticksContainer.querySelector(`a[href="${routeUrl}"]`);
+                            if (!existingRouteLink) {
+                                ticksContainer.insertAdjacentHTML('beforeend', createRouteHtml(groupedRoute));
+                            }
+                            // If route exists, we could update climbers, but for simplicity we skip
                         });
                     }
                 } else {
-                    // Create new date group
+                    // Create new date group with deduped routes
                     const formattedDate = formatDate(date);
-                    container.insertAdjacentHTML('beforeend', createDateGroupHtml(date, formattedDate, ticks));
+                    const routes = Array.from(routeMap.values());
+                    container.insertAdjacentHTML('beforeend', createDateGroupHtml(date, formattedDate, routes));
                 }
             });
 

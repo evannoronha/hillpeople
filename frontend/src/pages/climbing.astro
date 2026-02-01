@@ -1,6 +1,6 @@
 ---
 import Layout from "../layouts/Layout.astro";
-import { fetchClimbingTicksPaginated, fetchSiteSettings } from "../lib/api";
+import { fetchClimbingTicksPaginated, fetchSiteSettings, type ClimbingTick } from "../lib/api";
 
 const PAGE_SIZE = 50;
 
@@ -18,37 +18,58 @@ const description = "Our climbing log - routes we've climbed, organized by date.
 // Helper function to format route type
 function formatRouteType(routeType: string): string {
     if (!routeType) return "";
-    // Clean up comma-separated types like "Sport, TR"
     return routeType;
 }
 
-// Helper function to format tick style
-function formatStyle(style: string, leadStyle: string): string {
-    const parts: string[] = [];
-    if (style) parts.push(style);
-    if (leadStyle) parts.push(leadStyle);
-    return parts.join(" · ");
+// Grouped route entry - dedupes multiple climbers on same route/date
+interface GroupedRoute {
+    route: ClimbingTick['route'];
+    climbers: string[];
+    bestStars: number;
 }
 
-// Group ticks by date for better display
+// Group ticks by date, then by route (deduping multiple climbers)
 interface TicksByDate {
     date: string;
     formattedDate: string;
-    ticks: typeof ticks;
+    routes: GroupedRoute[];
 }
 
-function groupTicksByDate(tickList: typeof ticks): TicksByDate[] {
-    const grouped = new Map<string, typeof ticks>();
+function groupTicksByDateAndRoute(tickList: ClimbingTick[]): TicksByDate[] {
+    const byDate = new Map<string, Map<string, GroupedRoute>>();
 
     for (const tick of tickList) {
         const date = tick.tickDate;
-        if (!grouped.has(date)) {
-            grouped.set(date, []);
+        const routeUrl = tick.route?.mountainProjectUrl || 'unknown';
+
+        if (!byDate.has(date)) {
+            byDate.set(date, new Map());
         }
-        grouped.get(date)!.push(tick);
+
+        const dateRoutes = byDate.get(date)!;
+
+        if (!dateRoutes.has(routeUrl)) {
+            dateRoutes.set(routeUrl, {
+                route: tick.route,
+                climbers: [],
+                bestStars: 0,
+            });
+        }
+
+        const groupedRoute = dateRoutes.get(routeUrl)!;
+
+        // Add climber if not already in list
+        if (tick.person?.name && !groupedRoute.climbers.includes(tick.person.name)) {
+            groupedRoute.climbers.push(tick.person.name);
+        }
+
+        // Track best star rating
+        if (tick.yourStars && tick.yourStars > groupedRoute.bestStars) {
+            groupedRoute.bestStars = tick.yourStars;
+        }
     }
 
-    return Array.from(grouped.entries()).map(([date, dateTicks]) => ({
+    return Array.from(byDate.entries()).map(([date, routesMap]) => ({
         date,
         formattedDate: new Date(date + 'T00:00:00').toLocaleDateString(undefined, {
             weekday: 'long',
@@ -56,11 +77,14 @@ function groupTicksByDate(tickList: typeof ticks): TicksByDate[] {
             month: 'long',
             day: 'numeric',
         }),
-        ticks: dateTicks,
+        routes: Array.from(routesMap.values()),
     }));
 }
 
-const ticksByDate = groupTicksByDate(ticks);
+const ticksByDate = groupTicksByDateAndRoute(ticks);
+
+// Count unique routes for display
+const uniqueRouteCount = ticksByDate.reduce((sum, day) => sum + day.routes.length, 0);
 ---
 
 <Layout
@@ -71,48 +95,47 @@ const ticksByDate = groupTicksByDate(ticks);
     <div class="max-w-4xl mx-auto px-4 py-10">
         <h1 class="text-4xl font-bold mb-2">Climbing Log</h1>
         <p class="text-lg mb-8 opacity-80">
-            {pagination.total} routes climbed
+            {uniqueRouteCount} routes climbed
         </p>
 
         <div id="ticks-container">
-            {ticksByDate.map(({ date, formattedDate, ticks: dateTicks }) => (
+            {ticksByDate.map(({ date, formattedDate, routes }) => (
                 <div class="mb-8" data-date={date}>
                     <h2 class="text-xl font-semibold mb-3 sticky top-0 bg-[var(--color-bg)] py-2 border-b border-[var(--color-accent)]">
                         {formattedDate}
                     </h2>
-                    <div class="space-y-3">
-                        {dateTicks.map((tick) => (
-                            <div class="tick-item flex items-start gap-4 p-3 rounded-lg bg-[var(--color-inverse-bg)] bg-opacity-10 hover:bg-opacity-20 transition">
+                    <div class="space-y-2">
+                        {routes.map((groupedRoute) => (
+                            <div class="tick-item flex items-start gap-4 p-3 rounded-lg border border-[var(--color-accent)] hover:border-[var(--color-header)] transition">
                                 <div class="flex-1 min-w-0">
                                     <div class="flex items-baseline gap-2 flex-wrap">
                                         <a
-                                            href={tick.route?.mountainProjectUrl}
+                                            href={groupedRoute.route?.mountainProjectUrl}
                                             target="_blank"
                                             rel="noopener noreferrer"
-                                            class="font-semibold hover:underline"
+                                            class="font-semibold hover:underline text-[var(--color-header)]"
                                         >
-                                            {tick.route?.name || "Unknown Route"}
+                                            {groupedRoute.route?.name || "Unknown Route"}
                                         </a>
-                                        {tick.route?.rating && (
-                                            <span class="text-sm font-mono opacity-75">{tick.route.rating}</span>
+                                        {groupedRoute.route?.rating && (
+                                            <span class="text-sm font-mono">{groupedRoute.route.rating}</span>
                                         )}
-                                        {tick.route?.routeType && (
-                                            <span class="text-xs opacity-60">{formatRouteType(tick.route.routeType)}</span>
+                                        {groupedRoute.route?.routeType && (
+                                            <span class="text-xs text-[var(--color-accent)]">{formatRouteType(groupedRoute.route.routeType)}</span>
                                         )}
                                     </div>
-                                    {tick.route?.location && (
-                                        <p class="text-sm opacity-60 truncate">{tick.route.location}</p>
+                                    {groupedRoute.route?.location && (
+                                        <p class="text-sm truncate">{groupedRoute.route.location}</p>
                                     )}
-                                    {(tick.style || tick.leadStyle) && (
-                                        <p class="text-sm opacity-75 mt-1">{formatStyle(tick.style, tick.leadStyle)}</p>
-                                    )}
-                                    {tick.person?.name && (
-                                        <p class="text-xs opacity-50 mt-1">Climbed by {tick.person.name}</p>
+                                    {groupedRoute.climbers.length > 0 && (
+                                        <p class="text-xs mt-1 text-[var(--color-accent)]">
+                                            {groupedRoute.climbers.join(" & ")}
+                                        </p>
                                     )}
                                 </div>
-                                {tick.yourStars && tick.yourStars > 0 && (
-                                    <div class="flex-shrink-0 text-sm" title={`${tick.yourStars} stars`}>
-                                        {"★".repeat(tick.yourStars)}{"☆".repeat(4 - tick.yourStars)}
+                                {groupedRoute.bestStars > 0 && (
+                                    <div class="flex-shrink-0 text-sm text-[var(--color-header)]" title={`${groupedRoute.bestStars} stars`}>
+                                        {"★".repeat(groupedRoute.bestStars)}{"☆".repeat(4 - groupedRoute.bestStars)}
                                     </div>
                                 )}
                             </div>
