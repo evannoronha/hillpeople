@@ -15,17 +15,21 @@ export const getMediaUrl = (url?: string): string => {
 /**
  * Transforms relative /uploads/ URLs in HTML content to absolute Strapi URLs.
  * This is needed for CKEditor richContent which embeds relative URLs.
+ * Also fixes video MIME types for browser compatibility.
  */
 export const transformContentUrls = (html: string): string => {
     if (!html) return '';
 
-    // Replace relative /uploads/ URLs in src, srcset, and href attributes
     return html
+        // Replace relative /uploads/ URLs in src, srcset, and href attributes
         .replace(/src="\/uploads\//g, `src="${STRAPI_URL}/uploads/`)
         .replace(/srcset="([^"]+)"/g, (match, srcset) => {
             const transformed = srcset.replace(/\/uploads\//g, `${STRAPI_URL}/uploads/`);
             return `srcset="${transformed}"`;
-        });
+        })
+        // Fix video MIME type: video/quicktime -> video/mp4 for browser compatibility
+        // MOV files are often MP4 containers and play fine with the correct MIME type
+        .replace(/type="video\/quicktime"/g, 'type="video/mp4"');
 };
 
 export const getLargestImage = (post:any) => {

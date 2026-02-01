@@ -59,6 +59,15 @@ html {
     outline-offset: -1px;
 }
 
+/* CKEditor video styles */
+.ck-content video {
+    display: block;
+    margin: 0.9em auto;
+    max-width: 100%;
+    height: auto;
+    border-radius: 4px;
+}
+
 @layer base {
     :root {
         --color-bg: #f4f2ec;
