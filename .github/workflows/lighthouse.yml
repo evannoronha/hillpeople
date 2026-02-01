@@ -22,25 +22,36 @@ jobs:
       - name: Install dependencies
         run: cd frontend && npm ci
 
-      - name: Fetch latest post slugs and generate config
+      - name: Fetch latest post slugs
+        id: slugs
         run: |
-          RESPONSE=$(curl -s "https://journal.hillpeople.net/api/posts?pagination[pageSize]=3&sort=publishedDate:desc&fields[0]=slug")
+          RESPONSE=$(curl -s -g "https://journal.hillpeople.net/api/posts?pagination[pageSize]=3&sort=publishedDate:desc&fields[0]=slug")
           SLUG1=$(echo "$RESPONSE" | jq -r '.data[0].slug')
           SLUG2=$(echo "$RESPONSE" | jq -r '.data[1].slug')
           SLUG3=$(echo "$RESPONSE" | jq -r '.data[2].slug')
+          echo "slug1=$SLUG1" >> $GITHUB_OUTPUT
+          echo "slug2=$SLUG2" >> $GITHUB_OUTPUT
+          echo "slug3=$SLUG3" >> $GITHUB_OUTPUT
           echo "Found slugs: $SLUG1, $SLUG2, $SLUG3"
 
-          # Update lighthouserc.json with dynamic URLs
+      - name: Build site
+        run: cd frontend && npm run build
+        env:
+          STRAPI_API_URL: https://journal.hillpeople.net
+
+      - name: Generate Lighthouse config
+        run: |
           cat > lighthouserc.json << EOF
           {
             "ci": {
               "collect": {
-                "staticDistDir": "./frontend/dist",
+                "startServerCommand": "cd frontend && npx wrangler pages dev dist --port 8788",
+                "startServerReadyPattern": "Ready on",
                 "url": [
-                  "http://localhost/",
-                  "http://localhost/blog/$SLUG1",
-                  "http://localhost/blog/$SLUG2",
-                  "http://localhost/blog/$SLUG3"
+                  "http://localhost:8788/",
+                  "http://localhost:8788/blog/${{ steps.slugs.outputs.slug1 }}",
+                  "http://localhost:8788/blog/${{ steps.slugs.outputs.slug2 }}",
+                  "http://localhost:8788/blog/${{ steps.slugs.outputs.slug3 }}"
                 ],
                 "numberOfRuns": 1
               },
@@ -51,12 +62,14 @@ jobs:
           }
           EOF
 
-      - name: Build site
-        run: cd frontend && npm run build
-        env:
-          STRAPI_API_URL: https://journal.hillpeople.net
+      - name: Install Chrome
+        uses: browser-actions/setup-chrome@v1
+        with:
+          chrome-version: stable
 
       - name: Run Lighthouse CI
         run: |
           npm install -g @lhci/cli@0.14.x
           lhci autorun
+        env:
+          LHCI_GITHUB_APP_TOKEN: ${{ secrets.LHCI_GITHUB_APP_TOKEN }}

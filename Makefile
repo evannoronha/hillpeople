@@ -1,4 +1,4 @@
-.PHONY: dev dev-prod sync-data backend upgrade-strapi newsletter-dev newsletter-deploy newsletter-send newsletter-send-to newsletter-send-posts newsletter-send-force newsletter-godmode-send
+.PHONY: dev dev-prod sync-data backend upgrade-strapi newsletter-dev newsletter-deploy newsletter-send newsletter-send-to newsletter-send-posts newsletter-send-force newsletter-godmode-send act-lighthouse act-claude
 
 # Run frontend against local Strapi (http://localhost:1337)
 dev:
@@ -64,3 +64,10 @@ newsletter-godmode-send:
 			-H "Authorization: Bearer $$GODMODE_TOKEN" \
 			-d "{\"slugs\": $$slugs_json}"; \
 	fi
+
+# Local GitHub Actions testing (requires gh act extension)
+act-lighthouse:
+	gh act pull_request -W .github/workflows/lighthouse.yml
+
+act-claude:
+	gh act pull_request -W .github/workflows/claude-review.yml
