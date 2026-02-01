@@ -36,7 +36,7 @@ npm run upgrade    # Upgrade Strapi to latest version
 
 ### Data Flow
 1. Frontend fetches posts from Strapi API (`/api/posts?populate=*`)
-2. Post content is stored as markdown in Strapi, converted to HTML using `marked` library
+2. Post content is stored as HTML in Strapi using CKEditor (`richContent` field)
 3. Images are served with responsive formats (xlarge, large, medium, small, xsmall)
 
 ### Frontend (`frontend/src/`)
