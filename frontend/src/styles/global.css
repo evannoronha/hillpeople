@@ -68,6 +68,8 @@ html {
         --color-inverse-bg: #627f7c;
         --color-inverse-text: #f4f2ec;
         --color-accent: #627f7c;
+        --color-fab-bg: #627f7c;
+        --color-fab-text: #f4f2ec;
     }
 
     @media (prefers-color-scheme: dark) {
@@ -79,6 +81,8 @@ html {
             --color-inverse-bg: #e3ded3;
             --color-inverse-text: #231d1d;
             --color-accent: #5e413b;
+            --color-fab-bg: #e3ded3;
+            --color-fab-text: #101828;
         }
     }
 

@@ -15,7 +15,7 @@ const strapiUrl = import.meta.env.STRAPI_API_URL;
 <button
     id="newsletter-fab"
     type="button"
-    class="fixed bottom-4 right-4 sm:bottom-6 sm:right-6 z-40 px-4 py-3 rounded-full bg-[var(--color-accent)] text-[var(--color-inverse-text)] shadow-lg hover:opacity-90 transition flex items-center gap-2 font-semibold"
+    class="fixed bottom-4 right-4 sm:bottom-6 sm:right-6 z-40 px-4 py-3 rounded-full bg-[var(--color-fab-bg)] text-[var(--color-fab-text)] shadow-xl border-2 border-[var(--color-fab-text)] hover:opacity-90 transition flex items-center gap-2 font-semibold"
     aria-label="Subscribe to newsletter"
 >
     <svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
@@ -52,7 +52,7 @@ const strapiUrl = import.meta.env.STRAPI_API_URL;
             />
             <button
                 type="submit"
-                class="bg-[var(--color-accent)] text-[var(--color-inverse-text)] px-4 py-2 rounded font-semibold hover:opacity-90 transition"
+                class="bg-[var(--color-fab-bg)] text-[var(--color-fab-text)] border-2 border-[var(--color-fab-text)] px-4 py-2 rounded font-semibold hover:opacity-90 transition"
             >
                 {buttonText}
             </button>
