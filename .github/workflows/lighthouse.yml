@@ -1,0 +1,62 @@
+name: Lighthouse CI
+
+on:
+  pull_request:
+    types: [opened, synchronize]
+    paths:
+      - 'frontend/**'
+
+jobs:
+  lighthouse:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+          cache-dependency-path: frontend/package-lock.json
+
+      - name: Install dependencies
+        run: cd frontend && npm ci
+
+      - name: Fetch latest post slugs and generate config
+        run: |
+          RESPONSE=$(curl -s "https://journal.hillpeople.net/api/posts?pagination[pageSize]=3&sort=publishedDate:desc&fields[0]=slug")
+          SLUG1=$(echo "$RESPONSE" | jq -r '.data[0].slug')
+          SLUG2=$(echo "$RESPONSE" | jq -r '.data[1].slug')
+          SLUG3=$(echo "$RESPONSE" | jq -r '.data[2].slug')
+          echo "Found slugs: $SLUG1, $SLUG2, $SLUG3"
+
+          # Update lighthouserc.json with dynamic URLs
+          cat > lighthouserc.json << EOF
+          {
+            "ci": {
+              "collect": {
+                "staticDistDir": "./frontend/dist",
+                "url": [
+                  "http://localhost/",
+                  "http://localhost/blog/$SLUG1",
+                  "http://localhost/blog/$SLUG2",
+                  "http://localhost/blog/$SLUG3"
+                ],
+                "numberOfRuns": 1
+              },
+              "upload": {
+                "target": "temporary-public-storage"
+              }
+            }
+          }
+          EOF
+
+      - name: Build site
+        run: cd frontend && npm run build
+        env:
+          STRAPI_API_URL: https://journal.hillpeople.net
+
+      - name: Run Lighthouse CI
+        run: |
+          npm install -g @lhci/cli@0.14.x
+          lhci autorun
