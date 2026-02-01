@@ -25,6 +25,15 @@
       "multiple": false,
       "required": false,
       "allowedTypes": ["images"]
+    },
+    "footerTagline": {
+      "type": "string",
+      "required": false
+    },
+    "copyrightText": {
+      "type": "string",
+      "required": false,
+      "default": "Hill People"
     }
   }
 }
