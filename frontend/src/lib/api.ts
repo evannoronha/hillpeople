@@ -100,3 +100,85 @@ export async function fetchSingleType(pageName: string) {
 export async function fetchSiteSettings() {
     return fetchSingleType("site-settings")
 }
+
+// Climbing tick types
+export interface ClimbingRoute {
+    id: number;
+    documentId: string;
+    name: string;
+    rating: string;
+    ratingCode: number;
+    routeType: string;
+    location: string;
+    avgStars: number;
+    pitches: number;
+    length: number;
+    mountainProjectUrl: string;
+}
+
+export interface Person {
+    id: number;
+    documentId: string;
+    name: string;
+}
+
+export interface ClimbingTick {
+    id: number;
+    documentId: string;
+    tickDate: string;
+    style: string;
+    leadStyle: string;
+    yourStars: number;
+    yourRating: string;
+    mpNotes: string;
+    notes: string;
+    route: ClimbingRoute;
+    person: Person;
+}
+
+export interface PaginatedClimbingTicksResponse {
+    ticks: ClimbingTick[];
+    pagination: PaginationMeta;
+}
+
+export async function fetchClimbingTicksPaginated(page: number = 1, pageSize: number = 50): Promise<PaginatedClimbingTicksResponse> {
+    try {
+        const reqUrl = `${STRAPI_URL}/api/climbing-ticks?populate=*&sort=tickDate:desc&pagination[page]=${page}&pagination[pageSize]=${pageSize}`
+        console.debug("Fetching paginated climbing ticks from:", reqUrl)
+        const response = await fetch(reqUrl)
+
+        if (!response.ok) {
+            throw new Error(`Failed to fetch climbing ticks: ${response.status}`)
+        }
+
+        const data = await response.json()
+        return {
+            ticks: data.data || [],
+            pagination: data.meta?.pagination || { page: 1, pageSize, pageCount: 1, total: 0 }
+        }
+    } catch (error) {
+        console.error("Error fetching paginated climbing ticks:", error)
+        return {
+            ticks: [],
+            pagination: { page: 1, pageSize, pageCount: 1, total: 0 }
+        }
+    }
+}
+
+export async function fetchClimbingTicksByDateRange(startDate: string, endDate: string): Promise<ClimbingTick[]> {
+    try {
+        const reqUrl = `${STRAPI_URL}/api/climbing-ticks?populate=*&sort=tickDate:asc&filters[tickDate][$gte]=${startDate}&filters[tickDate][$lte]=${endDate}`
+        console.debug("Fetching climbing ticks by date range from:", reqUrl)
+        const response = await fetch(reqUrl)
+
+        if (!response.ok) {
+            throw new Error(`Failed to fetch climbing ticks: ${response.status}`)
+        }
+
+        const data = await response.json()
+        return data.data || []
+    } catch (error) {
+        console.error("Error fetching climbing ticks by date range:", error)
+        return []
+    }
+}

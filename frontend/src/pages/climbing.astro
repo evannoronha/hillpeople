@@ -1,0 +1,145 @@
+---
+import Layout from "../layouts/Layout.astro";
+import { fetchClimbingTicksPaginated, fetchSiteSettings } from "../lib/api";
+
+const PAGE_SIZE = 50;
+
+const [{ ticks, pagination }, siteSettings] = await Promise.all([
+    fetchClimbingTicksPaginated(1, PAGE_SIZE),
+    fetchSiteSettings(),
+]);
+
+const hasMore = pagination.pageCount > 1;
+
+// SEO data
+const siteName = siteSettings?.siteName || "Hill People";
+const description = "Our climbing log - routes we've climbed, organized by date.";
+
+// Helper function to format route type
+function formatRouteType(routeType: string): string {
+    if (!routeType) return "";
+    // Clean up comma-separated types like "Sport, TR"
+    return routeType;
+}
+
+// Helper function to format tick style
+function formatStyle(style: string, leadStyle: string): string {
+    const parts: string[] = [];
+    if (style) parts.push(style);
+    if (leadStyle) parts.push(leadStyle);
+    return parts.join(" · ");
+}
+
+// Group ticks by date for better display
+interface TicksByDate {
+    date: string;
+    formattedDate: string;
+    ticks: typeof ticks;
+}
+
+function groupTicksByDate(tickList: typeof ticks): TicksByDate[] {
+    const grouped = new Map<string, typeof ticks>();
+
+    for (const tick of tickList) {
+        const date = tick.tickDate;
+        if (!grouped.has(date)) {
+            grouped.set(date, []);
+        }
+        grouped.get(date)!.push(tick);
+    }
+
+    return Array.from(grouped.entries()).map(([date, dateTicks]) => ({
+        date,
+        formattedDate: new Date(date + 'T00:00:00').toLocaleDateString(undefined, {
+            weekday: 'long',
+            year: 'numeric',
+            month: 'long',
+            day: 'numeric',
+        }),
+        ticks: dateTicks,
+    }));
+}
+
+const ticksByDate = groupTicksByDate(ticks);
+---
+
+<Layout
+    pageTitle="Climbing Log"
+    description={description}
+    siteName={siteName}
+>
+    <div class="max-w-4xl mx-auto px-4 py-10">
+        <h1 class="text-4xl font-bold mb-2">Climbing Log</h1>
+        <p class="text-lg mb-8 opacity-80">
+            {pagination.total} routes climbed
+        </p>
+
+        <div id="ticks-container">
+            {ticksByDate.map(({ date, formattedDate, ticks: dateTicks }) => (
+                <div class="mb-8" data-date={date}>
+                    <h2 class="text-xl font-semibold mb-3 sticky top-0 bg-[var(--color-bg)] py-2 border-b border-[var(--color-accent)]">
+                        {formattedDate}
+                    </h2>
+                    <div class="space-y-3">
+                        {dateTicks.map((tick) => (
+                            <div class="tick-item flex items-start gap-4 p-3 rounded-lg bg-[var(--color-inverse-bg)] bg-opacity-10 hover:bg-opacity-20 transition">
+                                <div class="flex-1 min-w-0">
+                                    <div class="flex items-baseline gap-2 flex-wrap">
+                                        <a
+                                            href={tick.route?.mountainProjectUrl}
+                                            target="_blank"
+                                            rel="noopener noreferrer"
+                                            class="font-semibold hover:underline"
+                                        >
+                                            {tick.route?.name || "Unknown Route"}
+                                        </a>
+                                        {tick.route?.rating && (
+                                            <span class="text-sm font-mono opacity-75">{tick.route.rating}</span>
+                                        )}
+                                        {tick.route?.routeType && (
+                                            <span class="text-xs opacity-60">{formatRouteType(tick.route.routeType)}</span>
+                                        )}
+                                    </div>
+                                    {tick.route?.location && (
+                                        <p class="text-sm opacity-60 truncate">{tick.route.location}</p>
+                                    )}
+                                    {(tick.style || tick.leadStyle) && (
+                                        <p class="text-sm opacity-75 mt-1">{formatStyle(tick.style, tick.leadStyle)}</p>
+                                    )}
+                                    {tick.person?.name && (
+                                        <p class="text-xs opacity-50 mt-1">Climbed by {tick.person.name}</p>
+                                    )}
+                                </div>
+                                {tick.yourStars && tick.yourStars > 0 && (
+                                    <div class="flex-shrink-0 text-sm" title={`${tick.yourStars} stars`}>
+                                        {"★".repeat(tick.yourStars)}{"☆".repeat(4 - tick.yourStars)}
+                                    </div>
+                                )}
+                            </div>
+                        ))}
+                    </div>
+                </div>
+            ))}
+        </div>
+
+        {ticks.length === 0 && (
+            <p class="text-center opacity-60 py-10">No climbing ticks yet.</p>
+        )}
+
+        {hasMore && (
+            <div class="text-center mt-10">
+                <button
+                    id="load-more-ticks"
+                    type="button"
+                    data-page="2"
+                    data-page-size={PAGE_SIZE}
+                    class="bg-[var(--color-fab-bg)] text-[var(--color-fab-text)] border-2 border-[var(--color-fab-text)] px-6 py-3 rounded-lg font-semibold hover:opacity-90 transition w-full sm:w-auto"
+                >
+                    Load more
+                </button>
+            </div>
+        )}
+    </div>
+</Layout>
+
+<script src="../scripts/load-more-ticks.ts"></script>
