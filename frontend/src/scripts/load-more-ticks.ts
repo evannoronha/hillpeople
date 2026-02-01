@@ -93,7 +93,7 @@ function createRouteHtml(groupedRoute: GroupedRoute): string {
                 <div class="flex items-baseline gap-2 flex-wrap">
                     <a href="${routeUrl}" target="_blank" rel="noopener noreferrer" class="font-semibold hover:underline text-[var(--color-header)]">${routeName}</a>
                     ${rating ? `<span class="text-sm font-mono">${rating}</span>` : ""}
-                    ${routeType ? `<span class="text-xs text-[var(--color-accent)]">${routeType}</span>` : ""}
+                    ${routeType ? `<span class="text-xs opacity-70">${routeType}</span>` : ""}
                 </div>
                 ${location ? `<p class="text-sm truncate">${location}</p>` : ""}
                 ${climbers ? `<p class="text-xs mt-1 opacity-70">${climbers}</p>` : ""}

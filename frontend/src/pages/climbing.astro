@@ -121,7 +121,7 @@ const uniqueRouteCount = ticksByDate.reduce((sum, day) => sum + day.routes.lengt
                                             <span class="text-sm font-mono">{groupedRoute.route.rating}</span>
                                         )}
                                         {groupedRoute.route?.routeType && (
-                                            <span class="text-xs text-[var(--color-accent)]">{formatRouteType(groupedRoute.route.routeType)}</span>
+                                            <span class="text-xs opacity-70">{formatRouteType(groupedRoute.route.routeType)}</span>
                                         )}
                                     </div>
                                     {groupedRoute.route?.location && (
