@@ -13,33 +13,78 @@
   "attributes": {
     "name": {
       "type": "string",
-      "required": true
+      "required": true,
+      "pluginOptions": {
+        "content-manager": {
+          "editable": false
+        }
+      }
     },
     "mountainProjectUrl": {
       "type": "string",
       "unique": true,
-      "required": true
+      "required": true,
+      "pluginOptions": {
+        "content-manager": {
+          "editable": false
+        }
+      }
     },
     "rating": {
-      "type": "string"
+      "type": "string",
+      "pluginOptions": {
+        "content-manager": {
+          "editable": false
+        }
+      }
     },
     "ratingCode": {
-      "type": "integer"
+      "type": "integer",
+      "pluginOptions": {
+        "content-manager": {
+          "editable": false
+        }
+      }
     },
     "routeType": {
-      "type": "string"
+      "type": "string",
+      "pluginOptions": {
+        "content-manager": {
+          "editable": false
+        }
+      }
     },
     "location": {
-      "type": "text"
+      "type": "text",
+      "pluginOptions": {
+        "content-manager": {
+          "editable": false
+        }
+      }
     },
     "avgStars": {
-      "type": "decimal"
+      "type": "decimal",
+      "pluginOptions": {
+        "content-manager": {
+          "editable": false
+        }
+      }
     },
     "pitches": {
-      "type": "integer"
+      "type": "integer",
+      "pluginOptions": {
+        "content-manager": {
+          "editable": false
+        }
+      }
     },
     "length": {
-      "type": "integer"
+      "type": "integer",
+      "pluginOptions": {
+        "content-manager": {
+          "editable": false
+        }
+      }
     },
     "ticks": {
       "type": "relation",

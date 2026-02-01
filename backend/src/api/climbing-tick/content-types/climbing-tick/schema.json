@@ -13,34 +13,74 @@
   "attributes": {
     "tickDate": {
       "type": "date",
-      "required": true
+      "required": true,
+      "pluginOptions": {
+        "content-manager": {
+          "editable": false
+        }
+      }
     },
     "route": {
       "type": "relation",
       "relation": "manyToOne",
       "target": "api::climbing-route.climbing-route",
-      "inversedBy": "ticks"
+      "inversedBy": "ticks",
+      "pluginOptions": {
+        "content-manager": {
+          "editable": false
+        }
+      }
     },
     "person": {
       "type": "relation",
       "relation": "manyToOne",
       "target": "api::person.person",
-      "inversedBy": "ticks"
+      "inversedBy": "ticks",
+      "pluginOptions": {
+        "content-manager": {
+          "editable": false
+        }
+      }
     },
     "style": {
-      "type": "string"
+      "type": "string",
+      "pluginOptions": {
+        "content-manager": {
+          "editable": false
+        }
+      }
     },
     "leadStyle": {
-      "type": "string"
+      "type": "string",
+      "pluginOptions": {
+        "content-manager": {
+          "editable": false
+        }
+      }
     },
     "yourStars": {
-      "type": "integer"
+      "type": "integer",
+      "pluginOptions": {
+        "content-manager": {
+          "editable": false
+        }
+      }
     },
     "yourRating": {
-      "type": "string"
+      "type": "string",
+      "pluginOptions": {
+        "content-manager": {
+          "editable": false
+        }
+      }
     },
     "mpNotes": {
-      "type": "text"
+      "type": "text",
+      "pluginOptions": {
+        "content-manager": {
+          "editable": false
+        }
+      }
     },
     "notes": {
       "type": "text"
@@ -53,7 +93,12 @@
     "mountainProjectTickId": {
       "type": "string",
       "unique": true,
-      "required": true
+      "required": true,
+      "pluginOptions": {
+        "content-manager": {
+          "editable": false
+        }
+      }
     }
   }
 }
