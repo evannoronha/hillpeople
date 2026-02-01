@@ -4,6 +4,7 @@ import Prose from "../../components/Prose.astro";
 import { fetchPostBySlug, fetchSiteSettings } from "../../lib/api";
 import { getMediaUrl, getLargestImage, transformContentUrls } from "../../lib/imageUrl";
 import StravaEmbed from "../../components/StravaEmbed.astro";
+import ClimbingEmbed from "../../components/ClimbingEmbed.astro";
 
 const { slug } = Astro.params;
 
@@ -67,6 +68,15 @@ const siteName = siteSettings?.siteName || "Hill People";
                 <div class="mt-10">
                     <StravaEmbed activityId={post.stravaActivityId} />
                 </div>
+            )
+        }
+
+        {
+            post.climbingDateRange?.showClimbingData && post.climbingDateRange?.startDate && (
+                <ClimbingEmbed
+                    startDate={post.climbingDateRange.startDate}
+                    endDate={post.climbingDateRange.endDate}
+                />
             )
         }
     </article>

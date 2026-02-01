@@ -54,6 +54,11 @@
     "newsletterSent": {
       "type": "boolean",
       "default": false
+    },
+    "climbingDateRange": {
+      "type": "component",
+      "repeatable": false,
+      "component": "climbing.date-range"
     }
   }
 }

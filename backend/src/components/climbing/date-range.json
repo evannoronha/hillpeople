@@ -1,0 +1,22 @@
+{
+  "collectionName": "components_climbing_date_ranges",
+  "info": {
+    "displayName": "Climbing Date Range",
+    "icon": "mountain",
+    "description": "Embed climbing ticks from a date range in a blog post"
+  },
+  "options": {},
+  "attributes": {
+    "startDate": {
+      "type": "date",
+      "required": true
+    },
+    "endDate": {
+      "type": "date"
+    },
+    "showClimbingData": {
+      "type": "boolean",
+      "default": true
+    }
+  }
+}
