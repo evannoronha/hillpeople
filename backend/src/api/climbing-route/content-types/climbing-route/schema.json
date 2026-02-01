@@ -1,0 +1,96 @@
+{
+  "kind": "collectionType",
+  "collectionName": "climbing_routes",
+  "info": {
+    "singularName": "climbing-route",
+    "pluralName": "climbing-routes",
+    "displayName": "Climbing Route",
+    "description": "Climbing routes from Mountain Project"
+  },
+  "options": {
+    "draftAndPublish": false
+  },
+  "attributes": {
+    "name": {
+      "type": "string",
+      "required": true,
+      "pluginOptions": {
+        "content-manager": {
+          "editable": false
+        }
+      }
+    },
+    "mountainProjectUrl": {
+      "type": "string",
+      "unique": true,
+      "required": true,
+      "pluginOptions": {
+        "content-manager": {
+          "editable": false
+        }
+      }
+    },
+    "rating": {
+      "type": "string",
+      "pluginOptions": {
+        "content-manager": {
+          "editable": false
+        }
+      }
+    },
+    "ratingCode": {
+      "type": "integer",
+      "pluginOptions": {
+        "content-manager": {
+          "editable": false
+        }
+      }
+    },
+    "routeType": {
+      "type": "string",
+      "pluginOptions": {
+        "content-manager": {
+          "editable": false
+        }
+      }
+    },
+    "location": {
+      "type": "text",
+      "pluginOptions": {
+        "content-manager": {
+          "editable": false
+        }
+      }
+    },
+    "avgStars": {
+      "type": "decimal",
+      "pluginOptions": {
+        "content-manager": {
+          "editable": false
+        }
+      }
+    },
+    "pitches": {
+      "type": "integer",
+      "pluginOptions": {
+        "content-manager": {
+          "editable": false
+        }
+      }
+    },
+    "length": {
+      "type": "integer",
+      "pluginOptions": {
+        "content-manager": {
+          "editable": false
+        }
+      }
+    },
+    "ticks": {
+      "type": "relation",
+      "relation": "oneToMany",
+      "target": "api::climbing-tick.climbing-tick",
+      "mappedBy": "route"
+    }
+  }
+}

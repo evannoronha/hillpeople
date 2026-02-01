@@ -466,6 +466,187 @@ export interface ApiAboutAbout extends Struct.SingleTypeSchema {
   };
 }
 
+export interface ApiClimbingRouteClimbingRoute
+  extends Struct.CollectionTypeSchema {
+  collectionName: 'climbing_routes';
+  info: {
+    description: 'Climbing routes from Mountain Project';
+    displayName: 'Climbing Route';
+    pluralName: 'climbing-routes';
+    singularName: 'climbing-route';
+  };
+  options: {
+    draftAndPublish: false;
+  };
+  attributes: {
+    avgStars: Schema.Attribute.Decimal &
+      Schema.Attribute.SetPluginOptions<{
+        'content-manager': {
+          editable: false;
+        };
+      }>;
+    createdAt: Schema.Attribute.DateTime;
+    createdBy: Schema.Attribute.Relation<'oneToOne', 'admin::user'> &
+      Schema.Attribute.Private;
+    length: Schema.Attribute.Integer &
+      Schema.Attribute.SetPluginOptions<{
+        'content-manager': {
+          editable: false;
+        };
+      }>;
+    locale: Schema.Attribute.String & Schema.Attribute.Private;
+    localizations: Schema.Attribute.Relation<
+      'oneToMany',
+      'api::climbing-route.climbing-route'
+    > &
+      Schema.Attribute.Private;
+    location: Schema.Attribute.Text &
+      Schema.Attribute.SetPluginOptions<{
+        'content-manager': {
+          editable: false;
+        };
+      }>;
+    mountainProjectUrl: Schema.Attribute.String &
+      Schema.Attribute.Required &
+      Schema.Attribute.Unique &
+      Schema.Attribute.SetPluginOptions<{
+        'content-manager': {
+          editable: false;
+        };
+      }>;
+    name: Schema.Attribute.String &
+      Schema.Attribute.Required &
+      Schema.Attribute.SetPluginOptions<{
+        'content-manager': {
+          editable: false;
+        };
+      }>;
+    pitches: Schema.Attribute.Integer &
+      Schema.Attribute.SetPluginOptions<{
+        'content-manager': {
+          editable: false;
+        };
+      }>;
+    publishedAt: Schema.Attribute.DateTime;
+    rating: Schema.Attribute.String &
+      Schema.Attribute.SetPluginOptions<{
+        'content-manager': {
+          editable: false;
+        };
+      }>;
+    ratingCode: Schema.Attribute.Integer &
+      Schema.Attribute.SetPluginOptions<{
+        'content-manager': {
+          editable: false;
+        };
+      }>;
+    routeType: Schema.Attribute.String &
+      Schema.Attribute.SetPluginOptions<{
+        'content-manager': {
+          editable: false;
+        };
+      }>;
+    ticks: Schema.Attribute.Relation<
+      'oneToMany',
+      'api::climbing-tick.climbing-tick'
+    >;
+    updatedAt: Schema.Attribute.DateTime;
+    updatedBy: Schema.Attribute.Relation<'oneToOne', 'admin::user'> &
+      Schema.Attribute.Private;
+  };
+}
+
+export interface ApiClimbingTickClimbingTick
+  extends Struct.CollectionTypeSchema {
+  collectionName: 'climbing_ticks';
+  info: {
+    description: 'Individual climbing ascents logged from Mountain Project';
+    displayName: 'Climbing Tick';
+    pluralName: 'climbing-ticks';
+    singularName: 'climbing-tick';
+  };
+  options: {
+    draftAndPublish: false;
+  };
+  attributes: {
+    createdAt: Schema.Attribute.DateTime;
+    createdBy: Schema.Attribute.Relation<'oneToOne', 'admin::user'> &
+      Schema.Attribute.Private;
+    leadStyle: Schema.Attribute.String &
+      Schema.Attribute.SetPluginOptions<{
+        'content-manager': {
+          editable: false;
+        };
+      }>;
+    locale: Schema.Attribute.String & Schema.Attribute.Private;
+    localizations: Schema.Attribute.Relation<
+      'oneToMany',
+      'api::climbing-tick.climbing-tick'
+    > &
+      Schema.Attribute.Private;
+    mountainProjectTickId: Schema.Attribute.String &
+      Schema.Attribute.Required &
+      Schema.Attribute.Unique &
+      Schema.Attribute.SetPluginOptions<{
+        'content-manager': {
+          editable: false;
+        };
+      }>;
+    mpNotes: Schema.Attribute.Text &
+      Schema.Attribute.SetPluginOptions<{
+        'content-manager': {
+          editable: false;
+        };
+      }>;
+    notes: Schema.Attribute.Text;
+    person: Schema.Attribute.Relation<'manyToOne', 'api::person.person'> &
+      Schema.Attribute.SetPluginOptions<{
+        'content-manager': {
+          editable: false;
+        };
+      }>;
+    photos: Schema.Attribute.Media<'images', true>;
+    publishedAt: Schema.Attribute.DateTime;
+    route: Schema.Attribute.Relation<
+      'manyToOne',
+      'api::climbing-route.climbing-route'
+    > &
+      Schema.Attribute.SetPluginOptions<{
+        'content-manager': {
+          editable: false;
+        };
+      }>;
+    style: Schema.Attribute.String &
+      Schema.Attribute.SetPluginOptions<{
+        'content-manager': {
+          editable: false;
+        };
+      }>;
+    tickDate: Schema.Attribute.Date &
+      Schema.Attribute.Required &
+      Schema.Attribute.SetPluginOptions<{
+        'content-manager': {
+          editable: false;
+        };
+      }>;
+    updatedAt: Schema.Attribute.DateTime;
+    updatedBy: Schema.Attribute.Relation<'oneToOne', 'admin::user'> &
+      Schema.Attribute.Private;
+    yourRating: Schema.Attribute.String &
+      Schema.Attribute.SetPluginOptions<{
+        'content-manager': {
+          editable: false;
+        };
+      }>;
+    yourStars: Schema.Attribute.Integer &
+      Schema.Attribute.SetPluginOptions<{
+        'content-manager': {
+          editable: false;
+        };
+      }>;
+  };
+}
+
 export interface ApiHomePageHomePage extends Struct.SingleTypeSchema {
   collectionName: 'home_pages';
   info: {
@@ -497,6 +678,43 @@ export interface ApiHomePageHomePage extends Struct.SingleTypeSchema {
       Schema.Attribute.DefaultTo<'Subscribe'>;
     newsletterTitle: Schema.Attribute.String & Schema.Attribute.Required;
     publishedAt: Schema.Attribute.DateTime;
+    updatedAt: Schema.Attribute.DateTime;
+    updatedBy: Schema.Attribute.Relation<'oneToOne', 'admin::user'> &
+      Schema.Attribute.Private;
+  };
+}
+
+export interface ApiPersonPerson extends Struct.CollectionTypeSchema {
+  collectionName: 'people';
+  info: {
+    description: 'People who contribute to the blog (authors, climbers, etc.)';
+    displayName: 'Person';
+    pluralName: 'people';
+    singularName: 'person';
+  };
+  options: {
+    draftAndPublish: false;
+  };
+  attributes: {
+    createdAt: Schema.Attribute.DateTime;
+    createdBy: Schema.Attribute.Relation<'oneToOne', 'admin::user'> &
+      Schema.Attribute.Private;
+    lastSyncDate: Schema.Attribute.DateTime;
+    lastSyncError: Schema.Attribute.Text;
+    lastSyncErrorDate: Schema.Attribute.DateTime;
+    locale: Schema.Attribute.String & Schema.Attribute.Private;
+    localizations: Schema.Attribute.Relation<
+      'oneToMany',
+      'api::person.person'
+    > &
+      Schema.Attribute.Private;
+    mountainProjectUserId: Schema.Attribute.String & Schema.Attribute.Unique;
+    name: Schema.Attribute.String & Schema.Attribute.Required;
+    publishedAt: Schema.Attribute.DateTime;
+    ticks: Schema.Attribute.Relation<
+      'oneToMany',
+      'api::climbing-tick.climbing-tick'
+    >;
     updatedAt: Schema.Attribute.DateTime;
     updatedBy: Schema.Attribute.Relation<'oneToOne', 'admin::user'> &
       Schema.Attribute.Private;
@@ -1164,7 +1382,10 @@ declare module '@strapi/strapi' {
       'admin::transfer-token-permission': AdminTransferTokenPermission;
       'admin::user': AdminUser;
       'api::about.about': ApiAboutAbout;
+      'api::climbing-route.climbing-route': ApiClimbingRouteClimbingRoute;
+      'api::climbing-tick.climbing-tick': ApiClimbingTickClimbingTick;
       'api::home-page.home-page': ApiHomePageHomePage;
+      'api::person.person': ApiPersonPerson;
       'api::post.post': ApiPostPost;
       'api::privacy-policy.privacy-policy': ApiPrivacyPolicyPrivacyPolicy;
       'api::site-settings.site-settings': ApiSiteSettingsSiteSettings;

@@ -1,0 +1,104 @@
+{
+  "kind": "collectionType",
+  "collectionName": "climbing_ticks",
+  "info": {
+    "singularName": "climbing-tick",
+    "pluralName": "climbing-ticks",
+    "displayName": "Climbing Tick",
+    "description": "Individual climbing ascents logged from Mountain Project"
+  },
+  "options": {
+    "draftAndPublish": false
+  },
+  "attributes": {
+    "tickDate": {
+      "type": "date",
+      "required": true,
+      "pluginOptions": {
+        "content-manager": {
+          "editable": false
+        }
+      }
+    },
+    "route": {
+      "type": "relation",
+      "relation": "manyToOne",
+      "target": "api::climbing-route.climbing-route",
+      "inversedBy": "ticks",
+      "pluginOptions": {
+        "content-manager": {
+          "editable": false
+        }
+      }
+    },
+    "person": {
+      "type": "relation",
+      "relation": "manyToOne",
+      "target": "api::person.person",
+      "inversedBy": "ticks",
+      "pluginOptions": {
+        "content-manager": {
+          "editable": false
+        }
+      }
+    },
+    "style": {
+      "type": "string",
+      "pluginOptions": {
+        "content-manager": {
+          "editable": false
+        }
+      }
+    },
+    "leadStyle": {
+      "type": "string",
+      "pluginOptions": {
+        "content-manager": {
+          "editable": false
+        }
+      }
+    },
+    "yourStars": {
+      "type": "integer",
+      "pluginOptions": {
+        "content-manager": {
+          "editable": false
+        }
+      }
+    },
+    "yourRating": {
+      "type": "string",
+      "pluginOptions": {
+        "content-manager": {
+          "editable": false
+        }
+      }
+    },
+    "mpNotes": {
+      "type": "text",
+      "pluginOptions": {
+        "content-manager": {
+          "editable": false
+        }
+      }
+    },
+    "notes": {
+      "type": "text"
+    },
+    "photos": {
+      "type": "media",
+      "multiple": true,
+      "allowedTypes": ["images"]
+    },
+    "mountainProjectTickId": {
+      "type": "string",
+      "unique": true,
+      "required": true,
+      "pluginOptions": {
+        "content-manager": {
+          "editable": false
+        }
+      }
+    }
+  }
+}

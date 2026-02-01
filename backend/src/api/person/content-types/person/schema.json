@@ -1,0 +1,38 @@
+{
+  "kind": "collectionType",
+  "collectionName": "people",
+  "info": {
+    "singularName": "person",
+    "pluralName": "people",
+    "displayName": "Person",
+    "description": "People who contribute to the blog (authors, climbers, etc.)"
+  },
+  "options": {
+    "draftAndPublish": false
+  },
+  "attributes": {
+    "name": {
+      "type": "string",
+      "required": true
+    },
+    "mountainProjectUserId": {
+      "type": "string",
+      "unique": true
+    },
+    "lastSyncDate": {
+      "type": "datetime"
+    },
+    "lastSyncError": {
+      "type": "text"
+    },
+    "lastSyncErrorDate": {
+      "type": "datetime"
+    },
+    "ticks": {
+      "type": "relation",
+      "relation": "oneToMany",
+      "target": "api::climbing-tick.climbing-tick",
+      "mappedBy": "person"
+    }
+  }
+}

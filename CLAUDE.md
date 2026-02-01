@@ -52,6 +52,13 @@ npm run upgrade    # Upgrade Strapi to latest version
 ### Preview Mode
 Strapi admin generates preview URLs like `/blog/{slug}?status=draft`. The frontend checks for `status=draft` query param to fetch and render draft content.
 
+## Git Workflow
+
+- Always develop on a new branch checked out from latest `main`
+- All changes require human review and testing before merge
+- PRs are merged via the GitHub UI (not via CLI)
+- Never push directly to `main`
+
 ## Deployment
 
 Both services auto-deploy on merge to main:
