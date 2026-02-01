@@ -19,23 +19,14 @@ jobs:
         with:
           anthropic_api_key: ${{ secrets.ANTHROPIC_API_KEY }}
           prompt: |
-            REPO: ${{ github.repository }}
-            PR NUMBER: ${{ github.event.pull_request.number }}
+            Review PR #${{ github.event.pull_request.number }} in ${{ github.repository }}.
 
-            Please review this pull request with a focus on:
+            Focus on:
             - Code quality and best practices
             - Potential bugs or issues
             - Security implications
             - Performance considerations
 
-            Note: The PR branch is already checked out in the current working directory.
-
-            Use `gh pr comment` for top-level feedback.
-            Use `gh pr --review --approve` if this PR is ready for merge.
-            Use `mcp__github_inline_comment__create_inline_comment` to highlight specific code issues.
-            Only post GitHub comments - don't submit review text as messages.
-
-          
-
-          claude_args: |
-            --allowedTools "mcp__github_inline_comment__create_inline_comment,Bash(gh pr comment:*),Bash(gh pr diff:*),Bash(gh pr view:*)"
+            Use `gh pr diff` to see the changes.
+            Use `gh pr comment` for feedback.
+            Approve with `gh pr review --approve` if the PR looks good.
