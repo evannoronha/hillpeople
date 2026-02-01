@@ -1,0 +1,97 @@
+---
+import { fetchClimbingTicksByDateRange, type ClimbingTick } from "../lib/api";
+
+interface Props {
+    startDate: string;
+    endDate?: string;
+}
+
+const { startDate, endDate } = Astro.props;
+
+// If no endDate, use startDate for single-day trips
+const effectiveEndDate = endDate || startDate;
+
+const ticks = await fetchClimbingTicksByDateRange(startDate, effectiveEndDate);
+
+// Group ticks by route (deduping multiple climbers)
+interface GroupedRoute {
+    route: ClimbingTick['route'];
+    climbers: string[];
+    bestStars: number;
+}
+
+function groupTicksByRoute(tickList: ClimbingTick[]): GroupedRoute[] {
+    const routeMap = new Map<string, GroupedRoute>();
+
+    for (const tick of tickList) {
+        const routeUrl = tick.route?.mountainProjectUrl || 'unknown';
+
+        if (!routeMap.has(routeUrl)) {
+            routeMap.set(routeUrl, {
+                route: tick.route,
+                climbers: [],
+                bestStars: 0,
+            });
+        }
+
+        const groupedRoute = routeMap.get(routeUrl)!;
+
+        if (tick.person?.name && !groupedRoute.climbers.includes(tick.person.name)) {
+            groupedRoute.climbers.push(tick.person.name);
+        }
+
+        if (tick.yourStars && tick.yourStars > groupedRoute.bestStars) {
+            groupedRoute.bestStars = tick.yourStars;
+        }
+    }
+
+    return Array.from(routeMap.values());
+}
+
+const routes = groupTicksByRoute(ticks);
+---
+
+{routes.length > 0 && (
+    <div class="climbing-embed my-8 p-4 rounded-lg border border-[var(--color-accent)] bg-[var(--color-bg)]">
+        <h3 class="text-lg font-semibold mb-3 text-[var(--color-header)]">
+            Routes Climbed
+        </h3>
+        <div class="space-y-2">
+            {routes.map((groupedRoute) => (
+                <div class="flex items-start gap-4 p-2 rounded border border-[var(--color-accent)] hover:border-[var(--color-header)] transition">
+                    <div class="flex-1 min-w-0">
+                        <div class="flex items-baseline gap-2 flex-wrap">
+                            <a
+                                href={groupedRoute.route?.mountainProjectUrl}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                class="font-semibold hover:underline text-[var(--color-header)]"
+                            >
+                                {groupedRoute.route?.name || "Unknown Route"}
+                            </a>
+                            {groupedRoute.route?.rating && (
+                                <span class="text-sm font-mono">{groupedRoute.route.rating}</span>
+                            )}
+                            {groupedRoute.route?.routeType && (
+                                <span class="text-xs opacity-70">{groupedRoute.route.routeType}</span>
+                            )}
+                        </div>
+                        {groupedRoute.route?.location && (
+                            <p class="text-sm truncate">{groupedRoute.route.location}</p>
+                        )}
+                        {groupedRoute.climbers.length > 0 && (
+                            <p class="text-xs mt-1 opacity-70">
+                                {groupedRoute.climbers.join(" & ")}
+                            </p>
+                        )}
+                    </div>
+                    {groupedRoute.bestStars > 0 && (
+                        <div class="flex-shrink-0 text-sm text-[var(--color-header)]" title={`${groupedRoute.bestStars} stars`}>
+                            {"★".repeat(groupedRoute.bestStars)}{"☆".repeat(4 - groupedRoute.bestStars)}
+                        </div>
+                    )}
+                </div>
+            ))}
+        </div>
+    </div>
+)}
