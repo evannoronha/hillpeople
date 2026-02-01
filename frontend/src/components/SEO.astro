@@ -25,6 +25,104 @@ const {
 
 const fullTitle = title === 'Home' ? siteName : `${title} - ${siteName}`;
 const url = canonicalUrl || Astro.url.href;
+const siteUrl = Astro.site?.href || 'https://hillpeople.net';
+
+// Build JSON-LD structured data
+const buildJsonLd = () => {
+  const baseSchema = {
+    "@context": "https://schema.org",
+  };
+
+  if (ogType === 'article') {
+    // Article schema for blog posts
+    const articleSchema: Record<string, unknown> = {
+      ...baseSchema,
+      "@type": "Article",
+      "headline": title,
+      "description": description,
+      "url": url,
+      "mainEntityOfPage": {
+        "@type": "WebPage",
+        "@id": url,
+      },
+    };
+
+    if (ogImage) {
+      articleSchema.image = ogImage;
+    }
+
+    if (publishedTime) {
+      articleSchema.datePublished = publishedTime;
+    }
+
+    if (authorName) {
+      articleSchema.author = {
+        "@type": "Person",
+        "name": authorName,
+      };
+    }
+
+    return articleSchema;
+  }
+
+  // WebSite schema for homepage
+  if (title === 'Home') {
+    return {
+      ...baseSchema,
+      "@type": "WebSite",
+      "name": siteName,
+      "url": siteUrl,
+      "description": description,
+    };
+  }
+
+  // WebPage schema for other pages
+  return {
+    ...baseSchema,
+    "@type": "WebPage",
+    "name": fullTitle,
+    "url": url,
+    "description": description,
+  };
+};
+
+// Build breadcrumb schema
+const buildBreadcrumbSchema = () => {
+  const pathSegments = new URL(url).pathname.split('/').filter(Boolean);
+
+  if (pathSegments.length === 0) {
+    return null; // No breadcrumbs for homepage
+  }
+
+  const items = [
+    {
+      "@type": "ListItem",
+      "position": 1,
+      "name": "Home",
+      "item": siteUrl,
+    },
+  ];
+
+  let currentPath = siteUrl;
+  pathSegments.forEach((segment, index) => {
+    currentPath = `${currentPath.replace(/\/$/, '')}/${segment}`;
+    items.push({
+      "@type": "ListItem",
+      "position": index + 2,
+      "name": index === pathSegments.length - 1 ? title : segment.charAt(0).toUpperCase() + segment.slice(1),
+      "item": currentPath,
+    });
+  });
+
+  return {
+    "@context": "https://schema.org",
+    "@type": "BreadcrumbList",
+    "itemListElement": items,
+  };
+};
+
+const jsonLd = buildJsonLd();
+const breadcrumbSchema = buildBreadcrumbSchema();
 ---
 
 <!-- Primary Meta Tags -->
@@ -42,3 +140,9 @@ const url = canonicalUrl || Astro.url.href;
 {ogImage && <meta property="og:image" content={ogImage} />}
 {publishedTime && <meta property="article:published_time" content={publishedTime} />}
 {authorName && <meta property="article:author" content={authorName} />}
+
+<!-- JSON-LD Structured Data -->
+<script type="application/ld+json" set:html={JSON.stringify(jsonLd)} />
+{breadcrumbSchema && (
+  <script type="application/ld+json" set:html={JSON.stringify(breadcrumbSchema)} />
+)}
