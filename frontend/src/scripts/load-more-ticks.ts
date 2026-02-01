@@ -96,7 +96,7 @@ function createRouteHtml(groupedRoute: GroupedRoute): string {
                     ${routeType ? `<span class="text-xs text-[var(--color-accent)]">${routeType}</span>` : ""}
                 </div>
                 ${location ? `<p class="text-sm truncate">${location}</p>` : ""}
-                ${climbers ? `<p class="text-xs mt-1 text-[var(--color-accent)]">${climbers}</p>` : ""}
+                ${climbers ? `<p class="text-xs mt-1 opacity-70">${climbers}</p>` : ""}
             </div>
             ${starsHtml}
         </div>

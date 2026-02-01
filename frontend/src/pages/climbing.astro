@@ -128,7 +128,7 @@ const uniqueRouteCount = ticksByDate.reduce((sum, day) => sum + day.routes.lengt
                                         <p class="text-sm truncate">{groupedRoute.route.location}</p>
                                     )}
                                     {groupedRoute.climbers.length > 0 && (
-                                        <p class="text-xs mt-1 text-[var(--color-accent)]">
+                                        <p class="text-xs mt-1 opacity-70">
                                             {groupedRoute.climbers.join(" & ")}
                                         </p>
                                     )}
