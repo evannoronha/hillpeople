@@ -217,13 +217,123 @@ class VideoFixer extends Plugin {
         border-radius: inherit !important;
       }
 
-      /* Editor content area */
+      /* Editor content area - match frontend prose styling */
       .ck.ck-editor__editable {
-        padding: 16px !important;
+        padding: 24px !important;
         min-height: 200px !important;
         border-radius: 0 !important;
-        font-family: inherit !important;
-        font-size: 14px !important;
+        font-family: "Libre Baskerville", Georgia, serif !important;
+        font-size: 1rem !important;
+        line-height: 1.75 !important;
+        color: #374151 !important;
+      }
+
+      /* Typography - match Tailwind prose */
+      .ck.ck-editor__editable h1 {
+        font-size: 2.25em !important;
+        margin-top: 0 !important;
+        margin-bottom: 0.8888889em !important;
+        line-height: 1.1111111 !important;
+        font-weight: 800 !important;
+      }
+
+      .ck.ck-editor__editable h2 {
+        font-size: 1.5em !important;
+        margin-top: 2em !important;
+        margin-bottom: 1em !important;
+        line-height: 1.3333333 !important;
+        font-weight: 700 !important;
+      }
+
+      .ck.ck-editor__editable h3 {
+        font-size: 1.25em !important;
+        margin-top: 1.6em !important;
+        margin-bottom: 0.6em !important;
+        line-height: 1.6 !important;
+        font-weight: 600 !important;
+      }
+
+      .ck.ck-editor__editable p {
+        margin-top: 1.25em !important;
+        margin-bottom: 1.25em !important;
+      }
+
+      .ck.ck-editor__editable a {
+        color: #2563eb !important;
+        text-decoration: underline !important;
+      }
+
+      .ck.ck-editor__editable blockquote {
+        font-style: italic !important;
+        border-left: 4px solid #e5e7eb !important;
+        padding-left: 1em !important;
+        margin-left: 0 !important;
+        margin-right: 0 !important;
+      }
+
+      .ck.ck-editor__editable ul,
+      .ck.ck-editor__editable ol {
+        padding-left: 1.625em !important;
+        margin-top: 1.25em !important;
+        margin-bottom: 1.25em !important;
+      }
+
+      .ck.ck-editor__editable li {
+        margin-top: 0.5em !important;
+        margin-bottom: 0.5em !important;
+      }
+
+      /* Image styles - match frontend rendering */
+      .ck.ck-editor__editable .image {
+        display: table !important;
+        clear: both !important;
+        text-align: center !important;
+        margin: 1.5em auto !important;
+      }
+
+      .ck.ck-editor__editable .image img {
+        display: block !important;
+        margin: 0 auto !important;
+        max-width: 100% !important;
+        height: auto !important;
+      }
+
+      .ck.ck-editor__editable .image > figcaption {
+        display: table-caption !important;
+        caption-side: bottom !important;
+        padding: 0.6em !important;
+        font-size: 0.75em !important;
+        color: #6b7280 !important;
+      }
+
+      /* Image alignment */
+      .ck.ck-editor__editable .image-style-align-center {
+        margin-left: auto !important;
+        margin-right: auto !important;
+      }
+
+      .ck.ck-editor__editable .image-style-align-left {
+        float: left !important;
+        margin-right: 1.5em !important;
+      }
+
+      .ck.ck-editor__editable .image-style-align-right {
+        float: right !important;
+        margin-left: 1.5em !important;
+      }
+
+      .ck.ck-editor__editable .image-style-side {
+        float: right !important;
+        margin-left: 1.5em !important;
+        max-width: 50% !important;
+      }
+
+      /* Resized images (for side-by-side) */
+      .ck.ck-editor__editable .image.image_resized {
+        display: inline-block !important;
+        max-width: 100% !important;
+        margin: 0.5em !important;
+        vertical-align: top !important;
       }
 
       /* Hide word count to match native editor */
@@ -260,8 +370,19 @@ class VideoFixer extends Plugin {
 
         .ck.ck-editor__editable {
           background: rgb(33, 33, 52) !important;
-          color: #FFFFFF !important;
-          font-size: 14px !important;
+          color: #e5e7eb !important;
+        }
+
+        .ck.ck-editor__editable a {
+          color: #60a5fa !important;
+        }
+
+        .ck.ck-editor__editable blockquote {
+          border-left-color: #4b5563 !important;
+        }
+
+        .ck.ck-editor__editable .image > figcaption {
+          color: #9ca3af !important;
         }
       }
     `;

@@ -5,12 +5,18 @@ html {
     font-family: "Libre Baskerville", serif;
 }
 
-/* CKEditor image positioning styles (minimal subset - not loading full CDN stylesheet to preserve site typography) */
+/* ===========================================
+   CKEditor Content Styles
+   These styles ensure CKEditor content renders
+   identically on frontend as it appears in editor
+   =========================================== */
+
+/* Base image container */
 .ck-content .image {
     display: table;
     clear: both;
     text-align: center;
-    margin: 0.9em auto;
+    margin: 1.5em auto;
     min-width: 50px;
 }
 
@@ -18,36 +24,10 @@ html {
     display: block;
     margin: 0 auto;
     max-width: 100%;
-    min-width: 100%;
     height: auto;
 }
 
-.ck-content .image-style-side {
-    float: right;
-    margin-left: 1.5em;
-    max-width: 50%;
-}
-
-.ck-content .image-style-align-left {
-    float: left;
-    margin-right: 1.5em;
-}
-
-.ck-content .image-style-align-right {
-    float: right;
-    margin-left: 1.5em;
-}
-
-.ck-content .image.image_resized {
-    max-width: 100%;
-    display: block;
-    box-sizing: border-box;
-}
-
-.ck-content .image.image_resized img {
-    width: 100%;
-}
-
+/* Image captions */
 .ck-content .image > figcaption {
     display: table-caption;
     caption-side: bottom;
@@ -57,6 +37,84 @@ html {
     padding: 0.6em;
     font-size: 0.75em;
     outline-offset: -1px;
+}
+
+/* ---- Image Alignment Styles ---- */
+
+/* Center-aligned images (fixes issue #44) */
+.ck-content .image-style-align-center {
+    margin-left: auto;
+    margin-right: auto;
+}
+
+/* Block-level alignments */
+.ck-content .image-style-block-align-left {
+    margin-right: auto;
+}
+
+.ck-content .image-style-block-align-right {
+    margin-left: auto;
+}
+
+/* Floated/wrapped alignments */
+.ck-content .image-style-align-left {
+    float: left;
+    margin-right: 1.5em;
+    margin-top: 0.5em;
+    margin-bottom: 0.5em;
+}
+
+.ck-content .image-style-align-right {
+    float: right;
+    margin-left: 1.5em;
+    margin-top: 0.5em;
+    margin-bottom: 0.5em;
+}
+
+.ck-content .image-style-side {
+    float: right;
+    margin-left: 1.5em;
+    max-width: 50%;
+}
+
+/* ---- Resized Images (enables side-by-side, fixes issue #45) ---- */
+
+.ck-content .image.image_resized {
+    display: inline-block;
+    max-width: 100%;
+    box-sizing: border-box;
+    margin: 0.5em;
+    vertical-align: top;
+}
+
+.ck-content .image.image_resized img {
+    width: 100%;
+}
+
+/* Resized images with alignment */
+.ck-content .image.image_resized.image-style-align-left {
+    float: left;
+    margin-right: 1.5em;
+    margin-left: 0;
+}
+
+.ck-content .image.image_resized.image-style-align-right {
+    float: right;
+    margin-left: 1.5em;
+    margin-right: 0;
+}
+
+/* Clear floats after image groups */
+.ck-content p:has(+ .image),
+.ck-content .image + p {
+    clear: both;
+}
+
+/* Clearfix for paragraphs containing floated images */
+.ck-content p::after {
+    content: "";
+    display: table;
+    clear: both;
 }
 
 /* CKEditor video styles */
