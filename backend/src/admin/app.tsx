@@ -98,6 +98,41 @@ class VideoFixer extends Plugin {
       }
 
       /* ========================================
+         CSS Variables for CKEditor Content
+
+         These variables mirror the frontend's ck-content-shared.css
+         to ensure WYSIWYG editing matches the published output.
+
+         Light mode uses warm tones matching the Hill People site.
+         Dark mode (Strapi admin dark theme) uses complementary tones.
+         ======================================== */
+      :root {
+        --ck-content-font-family: "Libre Baskerville", Georgia, serif;
+        --ck-content-font-size: 16px;
+        --ck-content-line-height: 1.75;
+        --ck-content-color: #643f41;
+        --ck-content-color-muted: #6b7280;
+        --ck-content-color-link: #2563eb;
+        --ck-content-color-heading: #f16e53;
+        --ck-content-color-border: #627f7c;
+        --ck-content-color-code-bg: rgba(0, 0, 0, 0.05);
+        --ck-content-max-width: 768px;
+        --ck-content-bg: #f4f2ec;
+      }
+
+      @media (prefers-color-scheme: dark) {
+        :root {
+          --ck-content-color: #e7e7e7;
+          --ck-content-color-muted: #9ca3af;
+          --ck-content-color-link: #60a5fa;
+          --ck-content-color-heading: #d77a40;
+          --ck-content-color-border: #5e413b;
+          --ck-content-color-code-bg: rgba(255, 255, 255, 0.1);
+          --ck-content-bg: #101828;
+        }
+      }
+
+      /* ========================================
          Match Strapi native Blocks Editor exactly
          ======================================== */
 
@@ -217,78 +252,134 @@ class VideoFixer extends Plugin {
         border-radius: inherit !important;
       }
 
-      /* Editor content area - match frontend prose styling
-         Using explicit 16px base to match browser default (Strapi admin uses 14px root)
-         Max-width matches frontend post container (max-w-3xl = 768px)
-         Applies to both inline and pop-out/expanded editor modes */
+      /* Hide word count to match native editor */
+      .ck-word-count {
+        display: none !important;
+      }
+
+      /* ========================================
+         Editor Content Area - WYSIWYG Preview
+
+         Uses CSS variables to match frontend exactly.
+         Applies to both inline and pop-out editor modes.
+         ======================================== */
       .ck.ck-editor__editable,
       #ck-editor-modal .ck.ck-editor__editable,
       #ck-editor-modal .ck.ck-editor__main > div {
         padding: 24px !important;
         min-height: 200px !important;
         border-radius: 0 !important;
-        font-family: "Libre Baskerville", Georgia, serif !important;
-        font-size: 16px !important;
-        line-height: 1.75 !important;
-        color: #374151 !important;
-        max-width: 768px !important;
+        font-family: var(--ck-content-font-family) !important;
+        font-size: var(--ck-content-font-size) !important;
+        line-height: var(--ck-content-line-height) !important;
+        color: var(--ck-content-color) !important;
+        background-color: var(--ck-content-bg) !important;
+        max-width: var(--ck-content-max-width) !important;
         margin-left: auto !important;
         margin-right: auto !important;
       }
 
-      /* Typography - match Tailwind prose (sizes relative to 16px base) */
+      /* Typography - match frontend prose styling */
       .ck.ck-editor__editable h1 {
-        font-size: 36px !important;
+        font-size: 2.25em !important;
         margin-top: 0 !important;
-        margin-bottom: 32px !important;
+        margin-bottom: 0.8888889em !important;
         line-height: 1.1111111 !important;
         font-weight: 800 !important;
+        color: var(--ck-content-color-heading) !important;
       }
 
       .ck.ck-editor__editable h2 {
-        font-size: 24px !important;
-        margin-top: 32px !important;
-        margin-bottom: 16px !important;
+        font-size: 1.5em !important;
+        margin-top: 2em !important;
+        margin-bottom: 1em !important;
         line-height: 1.3333333 !important;
         font-weight: 700 !important;
+        color: var(--ck-content-color-heading) !important;
       }
 
       .ck.ck-editor__editable h3 {
-        font-size: 20px !important;
-        margin-top: 26px !important;
-        margin-bottom: 10px !important;
+        font-size: 1.25em !important;
+        margin-top: 1.6em !important;
+        margin-bottom: 0.6em !important;
         line-height: 1.6 !important;
         font-weight: 600 !important;
+        color: var(--ck-content-color-heading) !important;
+      }
+
+      .ck.ck-editor__editable h4 {
+        font-size: 1em !important;
+        margin-top: 1.5em !important;
+        margin-bottom: 0.5em !important;
+        line-height: 1.5 !important;
+        font-weight: 600 !important;
+        color: var(--ck-content-color-heading) !important;
       }
 
       .ck.ck-editor__editable p {
-        margin-top: 20px !important;
-        margin-bottom: 20px !important;
+        margin-top: 1.25em !important;
+        margin-bottom: 1.25em !important;
       }
 
       .ck.ck-editor__editable a {
-        color: #2563eb !important;
+        color: var(--ck-content-color-link) !important;
         text-decoration: underline !important;
+      }
+
+      .ck.ck-editor__editable strong {
+        font-weight: 600 !important;
+        color: inherit !important;
+      }
+
+      .ck.ck-editor__editable code {
+        font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace !important;
+        font-size: 0.875em !important;
+        background-color: var(--ck-content-color-code-bg) !important;
+        padding: 0.2em 0.4em !important;
+        border-radius: 0.25em !important;
       }
 
       .ck.ck-editor__editable blockquote {
         font-style: italic !important;
-        border-left: 4px solid #e5e7eb !important;
-        padding-left: 16px !important;
+        border-left: 4px solid var(--ck-content-color-border) !important;
+        padding-left: 1em !important;
         margin-left: 0 !important;
         margin-right: 0 !important;
+        margin-top: 1.6em !important;
+        margin-bottom: 1.6em !important;
       }
 
-      .ck.ck-editor__editable ul,
+      /* Lists - match frontend prose styling */
+      .ck.ck-editor__editable ul {
+        list-style-type: disc !important;
+        padding-left: 1.625em !important;
+        margin-top: 1.25em !important;
+        margin-bottom: 1.25em !important;
+      }
+
       .ck.ck-editor__editable ol {
-        padding-left: 26px !important;
-        margin-top: 20px !important;
-        margin-bottom: 20px !important;
+        list-style-type: decimal !important;
+        padding-left: 1.625em !important;
+        margin-top: 1.25em !important;
+        margin-bottom: 1.25em !important;
       }
 
       .ck.ck-editor__editable li {
-        margin-top: 8px !important;
-        margin-bottom: 8px !important;
+        margin-top: 0.5em !important;
+        margin-bottom: 0.5em !important;
+      }
+
+      .ck.ck-editor__editable ul > li::marker,
+      .ck.ck-editor__editable ol > li::marker {
+        color: var(--ck-content-color-muted) !important;
+      }
+
+      /* Horizontal rules */
+      .ck.ck-editor__editable hr {
+        border-color: var(--ck-content-color-border) !important;
+        border-top-width: 1px !important;
+        margin-top: 3em !important;
+        margin-bottom: 3em !important;
       }
 
       /* Image styles - match frontend rendering */
@@ -296,7 +387,8 @@ class VideoFixer extends Plugin {
         display: table !important;
         clear: both !important;
         text-align: center !important;
-        margin: 24px auto !important;
+        margin: 1.5em auto !important;
+        min-width: 50px !important;
       }
 
       .ck.ck-editor__editable .image img {
@@ -309,9 +401,11 @@ class VideoFixer extends Plugin {
       .ck.ck-editor__editable .image > figcaption {
         display: table-caption !important;
         caption-side: bottom !important;
-        padding: 10px !important;
-        font-size: 12px !important;
-        color: #6b7280 !important;
+        word-break: break-word !important;
+        color: var(--ck-content-color-muted) !important;
+        background-color: transparent !important;
+        padding: 0.6em !important;
+        font-size: 0.75em !important;
       }
 
       /* Image alignment */
@@ -320,19 +414,31 @@ class VideoFixer extends Plugin {
         margin-right: auto !important;
       }
 
+      .ck.ck-editor__editable .image-style-block-align-left {
+        margin-right: auto !important;
+      }
+
+      .ck.ck-editor__editable .image-style-block-align-right {
+        margin-left: auto !important;
+      }
+
       .ck.ck-editor__editable .image-style-align-left {
         float: left !important;
-        margin-right: 24px !important;
+        margin-right: 1.5em !important;
+        margin-top: 0.5em !important;
+        margin-bottom: 0.5em !important;
       }
 
       .ck.ck-editor__editable .image-style-align-right {
         float: right !important;
-        margin-left: 24px !important;
+        margin-left: 1.5em !important;
+        margin-top: 0.5em !important;
+        margin-bottom: 0.5em !important;
       }
 
       .ck.ck-editor__editable .image-style-side {
         float: right !important;
-        margin-left: 24px !important;
+        margin-left: 1.5em !important;
         max-width: 50% !important;
       }
 
@@ -340,17 +446,38 @@ class VideoFixer extends Plugin {
       .ck.ck-editor__editable .image.image_resized {
         display: inline-block !important;
         max-width: 100% !important;
-        margin: 8px !important;
+        box-sizing: border-box !important;
+        margin: 0.5em !important;
         vertical-align: top !important;
       }
 
-      /* Hide word count to match native editor */
-      .ck-word-count {
-        display: none !important;
+      .ck.ck-editor__editable .image.image_resized img {
+        width: 100% !important;
+      }
+
+      .ck.ck-editor__editable .image.image_resized.image-style-align-left {
+        float: left !important;
+        margin-right: 1.5em !important;
+        margin-left: 0 !important;
+      }
+
+      .ck.ck-editor__editable .image.image_resized.image-style-align-right {
+        float: right !important;
+        margin-left: 1.5em !important;
+        margin-right: 0 !important;
+      }
+
+      /* Video styles */
+      .ck.ck-editor__editable video {
+        display: block !important;
+        margin: 1.5em auto !important;
+        max-width: 100% !important;
+        height: auto !important;
+        border-radius: 4px !important;
       }
 
       /* ========================================
-         Dark mode styles
+         Dark mode toolbar styles (Strapi admin)
          ======================================== */
       @media (prefers-color-scheme: dark) {
         .ck.ck-toolbar {
@@ -374,23 +501,6 @@ class VideoFixer extends Plugin {
         .ck.ck-toolbar .ck-dropdown > .ck-button.ck-on {
           background: rgb(74, 74, 106) !important;
           color: rgb(220, 220, 230) !important;
-        }
-
-        .ck.ck-editor__editable {
-          background: rgb(33, 33, 52) !important;
-          color: #e5e7eb !important;
-        }
-
-        .ck.ck-editor__editable a {
-          color: #60a5fa !important;
-        }
-
-        .ck.ck-editor__editable blockquote {
-          border-left-color: #4b5563 !important;
-        }
-
-        .ck.ck-editor__editable .image > figcaption {
-          color: #9ca3af !important;
         }
       }
     `;
