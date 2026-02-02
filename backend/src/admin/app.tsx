@@ -219,8 +219,12 @@ class VideoFixer extends Plugin {
 
       /* Editor content area - match frontend prose styling
          Using explicit 16px base to match browser default (Strapi admin uses 14px root)
-         Max-width matches frontend post container (max-w-3xl = 768px) */
-      .ck.ck-editor__editable {
+         Max-width matches frontend post container (max-w-3xl = 768px)
+         Applies to both inline and pop-out/expanded editor modes */
+      .ck.ck-editor__editable,
+      .ck-body-wrapper .ck.ck-editor__editable,
+      [class*="modal"] .ck.ck-editor__editable,
+      .ck-editor__editable_inline {
         padding: 24px !important;
         min-height: 200px !important;
         border-radius: 0 !important;
