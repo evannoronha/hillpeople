@@ -9,5 +9,9 @@ export default () => ({
                 xsmall: 64
             },
         }
+    },
+    'mp-sync-helper': {
+        enabled: true,
+        resolve: './src/plugins/mp-sync-helper'
     }
 });
