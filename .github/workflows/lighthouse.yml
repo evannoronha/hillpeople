@@ -5,6 +5,7 @@ on:
     types: [opened, synchronize]
     paths:
       - 'frontend/**'
+      - 'lighthouserc.js'
 
 jobs:
   lighthouse:
@@ -42,29 +43,30 @@ jobs:
         env:
           STRAPI_API_URL: https://journal.hillpeople.net
 
-      - name: Generate Lighthouse config
+      - name: Create .dev.vars for wrangler
         run: |
-          cat > lighthouserc.json << EOF
-          {
-            "ci": {
-              "collect": {
-                "startServerCommand": "cd frontend && npx wrangler pages dev dist --port 8788",
-                "startServerReadyPattern": "Ready on",
-                "url": [
-                  "http://localhost:8788/",
-                  "http://localhost:8788/climbing",
-                  "http://localhost:8788/blog/${{ steps.slugs.outputs.slug1 }}",
-                  "http://localhost:8788/blog/${{ steps.slugs.outputs.slug2 }}",
-                  "http://localhost:8788/blog/${{ steps.slugs.outputs.slug3 }}"
-                ],
-                "numberOfRuns": 1
-              },
-              "upload": {
-                "target": "temporary-public-storage"
-              }
-            }
-          }
+          cat > frontend/.dev.vars << EOF
+          STRAPI_API_URL=https://journal.hillpeople.net
+          STRAPI_API_TOKEN=${{ secrets.STRAPI_API_TOKEN }}
           EOF
+
+      - name: Generate Lighthouse CI config with blog posts
+        run: |
+          node -e "
+            const baseConfig = require('./lighthouserc.js');
+            const blogUrls = [
+              'http://localhost:8788/blog/${{ steps.slugs.outputs.slug1 }}',
+              'http://localhost:8788/blog/${{ steps.slugs.outputs.slug2 }}',
+              'http://localhost:8788/blog/${{ steps.slugs.outputs.slug3 }}'
+            ];
+            baseConfig.ci.collect.url = [
+              ...baseConfig.ci.collect.url,
+              ...blogUrls
+            ];
+            // Use fewer runs in CI for speed
+            baseConfig.ci.collect.numberOfRuns = 1;
+            console.log(JSON.stringify(baseConfig, null, 2));
+          " > lighthouserc.json
 
       - name: Install Chrome
         uses: browser-actions/setup-chrome@v1
@@ -74,6 +76,6 @@ jobs:
       - name: Run Lighthouse CI
         run: |
           npm install -g @lhci/cli@0.14.x
-          lhci autorun
+          lhci autorun --config=lighthouserc.json
         env:
           LHCI_GITHUB_APP_TOKEN: ${{ secrets.LHCI_GITHUB_TOKEN }}
