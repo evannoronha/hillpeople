@@ -58,6 +58,7 @@ const breadcrumbs = [{ name: 'Home', url: '/' }, { name: post.title }];
 
 // Structured data
 const structuredData = {
+  type: 'BlogPosting' as const,
   title: seoTitle,
   description: seoDescription,
   datePublished: post.publishedDate,

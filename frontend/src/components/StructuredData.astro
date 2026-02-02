@@ -1,5 +1,6 @@
 ---
 interface BlogPostingData {
+  type: 'BlogPosting';
   title: string;
   description: string;
   datePublished: string;
@@ -10,42 +11,91 @@ interface BlogPostingData {
   siteName: string;
 }
 
+interface WebSiteData {
+  type: 'WebSite';
+  name: string;
+  description: string;
+  url: string;
+}
+
+interface ItemListData {
+  type: 'ItemList';
+  items: {
+    url: string;
+    name: string;
+    position: number;
+  }[];
+}
+
+type StructuredDataProps = BlogPostingData | WebSiteData | ItemListData;
+
 interface Props {
-  data: BlogPostingData;
+  data: StructuredDataProps;
 }
 
 const { data } = Astro.props;
 
-const schema = {
-  '@context': 'https://schema.org',
-  '@type': 'BlogPosting',
-  headline: data.title,
-  description: data.description,
-  datePublished: data.datePublished,
-  dateModified: data.dateModified || data.datePublished,
-  author: {
-    '@type': 'Person',
-    name: data.authorName,
-  },
-  publisher: {
-    '@type': 'Organization',
-    name: data.siteName,
-    logo: {
-      '@type': 'ImageObject',
-      url: 'https://hillpeople.net/favicon.svg',
-    },
-  },
-  mainEntityOfPage: {
-    '@type': 'WebPage',
-    '@id': data.url,
-  },
-  ...(data.imageUrl && {
-    image: {
-      '@type': 'ImageObject',
-      url: data.imageUrl,
-    },
-  }),
-};
+function buildSchema(data: StructuredDataProps) {
+  if (data.type === 'BlogPosting') {
+    return {
+      '@context': 'https://schema.org',
+      '@type': 'BlogPosting',
+      headline: data.title,
+      description: data.description,
+      datePublished: data.datePublished,
+      dateModified: data.dateModified || data.datePublished,
+      author: {
+        '@type': 'Person',
+        name: data.authorName,
+      },
+      publisher: {
+        '@type': 'Organization',
+        name: data.siteName,
+        logo: {
+          '@type': 'ImageObject',
+          url: 'https://hillpeople.net/favicon.svg',
+        },
+      },
+      mainEntityOfPage: {
+        '@type': 'WebPage',
+        '@id': data.url,
+      },
+      ...(data.imageUrl && {
+        image: {
+          '@type': 'ImageObject',
+          url: data.imageUrl,
+        },
+      }),
+    };
+  }
+
+  if (data.type === 'WebSite') {
+    return {
+      '@context': 'https://schema.org',
+      '@type': 'WebSite',
+      name: data.name,
+      description: data.description,
+      url: data.url,
+    };
+  }
+
+  if (data.type === 'ItemList') {
+    return {
+      '@context': 'https://schema.org',
+      '@type': 'ItemList',
+      itemListElement: data.items.map((item) => ({
+        '@type': 'ListItem',
+        position: item.position,
+        url: item.url,
+        name: item.name,
+      })),
+    };
+  }
+
+  return null;
+}
+
+const schema = buildSchema(data);
 ---
 
-<script type="application/ld+json" set:html={JSON.stringify(schema)} />
+{schema && <script is:inline type="application/ld+json" set:html={JSON.stringify(schema)} />}

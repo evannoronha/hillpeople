@@ -1,57 +1,85 @@
 ---
 // Homepage
-import PostCard from "../components/PostCard.astro";
-import Layout from "../layouts/Layout.astro";
-import Hero from "../components/Hero.astro";
-import { fetchPostsPaginated, fetchSingleType, fetchSiteSettings } from "../lib/api";
-import { getMediaUrl } from "../lib/imageUrl";
+import PostCard from '../components/PostCard.astro';
+import Layout from '../layouts/Layout.astro';
+import Hero from '../components/Hero.astro';
+import StructuredData from '../components/StructuredData.astro';
+import {
+  fetchPostsPaginated,
+  fetchSingleType,
+  fetchSiteSettings,
+} from '../lib/api';
+import { getMediaUrl } from '../lib/imageUrl';
 
 const PAGE_SIZE = 6;
 
 const [{ posts, pagination }, homePage, siteSettings] = await Promise.all([
-	fetchPostsPaginated(1, PAGE_SIZE),
-	fetchSingleType("home-page"),
-	fetchSiteSettings(),
+  fetchPostsPaginated(1, PAGE_SIZE),
+  fetchSingleType('home-page'),
+  fetchSiteSettings(),
 ]);
 
 const hasMore = pagination.pageCount > 1;
 
 // SEO data
-const siteName = siteSettings?.siteName || "Hill People";
-const description = siteSettings?.siteDescription || "Stories from the hills";
-const ogImage = siteSettings?.defaultOgImage ? getMediaUrl(siteSettings.defaultOgImage.url) : undefined;
+const siteName = siteSettings?.siteName || 'Hill People';
+const description = siteSettings?.siteDescription || 'Stories from the hills';
+const ogImage = siteSettings?.defaultOgImage
+  ? getMediaUrl(siteSettings.defaultOgImage.url)
+  : undefined;
+const siteUrl = 'https://hillpeople.net';
+
+// Structured data for WebSite
+const webSiteData = {
+  type: 'WebSite' as const,
+  name: siteName,
+  description,
+  url: siteUrl,
+};
+
+// Structured data for ItemList (blog posts)
+const itemListData = {
+  type: 'ItemList' as const,
+  items: posts.map((post: any, index: number) => ({
+    url: `${siteUrl}/blog/${post.slug}`,
+    name: post.title,
+    position: index + 1,
+  })),
+};
 ---
 
 <Layout
-	pageTitle="Home"
-	description={description}
-	ogImage={ogImage}
-	siteName={siteName}
+  pageTitle="Home"
+  description={description}
+  ogImage={ogImage}
+  siteName={siteName}
 >
-	{homePage && (
-		<Hero
-			title={homePage.heroTitle}
-			subtitle={homePage.heroSubtitle}
-		/>
-	)}
-	<section class="max-w-6xl mx-auto px-4 pb-10">
-		<div id="posts-grid" class="grid gap-8 sm:grid-cols-2 lg:grid-cols-3">
-			{posts.map((post: any) => <PostCard post={post} />)}
-		</div>
-		{hasMore && (
-			<div class="text-center mt-10">
-				<button
-					id="load-more"
-					type="button"
-					data-page="2"
-					data-page-size={PAGE_SIZE}
-					class="bg-[var(--color-fab-bg)] text-[var(--color-fab-text)] border-2 border-[var(--color-fab-text)] px-6 py-3 rounded-lg font-semibold hover:opacity-90 transition w-full sm:w-auto"
-				>
-					{homePage?.loadMoreButtonText || "Load more posts"}
-				</button>
-			</div>
-		)}
-	</section>
+  <StructuredData data={webSiteData} />
+  <StructuredData data={itemListData} />
+
+  {homePage && (
+    <Hero title={homePage.heroTitle} subtitle={homePage.heroSubtitle} />
+  )}
+
+  <section aria-label="Recent posts" class="max-w-6xl mx-auto px-4 pb-10">
+    <h2 class="sr-only">Recent Posts</h2>
+    <div id="posts-grid" class="grid gap-8 sm:grid-cols-2 lg:grid-cols-3">
+      {posts.map((post: any) => <PostCard post={post} />)}
+    </div>
+    {hasMore && (
+      <div class="text-center mt-10">
+        <button
+          id="load-more"
+          type="button"
+          data-page="2"
+          data-page-size={PAGE_SIZE}
+          class="bg-[var(--color-fab-bg)] text-[var(--color-fab-text)] border-2 border-[var(--color-fab-text)] px-6 py-3 rounded-lg font-semibold hover:opacity-90 transition w-full sm:w-auto"
+        >
+          {homePage?.loadMoreButtonText || 'Load more posts'}
+        </button>
+      </div>
+    )}
+  </section>
 </Layout>
 
 <script src="../scripts/load-more.ts"></script>

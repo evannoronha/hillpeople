@@ -1,53 +1,98 @@
 ---
-import { getLargestImage, getMediaUrl } from "../lib/imageUrl";
+import type { StrapiImage } from '../lib/api';
+import { getMediaUrl } from '../lib/imageUrl';
+import { calculateReadingTime } from '../lib/readingTime';
+
+interface Props {
+  post: {
+    title: string;
+    slug: string;
+    publishedDate: string;
+    richContent?: string;
+    seo?: {
+      excerpt?: string;
+    };
+    coverImage?: StrapiImage;
+  };
+}
 
 const { post } = Astro.props;
-
-const { title, slug, publishedDate, seo } = post;
+const { title, slug, publishedDate, seo, coverImage, richContent } = post;
 const excerpt = seo?.excerpt;
-const largestImage = getLargestImage(post);
-const imageUrl = largestImage ? getMediaUrl(largestImage.url) : null;
 const postUrl = `/blog/${slug}`;
+
+// Calculate reading time
+const readingTime = richContent ? calculateReadingTime(richContent) : null;
+
+// Build srcset from available formats
+const formats = coverImage?.formats || {};
+const formatOrder = ['thumbnail', 'small', 'medium', 'large', 'xlarge'] as const;
+
+const srcsetParts: string[] = [];
+for (const formatName of formatOrder) {
+  const format = formats[formatName];
+  if (format?.url && format?.width) {
+    srcsetParts.push(`${getMediaUrl(format.url)} ${format.width}w`);
+  }
+}
+
+// Add original as largest option
+if (coverImage?.url && coverImage?.width) {
+  srcsetParts.push(`${getMediaUrl(coverImage.url)} ${coverImage.width}w`);
+}
+
+const srcset = srcsetParts.length > 0 ? srcsetParts.join(', ') : undefined;
+const fallbackUrl = coverImage ? getMediaUrl(coverImage.url) : null;
+
+// Sizes for responsive grid: 1 col mobile, 2 col sm, 3 col lg
+const sizes = '(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 33vw';
+
+// Format date
+const formattedDate = new Date(publishedDate).toLocaleDateString(undefined, {
+  year: 'numeric',
+  month: 'long',
+  day: 'numeric',
+});
 ---
 
 <a
-    href={postUrl}
-    class="block
-        hover:opacity-90
-        transition
-        rounded-lg
-        shadow-md
-        bg-inverse"
+  href={postUrl}
+  class="group block rounded-lg shadow-md bg-inverse hover:shadow-lg transition-shadow"
 >
-    {
-        imageUrl && (
-            <div class="aspect-square overflow-hidden  rounded-t-lg">
-                <img
-                    src={imageUrl}
-                    alt={title}
-                    class="w-full h-full object-cover"
-                    loading="lazy"
-                />
-            </div>
-        )
-    }
-    <div class="p-4">
-        <h3 class="text-xl font-semibold leading-tight">
-            {title}
-        </h3>
-        {excerpt && (
-            <p class="text-sm mt-2 line-clamp-2">
-                {excerpt}
-            </p>
-        )}
-        <p class="text-sm mt-2 opacity-70">
-            {
-                new Date(publishedDate).toLocaleDateString(undefined, {
-                    year: "numeric",
-                    month: "long",
-                    day: "numeric",
-                })
-            }
-        </p>
+  {fallbackUrl && coverImage && (
+    <div class="aspect-square overflow-hidden rounded-t-lg">
+      <img
+        src={fallbackUrl}
+        srcset={srcset}
+        sizes={sizes}
+        width={coverImage.width}
+        height={coverImage.height}
+        alt={coverImage.alternativeText || title}
+        loading="lazy"
+        decoding="async"
+        class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
+      />
     </div>
+  )}
+  <div class="p-4">
+    <h3 class="text-xl font-semibold leading-tight group-hover:underline">
+      {title}
+    </h3>
+    {excerpt && (
+      <p class="text-sm mt-2 line-clamp-2 opacity-80">
+        {excerpt}
+      </p>
+    )}
+    <div class="flex items-center gap-3 text-sm mt-3 opacity-70">
+      <time datetime={new Date(publishedDate).toISOString()}>
+        {formattedDate}
+      </time>
+      {readingTime && (
+        <>
+          <span aria-hidden="true">&middot;</span>
+          <span>{readingTime} min read</span>
+        </>
+      )}
+    </div>
+  </div>
 </a>
