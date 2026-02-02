@@ -222,9 +222,8 @@ class VideoFixer extends Plugin {
          Max-width matches frontend post container (max-w-3xl = 768px)
          Applies to both inline and pop-out/expanded editor modes */
       .ck.ck-editor__editable,
-      .ck-body-wrapper .ck.ck-editor__editable,
-      [class*="modal"] .ck.ck-editor__editable,
-      .ck-editor__editable_inline {
+      #ck-editor-modal .ck.ck-editor__editable,
+      #ck-editor-modal .ck.ck-editor__main > div {
         padding: 24px !important;
         min-height: 200px !important;
         border-radius: 0 !important;
