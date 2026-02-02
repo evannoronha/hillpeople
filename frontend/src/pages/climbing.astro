@@ -1,6 +1,7 @@
 ---
 import Layout from "../layouts/Layout.astro";
-import { fetchClimbingTicksPaginated, fetchSiteSettings, type ClimbingTick } from "../lib/api";
+import PhotoGallery from "../components/PhotoGallery.astro";
+import { fetchClimbingTicksPaginated, fetchSiteSettings, type ClimbingTick, type StrapiImage } from "../lib/api";
 
 const PAGE_SIZE = 50;
 
@@ -26,6 +27,7 @@ interface GroupedRoute {
     route: ClimbingTick['route'];
     climbers: string[];
     bestStars: number;
+    photos: StrapiImage[];
 }
 
 // Group ticks by date, then by route (deduping multiple climbers)
@@ -53,6 +55,7 @@ function groupTicksByDateAndRoute(tickList: ClimbingTick[]): TicksByDate[] {
                 route: tick.route,
                 climbers: [],
                 bestStars: 0,
+                photos: [],
             });
         }
 
@@ -66,6 +69,16 @@ function groupTicksByDateAndRoute(tickList: ClimbingTick[]): TicksByDate[] {
         // Track best star rating
         if (tick.yourStars && tick.yourStars > groupedRoute.bestStars) {
             groupedRoute.bestStars = tick.yourStars;
+        }
+
+        // Collect photos from all ticks for this route
+        if (tick.photos?.length) {
+            for (const photo of tick.photos) {
+                // Avoid duplicates by checking ID
+                if (!groupedRoute.photos.some(p => p.id === photo.id)) {
+                    groupedRoute.photos.push(photo);
+                }
+            }
         }
     }
 
@@ -132,6 +145,10 @@ const uniqueRouteCount = ticksByDate.reduce((sum, day) => sum + day.routes.lengt
                                             {groupedRoute.climbers.join(" & ")}
                                         </p>
                                     )}
+                                    <PhotoGallery
+                                        photos={groupedRoute.photos}
+                                        galleryId={`${date}-${groupedRoute.route?.documentId || 'unknown'}`}
+                                    />
                                 </div>
                                 {groupedRoute.bestStars > 0 && (
                                     <div class="flex-shrink-0 text-sm text-[var(--color-header)]" title={`${groupedRoute.bestStars} stars`}>
