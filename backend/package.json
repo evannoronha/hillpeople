@@ -4,7 +4,8 @@
   "private": true,
   "description": "A Strapi application",
   "scripts": {
-    "build": "strapi build",
+    "build": "npm run build:plugins && strapi build",
+    "build:plugins": "cd src/plugins/mp-sync-helper && npm run build",
     "console": "strapi console",
     "deploy": "strapi deploy",
     "dev": "strapi develop",

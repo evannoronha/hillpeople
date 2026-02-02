@@ -1,5 +1,5 @@
 import type { Core } from '@strapi/strapi';
-import { parseCSV, createTickId } from '../../../../../api/climbing-tick/services/csv-parser';
+import { parseCSV, createTickId } from '../services/csv-parser';
 
 interface SyncResult {
   success: boolean;
@@ -71,7 +71,7 @@ async function syncPersonTicks(strapi: Core.Strapi, personDocumentId: string): P
       data: {
         lastSyncError: `Failed to fetch CSV: ${fetchError.message}`,
         lastSyncErrorDate: new Date().toISOString(),
-      }
+      } as any
     });
 
     strapi.log.error('Failed to fetch Mountain Project CSV', {
@@ -125,7 +125,7 @@ async function syncPersonTicks(strapi: Core.Strapi, personDocumentId: string): P
             yourStars: tick.yourStars,
             yourRating: tick.yourRating,
             mpNotes: tick.notes,
-          }
+          } as any
         });
         updated++;
       } else {
@@ -141,7 +141,7 @@ async function syncPersonTicks(strapi: Core.Strapi, personDocumentId: string): P
             mpNotes: tick.notes,
             notes: tick.notes,
             mountainProjectTickId: tickId,
-          }
+          } as any
         });
         created++;
       }
@@ -157,7 +157,7 @@ async function syncPersonTicks(strapi: Core.Strapi, personDocumentId: string): P
       lastSyncDate: new Date().toISOString(),
       lastSyncError: null,
       lastSyncErrorDate: null,
-    }
+    } as any
   });
 
   strapi.log.info(`Sync complete for ${person.name}: ${created} created, ${updated} updated, ${skipped} skipped`);
