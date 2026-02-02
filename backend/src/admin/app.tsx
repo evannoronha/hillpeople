@@ -218,7 +218,8 @@ class VideoFixer extends Plugin {
       }
 
       /* Editor content area - match frontend prose styling
-         Using explicit 16px base to match browser default (Strapi admin uses 14px root) */
+         Using explicit 16px base to match browser default (Strapi admin uses 14px root)
+         Max-width matches frontend post container (max-w-3xl = 768px) */
       .ck.ck-editor__editable {
         padding: 24px !important;
         min-height: 200px !important;
@@ -227,6 +228,9 @@ class VideoFixer extends Plugin {
         font-size: 16px !important;
         line-height: 1.75 !important;
         color: #374151 !important;
+        max-width: 768px !important;
+        margin-left: auto !important;
+        margin-right: auto !important;
       }
 
       /* Typography - match Tailwind prose (sizes relative to 16px base) */
