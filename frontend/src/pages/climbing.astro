@@ -1,6 +1,7 @@
 ---
 import Layout from "../layouts/Layout.astro";
-import { fetchClimbingTicksPaginated, fetchSiteSettings, type ClimbingTick } from "../lib/api";
+import { fetchClimbingTicksPaginated, fetchSiteSettings, type ClimbingTick, type StrapiImage } from "../lib/api";
+import { getMediaUrl } from "../lib/imageUrl";
 
 const PAGE_SIZE = 50;
 
@@ -26,6 +27,7 @@ interface GroupedRoute {
     route: ClimbingTick['route'];
     climbers: string[];
     bestStars: number;
+    photos: StrapiImage[];
 }
 
 // Group ticks by date, then by route (deduping multiple climbers)
@@ -53,6 +55,7 @@ function groupTicksByDateAndRoute(tickList: ClimbingTick[]): TicksByDate[] {
                 route: tick.route,
                 climbers: [],
                 bestStars: 0,
+                photos: [],
             });
         }
 
@@ -66,6 +69,16 @@ function groupTicksByDateAndRoute(tickList: ClimbingTick[]): TicksByDate[] {
         // Track best star rating
         if (tick.yourStars && tick.yourStars > groupedRoute.bestStars) {
             groupedRoute.bestStars = tick.yourStars;
+        }
+
+        // Collect photos from all ticks for this route
+        if (tick.photos?.length) {
+            for (const photo of tick.photos) {
+                // Avoid duplicates by checking ID
+                if (!groupedRoute.photos.some(p => p.id === photo.id)) {
+                    groupedRoute.photos.push(photo);
+                }
+            }
         }
     }
 
@@ -131,6 +144,25 @@ const uniqueRouteCount = ticksByDate.reduce((sum, day) => sum + day.routes.lengt
                                         <p class="text-xs mt-1 opacity-70">
                                             {groupedRoute.climbers.join(" & ")}
                                         </p>
+                                    )}
+                                    {groupedRoute.photos.length > 0 && (
+                                        <div class="flex gap-2 mt-2 overflow-x-auto">
+                                            {groupedRoute.photos.map((photo) => (
+                                                <a
+                                                    href={getMediaUrl(photo.url)}
+                                                    target="_blank"
+                                                    rel="noopener noreferrer"
+                                                    class="flex-shrink-0"
+                                                >
+                                                    <img
+                                                        src={getMediaUrl(photo.formats?.thumbnail?.url || photo.url)}
+                                                        alt={photo.alternativeText || "Climbing photo"}
+                                                        class="h-16 w-16 object-cover rounded"
+                                                        loading="lazy"
+                                                    />
+                                                </a>
+                                            ))}
+                                        </div>
                                     )}
                                 </div>
                                 {groupedRoute.bestStars > 0 && (

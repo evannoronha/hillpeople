@@ -113,6 +113,28 @@ export async function fetchSiteSettings() {
     return fetchSingleType("site-settings")
 }
 
+// Strapi image types
+export interface StrapiImageFormat {
+    url: string;
+    width: number;
+    height: number;
+}
+
+export interface StrapiImage {
+    id: number;
+    url: string;
+    alternativeText: string | null;
+    width: number;
+    height: number;
+    formats?: {
+        thumbnail?: StrapiImageFormat;
+        small?: StrapiImageFormat;
+        medium?: StrapiImageFormat;
+        large?: StrapiImageFormat;
+        xlarge?: StrapiImageFormat;
+    };
+}
+
 // Climbing tick types
 export interface ClimbingRoute {
     id: number;
@@ -144,6 +166,7 @@ export interface ClimbingTick {
     yourRating: string;
     mpNotes: string;
     notes: string;
+    photos: StrapiImage[];
     route: ClimbingRoute;
     person: Person;
 }
