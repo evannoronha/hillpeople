@@ -1,7 +1,7 @@
 ---
 import Layout from "../layouts/Layout.astro";
+import PhotoGallery from "../components/PhotoGallery.astro";
 import { fetchClimbingTicksPaginated, fetchSiteSettings, type ClimbingTick, type StrapiImage } from "../lib/api";
-import { getMediaUrl } from "../lib/imageUrl";
 
 const PAGE_SIZE = 50;
 
@@ -145,25 +145,10 @@ const uniqueRouteCount = ticksByDate.reduce((sum, day) => sum + day.routes.lengt
                                             {groupedRoute.climbers.join(" & ")}
                                         </p>
                                     )}
-                                    {groupedRoute.photos.length > 0 && (
-                                        <div class="flex gap-2 mt-2 overflow-x-auto">
-                                            {groupedRoute.photos.map((photo) => (
-                                                <a
-                                                    href={getMediaUrl(photo.url)}
-                                                    target="_blank"
-                                                    rel="noopener noreferrer"
-                                                    class="flex-shrink-0"
-                                                >
-                                                    <img
-                                                        src={getMediaUrl(photo.formats?.thumbnail?.url || photo.url)}
-                                                        alt={photo.alternativeText || "Climbing photo"}
-                                                        class="h-16 w-16 object-cover rounded"
-                                                        loading="lazy"
-                                                    />
-                                                </a>
-                                            ))}
-                                        </div>
-                                    )}
+                                    <PhotoGallery
+                                        photos={groupedRoute.photos}
+                                        galleryId={`${date}-${groupedRoute.route?.documentId || 'unknown'}`}
+                                    />
                                 </div>
                                 {groupedRoute.bestStars > 0 && (
                                     <div class="flex-shrink-0 text-sm text-[var(--color-header)]" title={`${groupedRoute.bestStars} stars`}>

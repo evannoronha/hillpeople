@@ -1,0 +1,154 @@
+---
+import type { StrapiImage } from "../lib/api";
+import { getMediaUrl } from "../lib/imageUrl";
+
+interface Props {
+    photos: StrapiImage[];
+    galleryId: string;
+}
+
+const { photos, galleryId } = Astro.props;
+---
+
+{photos.length > 0 && (
+    <div class="photo-gallery flex gap-2 mt-2 overflow-x-auto" data-gallery={galleryId}>
+        {photos.map((photo, index) => (
+            <button
+                type="button"
+                class="flex-shrink-0 cursor-pointer border-0 p-0 bg-transparent"
+                data-photo-url={getMediaUrl(photo.formats?.large?.url || photo.url)}
+                data-photo-alt={photo.alternativeText || "Climbing photo"}
+                data-photo-index={index}
+            >
+                <img
+                    src={getMediaUrl(photo.formats?.thumbnail?.url || photo.url)}
+                    alt={photo.alternativeText || "Climbing photo"}
+                    class="h-16 w-16 object-cover rounded hover:opacity-80 transition"
+                    loading="lazy"
+                />
+            </button>
+        ))}
+    </div>
+)}
+
+<!-- Lightbox modal (one per page, controlled by JS) -->
+<div
+    id="photo-lightbox"
+    class="fixed inset-0 z-50 hidden items-center justify-center bg-black/90 p-4"
+    role="dialog"
+    aria-modal="true"
+    aria-label="Photo viewer"
+>
+    <button
+        type="button"
+        id="lightbox-close"
+        class="absolute top-4 right-4 text-white text-3xl leading-none hover:opacity-70 transition z-10"
+        aria-label="Close"
+    >
+        &times;
+    </button>
+    <button
+        type="button"
+        id="lightbox-prev"
+        class="absolute left-4 top-1/2 -translate-y-1/2 text-white text-4xl leading-none hover:opacity-70 transition z-10 hidden"
+        aria-label="Previous photo"
+    >
+        &#8249;
+    </button>
+    <button
+        type="button"
+        id="lightbox-next"
+        class="absolute right-4 top-1/2 -translate-y-1/2 text-white text-4xl leading-none hover:opacity-70 transition z-10 hidden"
+        aria-label="Next photo"
+    >
+        &#8250;
+    </button>
+    <img
+        id="lightbox-image"
+        src=""
+        alt=""
+        class="max-h-[90vh] max-w-[90vw] object-contain"
+    />
+</div>
+
+<script>
+    function initPhotoGallery() {
+        const lightbox = document.getElementById('photo-lightbox');
+        const lightboxImage = document.getElementById('lightbox-image') as HTMLImageElement;
+        const closeBtn = document.getElementById('lightbox-close');
+        const prevBtn = document.getElementById('lightbox-prev');
+        const nextBtn = document.getElementById('lightbox-next');
+
+        if (!lightbox || !lightboxImage || !closeBtn || !prevBtn || !nextBtn) return;
+
+        let currentGallery: HTMLElement | null = null;
+        let currentIndex = 0;
+
+        function getPhotosInGallery(gallery: HTMLElement) {
+            return Array.from(gallery.querySelectorAll('button[data-photo-url]')) as HTMLButtonElement[];
+        }
+
+        function showPhoto(index: number) {
+            if (!currentGallery) return;
+            const photos = getPhotosInGallery(currentGallery);
+            if (index < 0 || index >= photos.length) return;
+
+            currentIndex = index;
+            const photo = photos[index];
+            lightboxImage.src = photo.dataset.photoUrl || '';
+            lightboxImage.alt = photo.dataset.photoAlt || '';
+
+            // Show/hide nav buttons
+            prevBtn.classList.toggle('hidden', index === 0);
+            nextBtn.classList.toggle('hidden', index === photos.length - 1);
+        }
+
+        function openLightbox(gallery: HTMLElement, index: number) {
+            currentGallery = gallery;
+            showPhoto(index);
+            lightbox.classList.remove('hidden');
+            lightbox.classList.add('flex');
+            document.body.style.overflow = 'hidden';
+        }
+
+        function closeLightbox() {
+            lightbox.classList.add('hidden');
+            lightbox.classList.remove('flex');
+            document.body.style.overflow = '';
+            currentGallery = null;
+        }
+
+        // Event listeners
+        document.querySelectorAll('.photo-gallery button[data-photo-url]').forEach((btn) => {
+            btn.addEventListener('click', (e) => {
+                const button = e.currentTarget as HTMLButtonElement;
+                const gallery = button.closest('.photo-gallery') as HTMLElement;
+                const index = parseInt(button.dataset.photoIndex || '0', 10);
+                openLightbox(gallery, index);
+            });
+        });
+
+        closeBtn.addEventListener('click', closeLightbox);
+        prevBtn.addEventListener('click', () => showPhoto(currentIndex - 1));
+        nextBtn.addEventListener('click', () => showPhoto(currentIndex + 1));
+
+        // Close on backdrop click
+        lightbox.addEventListener('click', (e) => {
+            if (e.target === lightbox) closeLightbox();
+        });
+
+        // Keyboard navigation
+        document.addEventListener('keydown', (e) => {
+            if (lightbox.classList.contains('hidden')) return;
+            if (e.key === 'Escape') closeLightbox();
+            if (e.key === 'ArrowLeft') showPhoto(currentIndex - 1);
+            if (e.key === 'ArrowRight') showPhoto(currentIndex + 1);
+        });
+    }
+
+    // Run on initial load
+    initPhotoGallery();
+
+    // Re-run when new content is loaded (for "Load more" functionality)
+    document.addEventListener('astro:page-load', initPhotoGallery);
+</script>
