@@ -1,4 +1,4 @@
-export default () => ({
+export default {
   type: 'admin',
   routes: [
     {
@@ -10,4 +10,4 @@ export default () => ({
       },
     },
   ],
-});
+};

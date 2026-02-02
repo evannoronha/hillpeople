@@ -134,14 +134,14 @@ const HomePage = () => {
               variant="success"
               title="Sync Complete"
             >
-              {syncResult.results.map((r) => (
-                <Box key={r.person} paddingTop={1}>
-                  <Typography>
+              <Box paddingTop={2}>
+                {syncResult.results.map((r) => (
+                  <Typography key={r.person} display="block">
                     <strong>{r.person}:</strong> {r.result.created} created, {r.result.updated} updated
                     {r.result.skipped > 0 && `, ${r.result.skipped} skipped`}
                   </Typography>
-                </Box>
-              ))}
+                ))}
+              </Box>
             </Alert>
           </Box>
         )}
