@@ -1,4 +1,13 @@
 export default () => ({
   type: 'admin',
-  routes: [],
+  routes: [
+    {
+      method: 'POST',
+      path: '/sync-all',
+      handler: 'controller.syncAll',
+      config: {
+        policies: [],
+      },
+    },
+  ],
 });
