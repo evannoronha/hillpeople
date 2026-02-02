@@ -735,6 +735,7 @@ export interface ApiPostPost extends Struct.CollectionTypeSchema {
   };
   attributes: {
     authorName: Schema.Attribute.String;
+    climbingDateRange: Schema.Attribute.Component<'climbing.date-range', false>;
     coverImage: Schema.Attribute.Media<'images'> & Schema.Attribute.Required;
     createdAt: Schema.Attribute.DateTime;
     createdBy: Schema.Attribute.Relation<'oneToOne', 'admin::user'>;
