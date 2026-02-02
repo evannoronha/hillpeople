@@ -217,45 +217,46 @@ class VideoFixer extends Plugin {
         border-radius: inherit !important;
       }
 
-      /* Editor content area - match frontend prose styling */
+      /* Editor content area - match frontend prose styling
+         Using explicit 16px base to match browser default (Strapi admin uses 14px root) */
       .ck.ck-editor__editable {
         padding: 24px !important;
         min-height: 200px !important;
         border-radius: 0 !important;
         font-family: "Libre Baskerville", Georgia, serif !important;
-        font-size: 1rem !important;
+        font-size: 16px !important;
         line-height: 1.75 !important;
         color: #374151 !important;
       }
 
-      /* Typography - match Tailwind prose */
+      /* Typography - match Tailwind prose (sizes relative to 16px base) */
       .ck.ck-editor__editable h1 {
-        font-size: 2.25em !important;
+        font-size: 36px !important;
         margin-top: 0 !important;
-        margin-bottom: 0.8888889em !important;
+        margin-bottom: 32px !important;
         line-height: 1.1111111 !important;
         font-weight: 800 !important;
       }
 
       .ck.ck-editor__editable h2 {
-        font-size: 1.5em !important;
-        margin-top: 2em !important;
-        margin-bottom: 1em !important;
+        font-size: 24px !important;
+        margin-top: 32px !important;
+        margin-bottom: 16px !important;
         line-height: 1.3333333 !important;
         font-weight: 700 !important;
       }
 
       .ck.ck-editor__editable h3 {
-        font-size: 1.25em !important;
-        margin-top: 1.6em !important;
-        margin-bottom: 0.6em !important;
+        font-size: 20px !important;
+        margin-top: 26px !important;
+        margin-bottom: 10px !important;
         line-height: 1.6 !important;
         font-weight: 600 !important;
       }
 
       .ck.ck-editor__editable p {
-        margin-top: 1.25em !important;
-        margin-bottom: 1.25em !important;
+        margin-top: 20px !important;
+        margin-bottom: 20px !important;
       }
 
       .ck.ck-editor__editable a {
@@ -266,21 +267,21 @@ class VideoFixer extends Plugin {
       .ck.ck-editor__editable blockquote {
         font-style: italic !important;
         border-left: 4px solid #e5e7eb !important;
-        padding-left: 1em !important;
+        padding-left: 16px !important;
         margin-left: 0 !important;
         margin-right: 0 !important;
       }
 
       .ck.ck-editor__editable ul,
       .ck.ck-editor__editable ol {
-        padding-left: 1.625em !important;
-        margin-top: 1.25em !important;
-        margin-bottom: 1.25em !important;
+        padding-left: 26px !important;
+        margin-top: 20px !important;
+        margin-bottom: 20px !important;
       }
 
       .ck.ck-editor__editable li {
-        margin-top: 0.5em !important;
-        margin-bottom: 0.5em !important;
+        margin-top: 8px !important;
+        margin-bottom: 8px !important;
       }
 
       /* Image styles - match frontend rendering */
@@ -288,7 +289,7 @@ class VideoFixer extends Plugin {
         display: table !important;
         clear: both !important;
         text-align: center !important;
-        margin: 1.5em auto !important;
+        margin: 24px auto !important;
       }
 
       .ck.ck-editor__editable .image img {
@@ -301,8 +302,8 @@ class VideoFixer extends Plugin {
       .ck.ck-editor__editable .image > figcaption {
         display: table-caption !important;
         caption-side: bottom !important;
-        padding: 0.6em !important;
-        font-size: 0.75em !important;
+        padding: 10px !important;
+        font-size: 12px !important;
         color: #6b7280 !important;
       }
 
@@ -314,17 +315,17 @@ class VideoFixer extends Plugin {
 
       .ck.ck-editor__editable .image-style-align-left {
         float: left !important;
-        margin-right: 1.5em !important;
+        margin-right: 24px !important;
       }
 
       .ck.ck-editor__editable .image-style-align-right {
         float: right !important;
-        margin-left: 1.5em !important;
+        margin-left: 24px !important;
       }
 
       .ck.ck-editor__editable .image-style-side {
         float: right !important;
-        margin-left: 1.5em !important;
+        margin-left: 24px !important;
         max-width: 50% !important;
       }
 
@@ -332,7 +333,7 @@ class VideoFixer extends Plugin {
       .ck.ck-editor__editable .image.image_resized {
         display: inline-block !important;
         max-width: 100% !important;
-        margin: 0.5em !important;
+        margin: 8px !important;
         vertical-align: top !important;
       }
 
