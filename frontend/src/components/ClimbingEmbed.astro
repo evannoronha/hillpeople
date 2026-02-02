@@ -20,6 +20,7 @@ interface GroupedRoute {
     climbers: string[];
     bestStars: number;
     photos: StrapiImage[];
+    notes: string[];
 }
 
 function groupTicksByRoute(tickList: ClimbingTick[]): GroupedRoute[] {
@@ -34,6 +35,7 @@ function groupTicksByRoute(tickList: ClimbingTick[]): GroupedRoute[] {
                 climbers: [],
                 bestStars: 0,
                 photos: [],
+                notes: [],
             });
         }
 
@@ -54,6 +56,11 @@ function groupTicksByRoute(tickList: ClimbingTick[]): GroupedRoute[] {
                     groupedRoute.photos.push(photo);
                 }
             }
+        }
+
+        // Collect notes (avoid duplicates)
+        if (tick.notes && !groupedRoute.notes.includes(tick.notes)) {
+            groupedRoute.notes.push(tick.notes);
         }
     }
 
@@ -94,6 +101,11 @@ const routes = groupTicksByRoute(ticks);
                         {groupedRoute.climbers.length > 0 && (
                             <p class="text-xs mt-1 opacity-70">
                                 {groupedRoute.climbers.join(" & ")}
+                            </p>
+                        )}
+                        {groupedRoute.notes.length > 0 && (
+                            <p class="text-sm mt-2 italic opacity-80">
+                                {groupedRoute.notes.join(" · ")}
                             </p>
                         )}
                         <PhotoGallery

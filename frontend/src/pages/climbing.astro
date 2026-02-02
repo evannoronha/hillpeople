@@ -28,6 +28,7 @@ interface GroupedRoute {
     climbers: string[];
     bestStars: number;
     photos: StrapiImage[];
+    notes: string[];
 }
 
 // Group ticks by date, then by route (deduping multiple climbers)
@@ -56,6 +57,7 @@ function groupTicksByDateAndRoute(tickList: ClimbingTick[]): TicksByDate[] {
                 climbers: [],
                 bestStars: 0,
                 photos: [],
+                notes: [],
             });
         }
 
@@ -79,6 +81,11 @@ function groupTicksByDateAndRoute(tickList: ClimbingTick[]): TicksByDate[] {
                     groupedRoute.photos.push(photo);
                 }
             }
+        }
+
+        // Collect notes (avoid duplicates)
+        if (tick.notes && !groupedRoute.notes.includes(tick.notes)) {
+            groupedRoute.notes.push(tick.notes);
         }
     }
 
@@ -143,6 +150,11 @@ const uniqueRouteCount = ticksByDate.reduce((sum, day) => sum + day.routes.lengt
                                     {groupedRoute.climbers.length > 0 && (
                                         <p class="text-xs mt-1 opacity-70">
                                             {groupedRoute.climbers.join(" & ")}
+                                        </p>
+                                    )}
+                                    {groupedRoute.notes.length > 0 && (
+                                        <p class="text-sm mt-2 italic opacity-80">
+                                            {groupedRoute.notes.join(" · ")}
                                         </p>
                                     )}
                                     <PhotoGallery
