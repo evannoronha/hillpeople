@@ -61,8 +61,16 @@ const siteSettings = await fetchSiteSettings();
 		<meta name="generator" content={Astro.generator} />
 	</head>
 	<body>
+		<a
+			href="#main-content"
+			class="sr-only focus:not-sr-only focus:absolute focus:top-4 focus:left-4 focus:z-50 focus:bg-[var(--color-fab-bg)] focus:text-[var(--color-fab-text)] focus:px-4 focus:py-2 focus:rounded focus:outline-none"
+		>
+			Skip to main content
+		</a>
 		<Header />
-		<slot />
+		<main id="main-content">
+			<slot />
+		</main>
 		<Footer
 			tagline={siteSettings?.footerTagline}
 			copyrightText={siteSettings?.copyrightText}

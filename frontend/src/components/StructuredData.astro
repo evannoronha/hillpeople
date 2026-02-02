@@ -1,0 +1,51 @@
+---
+interface BlogPostingData {
+  title: string;
+  description: string;
+  datePublished: string;
+  dateModified?: string;
+  authorName: string;
+  imageUrl?: string;
+  url: string;
+  siteName: string;
+}
+
+interface Props {
+  data: BlogPostingData;
+}
+
+const { data } = Astro.props;
+
+const schema = {
+  '@context': 'https://schema.org',
+  '@type': 'BlogPosting',
+  headline: data.title,
+  description: data.description,
+  datePublished: data.datePublished,
+  dateModified: data.dateModified || data.datePublished,
+  author: {
+    '@type': 'Person',
+    name: data.authorName,
+  },
+  publisher: {
+    '@type': 'Organization',
+    name: data.siteName,
+    logo: {
+      '@type': 'ImageObject',
+      url: 'https://hillpeople.net/favicon.svg',
+    },
+  },
+  mainEntityOfPage: {
+    '@type': 'WebPage',
+    '@id': data.url,
+  },
+  ...(data.imageUrl && {
+    image: {
+      '@type': 'ImageObject',
+      url: data.imageUrl,
+    },
+  }),
+};
+---
+
+<script type="application/ld+json" set:html={JSON.stringify(schema)} />

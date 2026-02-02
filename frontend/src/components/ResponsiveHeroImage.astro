@@ -1,0 +1,54 @@
+---
+import type { StrapiImage } from '../lib/api';
+import { getMediaUrl } from '../lib/imageUrl';
+
+interface Props {
+  image: StrapiImage;
+  alt: string;
+  priority?: boolean;
+}
+
+const { image, alt, priority = true } = Astro.props;
+
+// Build srcset from available formats (sorted by width)
+const formats = image.formats || {};
+const formatOrder = ['thumbnail', 'small', 'medium', 'large', 'xlarge'] as const;
+
+const srcsetParts: string[] = [];
+for (const formatName of formatOrder) {
+  const format = formats[formatName];
+  if (format?.url && format?.width) {
+    srcsetParts.push(`${getMediaUrl(format.url)} ${format.width}w`);
+  }
+}
+
+// Add original image as largest option
+if (image.url && image.width) {
+  srcsetParts.push(`${getMediaUrl(image.url)} ${image.width}w`);
+}
+
+const srcset = srcsetParts.length > 0 ? srcsetParts.join(', ') : undefined;
+const fallbackUrl = getMediaUrl(image.url);
+
+// Responsive sizes: full width on mobile, capped on larger screens
+const sizes = '(max-width: 1024px) 100vw, 1024px';
+
+// Use original image dimensions for aspect ratio
+const width = image.width;
+const height = image.height;
+---
+
+<div class="w-full overflow-hidden">
+  <img
+    src={fallbackUrl}
+    srcset={srcset}
+    sizes={sizes}
+    width={width}
+    height={height}
+    alt={alt}
+    fetchpriority={priority ? 'high' : 'auto'}
+    decoding="async"
+    class="w-full h-auto object-cover max-h-[70vh]"
+    itemprop="image"
+  />
+</div>
