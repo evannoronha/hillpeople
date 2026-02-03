@@ -389,7 +389,9 @@ function renderBarChart(data: ActivityData[], title: string): void {
                     ${data.map(point => {
                         const heightPercent = maxPitches > 0 ? (point.pitches / maxPitches) * 100 : 0;
                         return `<div style="height: 100%; display: flex; align-items: flex-end;">
-                            <div class="bar" style="width: 100%; height: ${heightPercent}%; background-color: ${barColor}; min-height: 4px; border-radius: 4px 4px 0 0; position: relative; cursor: pointer;" title="${point.pitches} pitches"></div>
+                            <div class="bar" style="width: 100%; height: ${heightPercent}%; background-color: ${barColor}; min-height: 4px; border-radius: 4px 4px 0 0; position: relative; cursor: pointer;">
+                                <span class="bar-tooltip">${point.pitches} pitches</span>
+                            </div>
                         </div>`;
                     }).join('')}
                 </div>
@@ -397,7 +399,9 @@ function renderBarChart(data: ActivityData[], title: string): void {
                     ${data.map(point => {
                         const heightPercent = maxClimbs > 0 ? (point.climbs / maxClimbs) * 100 : 0;
                         return `<div style="height: 100%; display: flex; align-items: flex-end;">
-                            <div class="bar" style="width: 100%; height: ${heightPercent}%; background-color: ${barColor}; min-height: 4px; border-radius: 4px 4px 0 0; position: relative; cursor: pointer;" title="${point.climbs} climbs"></div>
+                            <div class="bar" style="width: 100%; height: ${heightPercent}%; background-color: ${barColor}; min-height: 4px; border-radius: 4px 4px 0 0; position: relative; cursor: pointer;">
+                                <span class="bar-tooltip">${point.climbs} climbs</span>
+                            </div>
                         </div>`;
                     }).join('')}
                 </div>

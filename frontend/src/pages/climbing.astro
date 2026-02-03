@@ -188,8 +188,8 @@ const clientConfig = {
         animation: pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
     }
 
-    /* Toggle button styles */
-    .bar-toggle-btn, .pyramid-mode-btn {
+    /* Toggle button styles - global for client-rendered content */
+    :global(.bar-toggle-btn), :global(.pyramid-mode-btn) {
         padding: 0.25rem 0.5rem;
         border-radius: 0.25rem;
         transition: background-color 0.2s, color 0.2s;
@@ -197,28 +197,49 @@ const clientConfig = {
         color: #555;
     }
 
-    .bar-toggle-btn.active, .pyramid-mode-btn.active {
+    :global(.bar-toggle-btn.active), :global(.pyramid-mode-btn.active) {
         background-color: var(--color-header);
         color: white;
     }
 
-    .bar-toggle-btn:hover:not(.active),
-    .bar-toggle-btn:focus:not(.active),
-    .pyramid-mode-btn:hover:not(.active),
-    .pyramid-mode-btn:focus:not(.active) {
+    :global(.bar-toggle-btn:hover:not(.active)),
+    :global(.bar-toggle-btn:focus:not(.active)),
+    :global(.pyramid-mode-btn:hover:not(.active)),
+    :global(.pyramid-mode-btn:focus:not(.active)) {
         background-color: #bbb;
     }
 
-    :global(.dark) .bar-toggle-btn,
-    :global(.dark) .pyramid-mode-btn {
+    :global(.dark .bar-toggle-btn),
+    :global(.dark .pyramid-mode-btn) {
         background-color: #444;
         color: #ccc;
     }
 
-    :global(.dark) .bar-toggle-btn:hover:not(.active),
-    :global(.dark) .bar-toggle-btn:focus:not(.active),
-    :global(.dark) .pyramid-mode-btn:hover:not(.active),
-    :global(.dark) .pyramid-mode-btn:focus:not(.active) {
+    :global(.dark .bar-toggle-btn:hover:not(.active)),
+    :global(.dark .bar-toggle-btn:focus:not(.active)),
+    :global(.dark .pyramid-mode-btn:hover:not(.active)),
+    :global(.dark .pyramid-mode-btn:focus:not(.active)) {
         background-color: #555;
+    }
+
+    /* Tooltip styles for bars */
+    :global(.bar-tooltip) {
+        position: absolute;
+        top: -32px;
+        left: 50%;
+        transform: translateX(-50%);
+        background-color: var(--color-text);
+        color: var(--color-bg);
+        padding: 4px 8px;
+        border-radius: 4px;
+        font-size: 0.75rem;
+        white-space: nowrap;
+        opacity: 0;
+        pointer-events: none;
+        transition: opacity 0.2s;
+    }
+
+    :global(.bar:hover .bar-tooltip) {
+        opacity: 1;
     }
 </style>
