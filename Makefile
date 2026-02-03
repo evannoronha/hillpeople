@@ -2,11 +2,13 @@
 
 # Run frontend against local Strapi (http://localhost:1337)
 dev:
-	cd frontend && STRAPI_API_URL=http://localhost:1337 npm run dev
+	cp frontend/.dev.vars.local frontend/.dev.vars
+	cd frontend && npm run dev
 
 # Run frontend against production Strapi
 dev-prod:
-	cd frontend && STRAPI_API_URL=https://journal.hillpeople.net npm run dev
+	cp frontend/.dev.vars.prod frontend/.dev.vars
+	cd frontend && npm run dev
 
 # Sync local Strapi data from production (requires STRAPI_PRODUCTION_URL and STRAPI_TRANSFER_TOKEN in backend/.env)
 sync-data:

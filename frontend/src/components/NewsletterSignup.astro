@@ -1,5 +1,7 @@
 ---
 // Newsletter signup as floating action button with modal
+import { STRAPI_API_URL } from 'astro:env/server'
+
 interface Props {
     title: string;
     description?: string;
@@ -8,7 +10,7 @@ interface Props {
 }
 
 const { title, description, buttonText = "Subscribe", fabLabel = "Subscribe" } = Astro.props;
-const strapiUrl = import.meta.env.STRAPI_API_URL;
+const strapiUrl = STRAPI_API_URL;
 ---
 
 <!-- Floating Action Button -->
