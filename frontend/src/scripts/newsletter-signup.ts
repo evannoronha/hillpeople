@@ -76,14 +76,7 @@ export function initNewsletterSignup() {
         submitButton.textContent = 'Subscribed!';
       } else {
         const errorData = await res.json().catch(() => ({}));
-        const errorMessage = errorData?.error?.message || 'Something went wrong. Please try again.';
-
-        // Handle duplicate email
-        if (errorMessage.includes('unique') || errorMessage.includes('already')) {
-          message.textContent = 'This email is already subscribed.';
-        } else {
-          message.textContent = errorMessage;
-        }
+        message.textContent = errorData?.error?.message || 'Something went wrong. Please try again.';
         message.classList.remove('hidden', 'text-green-300');
         message.classList.add('text-red-400');
         submitButton.disabled = false;
