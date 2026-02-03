@@ -250,13 +250,21 @@ function renderGoalsDashboard(goals: GoalProgress[], personName?: string, goalYe
     const container = document.getElementById('goals-container');
     if (!container || goals.length === 0) return;
 
+    // When showing everyone's goals, sort by person then by completion/progress
     const sortedGoals = [...goals].sort((a, b) => {
+        // If no specific person selected, group by person first
+        if (!personName) {
+            const nameA = a.goal.person?.name || '';
+            const nameB = b.goal.person?.name || '';
+            if (nameA !== nameB) return nameA.localeCompare(nameB);
+        }
         if (a.isComplete !== b.isComplete) return a.isComplete ? 1 : -1;
         return b.percent - a.percent;
     });
 
     const completedCount = goals.filter(g => g.isComplete).length;
     const allComplete = completedCount === goals.length;
+    const isEveryoneView = !personName;
 
     container.innerHTML = `
         <div class="goals-dashboard bg-[var(--color-accent)]/5 rounded-xl p-6 mb-8">
@@ -271,7 +279,10 @@ function renderGoalsDashboard(goals: GoalProgress[], personName?: string, goalYe
                 ${sortedGoals.map(progress => `
                     <div class="progress-bar-container">
                         <div class="flex justify-between mb-1">
-                            <span class="text-sm font-medium ${progress.isComplete ? 'line-through opacity-60' : ''}">${progress.goal.title}</span>
+                            <div class="flex items-center gap-2">
+                                ${isEveryoneView && progress.goal.person ? `<span class="text-xs px-2 py-0.5 rounded bg-[var(--color-accent)]/20">${progress.goal.person.name}</span>` : ''}
+                                <span class="text-sm font-medium ${progress.isComplete ? 'line-through opacity-60' : ''}">${progress.goal.title}</span>
+                            </div>
                             <span class="text-sm opacity-70">${progress.current} / ${progress.target}</span>
                         </div>
                         <div class="h-2 bg-[var(--color-accent)]/20 rounded-full overflow-hidden">
