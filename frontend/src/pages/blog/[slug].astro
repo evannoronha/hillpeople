@@ -5,7 +5,6 @@ import ResponsiveHeroImage from '../../components/ResponsiveHeroImage.astro';
 import ArticleHeader from '../../components/ArticleHeader.astro';
 import Breadcrumbs from '../../components/Breadcrumbs.astro';
 import TableOfContents from '../../components/TableOfContents.astro';
-import ShareButtons from '../../components/ShareButtons.astro';
 import StructuredData from '../../components/StructuredData.astro';
 import StravaEmbed from '../../components/StravaEmbed.astro';
 import ClimbingEmbed from '../../components/ClimbingEmbed.astro';
@@ -117,7 +116,6 @@ const structuredData = {
           />
         )}
 
-      <ShareButtons url={canonicalUrl} title={post.title} />
     </div>
   </article>
 </Layout>
