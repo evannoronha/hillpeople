@@ -194,42 +194,56 @@ function renderCharts(
     showLast12Months: boolean,
     selectedYear?: number
 ): void {
-    // Get the containers
-    const chartsContainer = document.getElementById('charts-container');
-    const pyramidContainer = document.getElementById('pyramid-container');
+    // Check if React wrapper already exists (from previous render)
+    let reactWrapper = document.getElementById('react-charts-wrapper');
 
-    if (!chartsContainer || !pyramidContainer) return;
+    if (!reactWrapper) {
+        // First render - need to set up the wrapper
+        const chartsContainer = document.getElementById('charts-container');
+        const pyramidContainer = document.getElementById('pyramid-container');
 
-    // Clear skeleton content
-    chartsContainer.innerHTML = '';
-    pyramidContainer.innerHTML = '';
+        if (!chartsContainer || !pyramidContainer) return;
 
-    // Create a wrapper div for the React root
-    const reactWrapper = document.createElement('div');
-    reactWrapper.id = 'react-charts-wrapper';
-    chartsContainer.parentElement?.insertBefore(reactWrapper, chartsContainer);
+        // Clear skeleton content
+        chartsContainer.innerHTML = '';
+        pyramidContainer.innerHTML = '';
 
-    // Remove the old skeleton containers
-    chartsContainer.remove();
-    pyramidContainer.remove();
+        // Create a wrapper div for the React root
+        reactWrapper = document.createElement('div');
+        reactWrapper.id = 'react-charts-wrapper';
+        chartsContainer.parentElement?.insertBefore(reactWrapper, chartsContainer);
 
-    // Cleanup previous root if exists
-    if (chartsRoot) {
-        chartsRoot.unmount();
+        // Remove the old skeleton containers
+        chartsContainer.remove();
+        pyramidContainer.remove();
     }
 
-    // Create React root and render
-    chartsRoot = createRoot(reactWrapper);
-    chartsRoot.render(
-        React.createElement(ClimbingCharts, {
-            activityData,
-            routeTypeData,
-            gradePyramidData,
-            showAllTime,
-            showLast12Months,
-            selectedYear,
-        })
-    );
+    // If we have an existing root, just re-render with new props
+    if (chartsRoot) {
+        chartsRoot.render(
+            React.createElement(ClimbingCharts, {
+                activityData,
+                routeTypeData,
+                gradePyramidData,
+                showAllTime,
+                showLast12Months,
+                selectedYear,
+            })
+        );
+    } else {
+        // Create new React root and render
+        chartsRoot = createRoot(reactWrapper);
+        chartsRoot.render(
+            React.createElement(ClimbingCharts, {
+                activityData,
+                routeTypeData,
+                gradePyramidData,
+                showAllTime,
+                showLast12Months,
+                selectedYear,
+            })
+        );
+    }
 }
 
 function renderGoalsDashboard(goals: GoalProgress[], personName?: string, goalYear?: number): void {
