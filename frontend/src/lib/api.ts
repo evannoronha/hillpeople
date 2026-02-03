@@ -2,14 +2,50 @@ import { getSecret, STRAPI_API_URL } from 'astro:env/server'
 
 const STRAPI_URL = STRAPI_API_URL
 
-// Helper to make authenticated requests to Strapi
+// Request-level cache to deduplicate identical fetches within the same SSR request
+// This prevents duplicate calls like fetchSiteSettings() from Layout + page
+// We cache the parsed JSON data since Response bodies can only be consumed once
+interface CachedResponse {
+    ok: boolean;
+    status: number;
+    data: unknown;
+}
+const requestCache = new Map<string, Promise<CachedResponse>>();
+
+// Helper to make authenticated requests to Strapi with request-level deduplication
 async function strapiFetch(url: string): Promise<Response> {
+    // Check if we already have an in-flight or completed request for this URL
+    if (requestCache.has(url)) {
+        console.debug("Cache HIT (request-level):", url);
+        const cached = await requestCache.get(url)!;
+        // Return a synthetic Response with the cached data
+        return new Response(JSON.stringify(cached.data), {
+            status: cached.status,
+            headers: { 'Content-Type': 'application/json' },
+        });
+    }
+
+    console.debug("Cache MISS - fetching:", url);
     const headers: HeadersInit = {}
     const token = getSecret('STRAPI_API_TOKEN')
     if (token) {
         headers['Authorization'] = `Bearer ${token}`
     }
-    return fetch(url, { headers })
+
+    // Create a promise that fetches and caches the parsed JSON
+    const promise = fetch(url, { headers }).then(async response => {
+        const data = await response.json();
+        return { ok: response.ok, status: response.status, data };
+    });
+
+    requestCache.set(url, promise);
+
+    // Wait for the result and return a Response
+    const result = await promise;
+    return new Response(JSON.stringify(result.data), {
+        status: result.status,
+        headers: { 'Content-Type': 'application/json' },
+    });
 }
 
 export interface PaginationMeta {

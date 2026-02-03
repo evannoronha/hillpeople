@@ -51,6 +51,7 @@ export const GET: APIRoute = async ({ url }) => {
         status: 200,
         headers: {
             'Content-Type': 'application/json',
+            'Cache-Control': 'public, s-maxage=300, stale-while-revalidate=600',
         },
     });
 };
