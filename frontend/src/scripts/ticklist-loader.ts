@@ -151,7 +151,7 @@ function getYearlyActivity(byMonth: Record<string, number>, pitchesByMonth: Reco
 }
 
 // Rendering functions
-function renderStatsCards(stats: TickStats): void {
+function renderStatsCards(stats: TickStats, isEveryoneView: boolean): void {
     const container = document.getElementById('stats-container');
     if (!container) return;
 
@@ -159,11 +159,13 @@ function renderStatsCards(stats: TickStats): void {
         { value: stats.totalPitches, label: 'Pitches Climbed' },
         { value: stats.leadPitches, label: 'Pitches Led' },
         { value: stats.uniqueDays, label: 'Days Out' },
-        { value: stats.highestRedpoint || '—', label: 'Hardest Redpoint' },
+        // Only show Hardest Redpoint for individual person view
+        ...(!isEveryoneView ? [{ value: stats.highestRedpoint || '—', label: 'Hardest Redpoint' }] : []),
     ];
 
+    const gridCols = isEveryoneView ? 'lg:grid-cols-3' : 'lg:grid-cols-4';
     container.innerHTML = `
-        <div class="stats-cards grid grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
+        <div class="stats-cards grid grid-cols-2 ${gridCols} gap-4 mb-8">
             ${cards.map((card, i) => `
                 <div class="stat-card bg-[var(--color-accent)]/10 rounded-lg p-4 text-center transition-transform hover:scale-105" style="--card-index: ${i};">
                     <div class="text-2xl font-bold text-[var(--color-header)]">${card.value}</div>
@@ -374,7 +376,7 @@ async function loadTicklistData(params: LoadParams): Promise<void> {
 
         // Render stats cards
         if (stats.totalTicks > 0) {
-            renderStatsCards(stats);
+            renderStatsCards(stats, !personId);
         } else {
             const statsContainer = document.getElementById('stats-container');
             if (statsContainer) statsContainer.innerHTML = '';
