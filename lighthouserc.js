@@ -7,6 +7,8 @@ module.exports = {
       url: [
         'http://localhost:8788/',
         'http://localhost:8788/climbing',
+        // Blog post - CI adds dynamic slugs, this is a sample for local testing
+        'http://localhost:8788/blog/fall-break-in-moab',
       ],
       numberOfRuns: 3,
     },
