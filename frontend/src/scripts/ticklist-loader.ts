@@ -340,12 +340,13 @@ function renderGradePyramid(gradePyramid: GradePyramidData): void {
             const widthPercent = maxValue > 0 ? (item.count / maxValue) * 100 : 0;
             const existingRow = barsContainer.querySelector(`[data-grade="${item.grade}"]`) as HTMLElement;
 
-            if (existingRow) {
+            if (existingRow && !existingRow.classList.contains('pyramid-row-exit')) {
                 // Update existing bar width and count
                 const bar = existingRow.querySelector('.pyramid-bar') as HTMLElement;
                 const countSpan = existingRow.querySelector('.pyramid-count') as HTMLElement;
 
                 if (bar) {
+                    console.log(`Updating bar for ${item.grade}: ${bar.style.width} -> ${Math.max(widthPercent, 2)}%`);
                     bar.style.width = `${Math.max(widthPercent, 2)}%`;
                     bar.style.backgroundColor = colors[i % colors.length];
                 }
