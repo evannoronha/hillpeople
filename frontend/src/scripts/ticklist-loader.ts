@@ -1,6 +1,10 @@
 // Client-side data loader for The Ticklist page
 // Fetches pre-computed data from /api/ticklist-data and renders UI components
 
+import React from 'react';
+import { createRoot, Root } from 'react-dom/client';
+import { ClimbingCharts } from '../components/charts-react';
+
 interface TicklistConfig {
     strapiUrl: string; // Still needed for image URLs
     selectedPersonId?: string;
@@ -111,6 +115,9 @@ interface TicklistDataResponse {
     people: Person[];
 }
 
+// Store React root for cleanup on page transitions
+let chartsRoot: Root | null = null;
+
 // Activity data formatting functions
 function getMonthlyActivity(byMonth: Record<string, number>, pitchesByMonth: Record<string, number>, year: number): ActivityData[] {
     const monthNames = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
@@ -179,283 +186,50 @@ function renderStatsCards(stats: TickStats): void {
     `;
 }
 
-function renderBarChart(data: ActivityData[], title: string): void {
-    const container = document.getElementById('charts-container');
-    if (!container) return;
+function renderCharts(
+    activityData: ActivityData[],
+    routeTypeData: Array<{ label: string; value: number }>,
+    gradePyramidData: GradePyramidData,
+    showAllTime: boolean,
+    showLast12Months: boolean,
+    selectedYear?: number
+): void {
+    // Get the containers
+    const chartsContainer = document.getElementById('charts-container');
+    const pyramidContainer = document.getElementById('pyramid-container');
 
-    const chartCard = container.querySelector('.chart-card:first-child');
-    if (!chartCard) return;
+    if (!chartsContainer || !pyramidContainer) return;
 
-    const maxPitches = Math.max(...data.map(d => d.pitches), 1);
-    const maxClimbs = Math.max(...data.map(d => d.climbs), 1);
-    const barColor = 'var(--color-header)';
+    // Clear skeleton content
+    chartsContainer.innerHTML = '';
+    pyramidContainer.innerHTML = '';
 
-    chartCard.innerHTML = `
-        <div class="bar-chart-container" data-mode="pitches" style="display: flex; flex-direction: column; height: 100%;">
-            <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-2 mb-4">
-                <h3 class="text-lg font-semibold">${title}</h3>
-                <div class="bar-chart-toggle flex gap-1 text-xs" role="group">
-                    <button type="button" class="bar-toggle-btn active px-2 py-1 rounded" data-mode="pitches">Pitches</button>
-                    <button type="button" class="bar-toggle-btn px-2 py-1 rounded" data-mode="climbs">Climbs</button>
-                </div>
-            </div>
-            <div class="bar-chart" style="position: relative; flex: 1; min-height: 220px;">
-                <div class="chart-grid" style="position: absolute; inset: 0; display: flex; flex-direction: column; justify-content: space-between; padding-bottom: 30px; pointer-events: none; opacity: 0.3;">
-                    <div style="border-bottom: 1px solid currentColor;"></div>
-                    <div style="border-bottom: 1px solid currentColor;"></div>
-                    <div style="border-bottom: 1px solid currentColor;"></div>
-                </div>
-                <div class="bars-group pitches-bars" style="position: absolute; top: 0; left: 0; right: 0; bottom: 30px; display: grid; grid-auto-columns: 1fr; grid-auto-flow: column; gap: 4px; overflow: visible;">
-                    ${data.map(point => {
-                        const heightPercent = maxPitches > 0 ? (point.pitches / maxPitches) * 100 : 0;
-                        return `<div class="bar-column" style="height: 100%; display: flex; align-items: flex-end; overflow: visible;">
-                            <div class="bar" style="width: 100%; height: ${heightPercent}%; background-color: ${barColor}; min-height: 4px; border-radius: 4px 4px 0 0; position: relative; cursor: pointer; overflow: visible;">
-                                <span class="bar-tooltip">${point.pitches} pitches</span>
-                            </div>
-                        </div>`;
-                    }).join('')}
-                </div>
-                <div class="bars-group climbs-bars" style="position: absolute; top: 0; left: 0; right: 0; bottom: 30px; display: none; grid-auto-columns: 1fr; grid-auto-flow: column; gap: 4px; overflow: visible;">
-                    ${data.map(point => {
-                        const heightPercent = maxClimbs > 0 ? (point.climbs / maxClimbs) * 100 : 0;
-                        return `<div class="bar-column" style="height: 100%; display: flex; align-items: flex-end; overflow: visible;">
-                            <div class="bar" style="width: 100%; height: ${heightPercent}%; background-color: ${barColor}; min-height: 4px; border-radius: 4px 4px 0 0; position: relative; cursor: pointer; overflow: visible;">
-                                <span class="bar-tooltip">${point.climbs} climbs</span>
-                            </div>
-                        </div>`;
-                    }).join('')}
-                </div>
-                <div class="x-labels" style="position: absolute; bottom: 0; left: 0; right: 0; display: flex;">
-                    ${data.map(point => `<span style="flex: 1; text-align: center; font-size: 0.75rem; opacity: 0.7;">${point.label}</span>`).join('')}
-                </div>
-            </div>
-        </div>
-    `;
+    // Create a wrapper div for the React root
+    const reactWrapper = document.createElement('div');
+    reactWrapper.id = 'react-charts-wrapper';
+    chartsContainer.parentElement?.insertBefore(reactWrapper, chartsContainer);
 
-    // Add toggle functionality
-    const toggleBtns = chartCard.querySelectorAll('.bar-toggle-btn');
-    const pitchesBars = chartCard.querySelector('.pitches-bars') as HTMLElement;
-    const climbsBars = chartCard.querySelector('.climbs-bars') as HTMLElement;
+    // Remove the old skeleton containers
+    chartsContainer.remove();
+    pyramidContainer.remove();
 
-    toggleBtns.forEach(btn => {
-        btn.addEventListener('click', () => {
-            const mode = btn.getAttribute('data-mode');
-            toggleBtns.forEach(b => b.classList.toggle('active', b === btn));
-            if (pitchesBars && climbsBars) {
-                pitchesBars.style.display = mode === 'pitches' ? 'grid' : 'none';
-                climbsBars.style.display = mode === 'climbs' ? 'grid' : 'none';
-            }
-        });
-    });
-}
-
-function renderDonutChart(data: Array<{ label: string; value: number }>, title: string): void {
-    const container = document.getElementById('charts-container');
-    if (!container) return;
-
-    const chartCard = container.querySelector('.chart-card:last-child');
-    if (!chartCard) return;
-
-    const total = data.reduce((sum, d) => sum + d.value, 0);
-    const colors = [
-        'var(--color-header)', '#a8a29e', 'var(--color-accent)',
-        '#78716c', '#d6d3d1', '#57534e', '#e7e5e4'
-    ];
-
-    // Create SVG donut
-    let cumulativePercent = 0;
-    const radius = 60;
-    const circumference = 2 * Math.PI * radius;
-
-    const segments = data.slice(0, 7).map((item, i) => {
-        const percent = total > 0 ? item.value / total : 0;
-        const offset = cumulativePercent * circumference;
-        const length = percent * circumference;
-        cumulativePercent += percent;
-        return `<circle cx="80" cy="80" r="${radius}" fill="none" stroke="${colors[i % colors.length]}" stroke-width="20"
-            stroke-dasharray="${length} ${circumference - length}" stroke-dashoffset="${-offset}" transform="rotate(-90 80 80)" />`;
-    }).join('');
-
-    chartCard.innerHTML = `
-        <h3 class="text-lg font-semibold mb-4">${title}</h3>
-        <div class="flex flex-col sm:flex-row items-center justify-center gap-6">
-            <div class="relative">
-                <svg width="160" height="160" viewBox="0 0 160 160">
-                    ${segments}
-                </svg>
-                <div class="absolute inset-0 flex items-center justify-center flex-col">
-                    <span class="text-2xl font-bold">${total}</span>
-                    <span class="text-xs opacity-70">total</span>
-                </div>
-            </div>
-            <div class="flex flex-col gap-1 text-sm">
-                ${data.slice(0, 12).map((item, i) => `
-                    <div class="flex items-center gap-2">
-                        <span class="w-3 h-3 rounded-full" style="background-color: ${colors[i % colors.length]};"></span>
-                        <span>${item.label}</span>
-                        <span class="opacity-70">(${item.value})</span>
-                    </div>
-                `).join('')}
-            </div>
-        </div>
-    `;
-}
-
-function renderGradePyramid(gradePyramid: GradePyramidData): void {
-    const container = document.getElementById('pyramid-container');
-    if (!container) return;
-
-    const colors = [
-        'var(--color-header)', '#d6d3d1', 'var(--color-accent)',
-        '#a8a29e', '#78716c', '#57534e', '#e7e5e4'
-    ];
-
-    const modes = {
-        redpoints: gradePyramid.redpoints,
-        leads: gradePyramid.leads,
-        allRoutes: gradePyramid.all
-    };
-    let currentMode = 'redpoints';
-
-    function renderBars(data: Array<{ grade: string; count: number }>, isInitial = false) {
-        const maxValue = Math.max(...data.map(d => d.count), 1);
-        const barsContainer = container?.querySelector('.pyramid-bars') as HTMLElement;
-        if (!barsContainer) return;
-
-        const newGrades = data.slice(0, 15).map(d => d.grade);
-        const existingRows = barsContainer.querySelectorAll('.pyramid-row');
-        const existingGrades = Array.from(existingRows).map(row => row.getAttribute('data-grade'));
-
-        // Remove grades that are no longer present
-        existingRows.forEach(row => {
-            const grade = row.getAttribute('data-grade');
-            if (!newGrades.includes(grade || '')) {
-                row.classList.add('pyramid-row-exit');
-                setTimeout(() => row.remove(), 300);
-            }
-        });
-
-        // Update or add grades
-        data.slice(0, 15).forEach((item, i) => {
-            const widthPercent = maxValue > 0 ? (item.count / maxValue) * 100 : 0;
-            const existingRow = barsContainer.querySelector(`[data-grade="${item.grade}"]`) as HTMLElement;
-
-            if (existingRow && !existingRow.classList.contains('pyramid-row-exit')) {
-                // Update existing bar width and count
-                const bar = existingRow.querySelector('.pyramid-bar') as HTMLElement;
-                const countSpan = existingRow.querySelector('.pyramid-count') as HTMLElement;
-
-                if (bar) {
-                    const newWidth = `${Math.max(widthPercent, 2)}%`;
-                    const newColor = colors[i % colors.length];
-
-                    // Force a reflow to ensure transition works - read current computed style
-                    const currentWidth = bar.style.width || window.getComputedStyle(bar).width;
-
-                    // Set transition first
-                    bar.style.transition = 'width 0.5s cubic-bezier(0.4, 0, 0.2, 1), background-color 0.3s ease';
-
-                    // Use requestAnimationFrame to ensure transition is applied before width change
-                    requestAnimationFrame(() => {
-                        bar.style.width = newWidth;
-                        bar.style.backgroundColor = newColor;
-                    });
-                }
-                if (countSpan) {
-                    countSpan.textContent = item.count > 0 ? String(item.count) : '';
-                } else if (item.count > 0) {
-                    const barContainer = existingRow.querySelector('.flex-1');
-                    if (barContainer) {
-                        const newCount = document.createElement('span');
-                        newCount.className = 'pyramid-count text-xs font-medium shrink-0 opacity-70';
-                        newCount.textContent = String(item.count);
-                        barContainer.appendChild(newCount);
-                    }
-                }
-            } else {
-                // Create new row
-                const newRow = document.createElement('div');
-                newRow.className = `pyramid-row flex items-center w-full gap-2 group cursor-pointer ${isInitial ? '' : 'pyramid-row-enter'}`;
-                newRow.setAttribute('data-grade', item.grade);
-                newRow.innerHTML = `
-                    <span class="w-12 text-right text-sm font-mono opacity-80 shrink-0">${item.grade}</span>
-                    <div class="flex-1 h-6 flex items-center gap-2">
-                        <div class="pyramid-bar h-full rounded-r group-hover:opacity-80"
-                            style="width: ${Math.max(widthPercent, 2)}%; background-color: ${colors[i % colors.length]}; min-width: 4px; transition: width 0.5s cubic-bezier(0.4, 0, 0.2, 1), background-color 0.3s ease;"></div>
-                        ${item.count > 0 ? `<span class="pyramid-count text-xs font-medium shrink-0 opacity-70">${item.count}</span>` : ''}
-                    </div>
-                `;
-
-                // Insert at correct position
-                const existingIndex = existingGrades.indexOf(item.grade);
-                if (existingIndex === -1) {
-                    // Find where to insert based on position in new data
-                    const nextGrade = newGrades[i + 1];
-                    const nextRow = nextGrade ? barsContainer.querySelector(`[data-grade="${nextGrade}"]`) : null;
-                    if (nextRow) {
-                        barsContainer.insertBefore(newRow, nextRow);
-                    } else {
-                        barsContainer.appendChild(newRow);
-                    }
-                }
-
-                // Trigger animation after insert
-                if (!isInitial) {
-                    requestAnimationFrame(() => {
-                        newRow.classList.remove('pyramid-row-enter');
-                    });
-                }
-            }
-        });
-
-        // Reorder if needed - delay to avoid interfering with transitions
-        setTimeout(() => {
-            const currentRows = Array.from(barsContainer.querySelectorAll('.pyramid-row:not(.pyramid-row-exit)'));
-            newGrades.forEach((grade) => {
-                const row = currentRows.find(r => r.getAttribute('data-grade') === grade);
-                if (row && row.parentElement) {
-                    barsContainer.appendChild(row);
-                }
-            });
-        }, 50);
+    // Cleanup previous root if exists
+    if (chartsRoot) {
+        chartsRoot.unmount();
     }
 
-    container.innerHTML = `
-        <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-2 mb-4">
-            <h3 class="text-lg font-semibold">Grade Pyramid</h3>
-            <div class="pyramid-mode-toggle flex gap-1 text-xs" role="group" aria-label="Grade pyramid filter">
-                <div class="mode-btn-wrapper">
-                    <button type="button" class="pyramid-mode-btn active px-2 py-1 rounded" data-mode="redpoints" aria-pressed="true">Hardo</button>
-                    <span class="pyramid-tooltip" role="tooltip">Lead, no falls</span>
-                </div>
-                <div class="mode-btn-wrapper">
-                    <button type="button" class="pyramid-mode-btn px-2 py-1 rounded" data-mode="leads" aria-pressed="false">Normal</button>
-                    <span class="pyramid-tooltip" role="tooltip">All lead climbs</span>
-                </div>
-                <div class="mode-btn-wrapper">
-                    <button type="button" class="pyramid-mode-btn px-2 py-1 rounded" data-mode="allRoutes" aria-pressed="false">Top Rope Tough Guy</button>
-                    <span class="pyramid-tooltip" role="tooltip">All routes including TR</span>
-                </div>
-            </div>
-        </div>
-        <div class="pyramid-bars space-y-2"></div>
-    `;
-
-    renderBars(modes[currentMode as keyof typeof modes], true);
-
-    // Add toggle functionality
-    const buttons = container.querySelectorAll('.pyramid-mode-btn');
-    buttons.forEach(btn => {
-        btn.addEventListener('click', () => {
-            currentMode = btn.getAttribute('data-mode') || 'redpoints';
-            buttons.forEach(b => {
-                const isActive = b === btn;
-                b.classList.toggle('active', isActive);
-                b.setAttribute('aria-pressed', String(isActive));
-            });
-            renderBars(modes[currentMode as keyof typeof modes]);
-        });
-    });
+    // Create React root and render
+    chartsRoot = createRoot(reactWrapper);
+    chartsRoot.render(
+        React.createElement(ClimbingCharts, {
+            activityData,
+            routeTypeData,
+            gradePyramidData,
+            showAllTime,
+            showLast12Months,
+            selectedYear,
+        })
+    );
 }
 
 function renderGoalsDashboard(goals: GoalProgress[], personName?: string, goalYear?: number): void {
@@ -476,7 +250,7 @@ function renderGoalsDashboard(goals: GoalProgress[], personName?: string, goalYe
                 <h2 class="text-xl font-bold">
                     ${personName ? `${personName}'s ${goalYear || ''} Goals` : `${goalYear || ''} Goals`}
                 </h2>
-                ${allComplete ? '<span class="text-sm bg-green-100 text-green-800 px-3 py-1 rounded-full">All goals complete! 🎉</span>' : ''}
+                ${allComplete ? '<span class="text-sm bg-green-100 text-green-800 px-3 py-1 rounded-full">All goals complete!</span>' : ''}
                 ${!allComplete && completedCount > 0 ? `<span class="text-sm opacity-70">${completedCount} of ${goals.length} complete</span>` : ''}
             </div>
             <div class="goals-list space-y-3">
@@ -611,7 +385,7 @@ async function initTicklist() {
             if (statsContainer) statsContainer.innerHTML = '';
         }
 
-        // Prepare and render charts
+        // Prepare and render charts with React
         if (stats.totalTicks > 0) {
             const activityData = selectedYear
                 ? getMonthlyActivity(stats.byMonth, stats.pitchesByMonth, selectedYear)
@@ -619,13 +393,9 @@ async function initTicklist() {
                     ? getLast12MonthsActivity(stats.byMonth, stats.pitchesByMonth)
                     : getYearlyActivity(stats.byMonth, stats.pitchesByMonth);
 
-            const chartTitle = showAllTime ? 'Yearly Activity' : 'Monthly Activity';
-            renderBarChart(activityData, chartTitle);
-
             const routeTypeData = Object.entries(stats.byRouteType).map(([label, value]) => ({ label, value }));
-            renderDonutChart(routeTypeData, 'Route Types');
 
-            renderGradePyramid(gradePyramid);
+            renderCharts(activityData, routeTypeData, gradePyramid, showAllTime, showLast12Months, selectedYear);
         } else {
             const chartsContainer = document.getElementById('charts-container');
             const pyramidContainer = document.getElementById('pyramid-container');
@@ -660,6 +430,17 @@ async function initTicklist() {
     }
 }
 
+// Cleanup function for page transitions
+function cleanup() {
+    if (chartsRoot) {
+        chartsRoot.unmount();
+        chartsRoot = null;
+    }
+}
+
 // Initialize on page load
 initTicklist();
+
+// Handle Astro page transitions
 document.addEventListener('astro:page-load', initTicklist);
+document.addEventListener('astro:before-preparation', cleanup);
