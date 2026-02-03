@@ -346,9 +346,20 @@ function renderGradePyramid(gradePyramid: GradePyramidData): void {
                 const countSpan = existingRow.querySelector('.pyramid-count') as HTMLElement;
 
                 if (bar) {
-                    console.log(`Updating bar for ${item.grade}: ${bar.style.width} -> ${Math.max(widthPercent, 2)}%`);
-                    bar.style.width = `${Math.max(widthPercent, 2)}%`;
-                    bar.style.backgroundColor = colors[i % colors.length];
+                    const newWidth = `${Math.max(widthPercent, 2)}%`;
+                    const newColor = colors[i % colors.length];
+
+                    // Force a reflow to ensure transition works - read current computed style
+                    const currentWidth = bar.style.width || window.getComputedStyle(bar).width;
+
+                    // Set transition first
+                    bar.style.transition = 'width 0.5s cubic-bezier(0.4, 0, 0.2, 1), background-color 0.3s ease';
+
+                    // Use requestAnimationFrame to ensure transition is applied before width change
+                    requestAnimationFrame(() => {
+                        bar.style.width = newWidth;
+                        bar.style.backgroundColor = newColor;
+                    });
                 }
                 if (countSpan) {
                     countSpan.textContent = item.count > 0 ? String(item.count) : '';
@@ -397,14 +408,16 @@ function renderGradePyramid(gradePyramid: GradePyramidData): void {
             }
         });
 
-        // Reorder if needed
-        const currentRows = Array.from(barsContainer.querySelectorAll('.pyramid-row:not(.pyramid-row-exit)'));
-        newGrades.forEach((grade, i) => {
-            const row = currentRows.find(r => r.getAttribute('data-grade') === grade);
-            if (row && row.parentElement) {
-                barsContainer.appendChild(row);
-            }
-        });
+        // Reorder if needed - delay to avoid interfering with transitions
+        setTimeout(() => {
+            const currentRows = Array.from(barsContainer.querySelectorAll('.pyramid-row:not(.pyramid-row-exit)'));
+            newGrades.forEach((grade) => {
+                const row = currentRows.find(r => r.getAttribute('data-grade') === grade);
+                if (row && row.parentElement) {
+                    barsContainer.appendChild(row);
+                }
+            });
+        }, 50);
     }
 
     container.innerHTML = `
