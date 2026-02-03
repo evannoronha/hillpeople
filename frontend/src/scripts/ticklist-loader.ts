@@ -325,11 +325,11 @@ function renderGradePyramid(gradePyramid: GradePyramidData): void {
         barsContainer.innerHTML = data.slice(0, 15).map((item, i) => {
             const widthPercent = maxValue > 0 ? (item.count / maxValue) * 100 : 0;
             return `
-                <div class="flex items-center w-full gap-2 group cursor-pointer">
+                <div class="pyramid-row flex items-center w-full gap-2 group cursor-pointer">
                     <span class="w-12 text-right text-sm font-mono opacity-80 shrink-0">${item.grade}</span>
                     <div class="flex-1 h-6 flex items-center gap-2">
-                        <div class="h-full rounded-r transition-all duration-300 group-hover:opacity-80"
-                            style="width: ${Math.max(widthPercent, 2)}%; background-color: ${colors[i % colors.length]}; min-width: 4px;"></div>
+                        <div class="pyramid-bar h-full rounded-r transition-all duration-300 group-hover:opacity-80"
+                            style="width: ${Math.max(widthPercent, 2)}%; background-color: ${colors[i % colors.length]}; min-width: 4px; --row-index: ${i};"></div>
                         ${item.count > 0 ? `<span class="text-xs font-medium shrink-0 opacity-70">${item.count}</span>` : ''}
                     </div>
                 </div>
@@ -340,10 +340,19 @@ function renderGradePyramid(gradePyramid: GradePyramidData): void {
     container.innerHTML = `
         <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-2 mb-4">
             <h3 class="text-lg font-semibold">Grade Pyramid</h3>
-            <div class="flex gap-1 text-xs" role="group">
-                <button type="button" class="pyramid-mode-btn active px-2 py-1 rounded" data-mode="redpoints" title="Lead, no falls">Hardo</button>
-                <button type="button" class="pyramid-mode-btn px-2 py-1 rounded" data-mode="leads" title="All lead climbs">Normal</button>
-                <button type="button" class="pyramid-mode-btn px-2 py-1 rounded" data-mode="allRoutes" title="All routes including TR">Top Rope Tough Guy</button>
+            <div class="pyramid-mode-toggle flex gap-1 text-xs" role="group" aria-label="Grade pyramid filter">
+                <div class="mode-btn-wrapper">
+                    <button type="button" class="pyramid-mode-btn active px-2 py-1 rounded" data-mode="redpoints" aria-pressed="true">Hardo</button>
+                    <span class="pyramid-tooltip" role="tooltip">Lead, no falls</span>
+                </div>
+                <div class="mode-btn-wrapper">
+                    <button type="button" class="pyramid-mode-btn px-2 py-1 rounded" data-mode="leads" aria-pressed="false">Normal</button>
+                    <span class="pyramid-tooltip" role="tooltip">All lead climbs</span>
+                </div>
+                <div class="mode-btn-wrapper">
+                    <button type="button" class="pyramid-mode-btn px-2 py-1 rounded" data-mode="allRoutes" aria-pressed="false">Top Rope Tough Guy</button>
+                    <span class="pyramid-tooltip" role="tooltip">All routes including TR</span>
+                </div>
             </div>
         </div>
         <div class="pyramid-bars space-y-2"></div>
@@ -356,7 +365,11 @@ function renderGradePyramid(gradePyramid: GradePyramidData): void {
     buttons.forEach(btn => {
         btn.addEventListener('click', () => {
             currentMode = btn.getAttribute('data-mode') || 'redpoints';
-            buttons.forEach(b => b.classList.toggle('active', b === btn));
+            buttons.forEach(b => {
+                const isActive = b === btn;
+                b.classList.toggle('active', isActive);
+                b.setAttribute('aria-pressed', String(isActive));
+            });
             renderBars(modes[currentMode as keyof typeof modes]);
         });
     });
@@ -418,14 +431,18 @@ function renderTickList(ticksByDate: TicksByDate[], strapiUrl: string): void {
 
     emptyState?.classList.add('hidden');
 
+    let itemIndex = 0;
     container.innerHTML = ticksByDate.map(({ date, formattedDate, routes }) => `
-        <div class="mb-8" data-date="${date}">
+        <div class="tick-day mb-8" data-date="${date}">
             <h3 class="text-lg font-semibold mb-3 sticky top-0 bg-[var(--color-bg)] py-2 border-b border-[var(--color-accent)]/30">
                 ${formattedDate}
             </h3>
             <div class="space-y-2">
-                ${routes.map(groupedRoute => `
-                    <div class="tick-item flex items-start gap-4 p-3 rounded-lg border border-[var(--color-accent)]/30 hover:border-[var(--color-header)] transition">
+                ${routes.map(groupedRoute => {
+                    const delay = Math.min(itemIndex * 30, 500); // Cap at 500ms
+                    itemIndex++;
+                    return `
+                    <div class="tick-item flex items-start gap-4 p-3 rounded-lg border border-[var(--color-accent)]/30 hover:border-[var(--color-header)] transition" style="animation-delay: ${delay}ms;">
                         <div class="flex-1 min-w-0">
                             <div class="flex items-baseline gap-2 flex-wrap">
                                 <a href="${groupedRoute.route?.mountainProjectUrl || '#'}" target="_blank" rel="noopener noreferrer"
@@ -459,7 +476,7 @@ function renderTickList(ticksByDate: TicksByDate[], strapiUrl: string): void {
                             </div>
                         ` : ''}
                     </div>
-                `).join('')}
+                `;}).join('')}
             </div>
         </div>
     `).join('');
@@ -474,6 +491,10 @@ async function initTicklist() {
     }
 
     const { strapiUrl, selectedPersonId, selectedYear, showAllTime, showLast12Months, currentYear, selectedPersonName } = config;
+
+    // Show loading indicator
+    const loadingIndicator = document.getElementById('loading-indicator');
+    loadingIndicator?.classList.remove('hidden');
 
     try {
         // Build the API URL for our cached endpoint
@@ -549,6 +570,10 @@ async function initTicklist() {
                 </div>
             `;
         }
+    } finally {
+        // Hide loading indicator
+        const loadingIndicator = document.getElementById('loading-indicator');
+        loadingIndicator?.classList.add('hidden');
     }
 }
 
