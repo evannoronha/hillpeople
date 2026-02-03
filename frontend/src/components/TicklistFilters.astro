@@ -49,32 +49,44 @@ const { people, selectedPersonId, selectedYear, showAllTime, showLast12Months, a
 </div>
 
 <script>
-    const personFilter = document.getElementById('person-filter') as HTMLSelectElement;
-    const yearFilter = document.getElementById('year-filter') as HTMLSelectElement;
+    function initFilters() {
+        const personFilter = document.getElementById('person-filter') as HTMLSelectElement;
+        const yearFilter = document.getElementById('year-filter') as HTMLSelectElement;
 
-    function updateFilters() {
-        const personId = personFilter?.value || '';
-        const year = yearFilter?.value || 'last12';
+        function updateFilters() {
+            const personId = personFilter?.value || '';
+            const year = yearFilter?.value || 'last12';
 
-        const url = new URL(window.location.href);
+            const url = new URL(window.location.href);
 
-        if (personId) {
-            url.searchParams.set('person', personId);
-        } else {
-            url.searchParams.delete('person');
+            if (personId) {
+                url.searchParams.set('person', personId);
+            } else {
+                url.searchParams.delete('person');
+            }
+
+            if (year === 'all') {
+                url.searchParams.set('year', 'all');
+            } else if (year === 'last12') {
+                url.searchParams.delete('year');
+            } else {
+                url.searchParams.set('year', year);
+            }
+
+            // Update URL without page reload
+            history.pushState({}, '', url.toString());
+
+            // Dispatch custom event for ticklist-loader to handle
+            window.dispatchEvent(new CustomEvent('ticklist-filter-change', {
+                detail: { personId, year }
+            }));
         }
 
-        if (year === 'all') {
-            url.searchParams.set('year', 'all');
-        } else if (year === 'last12') {
-            url.searchParams.delete('year');
-        } else {
-            url.searchParams.set('year', year);
-        }
-
-        window.location.href = url.toString();
+        personFilter?.addEventListener('change', updateFilters);
+        yearFilter?.addEventListener('change', updateFilters);
     }
 
-    personFilter?.addEventListener('change', updateFilters);
-    yearFilter?.addEventListener('change', updateFilters);
+    // Initialize on load and Astro page transitions
+    initFilters();
+    document.addEventListener('astro:page-load', initFilters);
 </script>

@@ -9,19 +9,19 @@ const { stats } = Astro.props;
 
 const cards = [
     {
-        label: 'Routes Climbed',
-        value: stats.totalTicks,
+        label: 'Pitches Climbed',
+        value: stats.totalPitches,
     },
     {
-        label: 'Lead Pitches',
+        label: 'Pitches Led',
         value: stats.leadPitches,
     },
     {
-        label: 'Days Outside',
+        label: 'Days Out',
         value: stats.uniqueDays,
     },
     {
-        label: 'Highest Redpoint',
+        label: 'Hardest Redpoint',
         value: stats.highestRedpoint || '—',
     },
 ];

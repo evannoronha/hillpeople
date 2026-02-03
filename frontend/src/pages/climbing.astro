@@ -1,6 +1,7 @@
 ---
 import Layout from "../layouts/Layout.astro";
 import TicklistFilters from "../components/TicklistFilters.astro";
+import ChartsIsland from "../components/charts-react/ChartsIsland";
 import { fetchAllPeople, fetchSiteSettings } from "../lib/api";
 import { STRAPI_API_URL } from 'astro:env/server';
 
@@ -52,6 +53,15 @@ const clientConfig = {
     description={description}
     siteName={siteName}
 >
+    <!-- Loading indicator -->
+    <div id="loading-indicator" class="fixed top-4 right-4 z-50 flex items-center gap-2 bg-[var(--color-header)] text-white px-4 py-2 rounded-full shadow-lg transition-opacity duration-300">
+        <svg class="animate-spin h-4 w-4" viewBox="0 0 24 24" fill="none">
+            <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+            <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"></path>
+        </svg>
+        <span class="text-sm font-medium">Loading...</span>
+    </div>
+
     <div class="max-w-5xl mx-auto px-4 py-10">
         <!-- Header -->
         <header class="text-center mb-8">
@@ -88,8 +98,13 @@ const clientConfig = {
             </div>
         </div>
 
-        <!-- Charts Section (with skeletons) -->
-        <div id="charts-container" class="charts-section grid md:grid-cols-2 gap-8 mb-12">
+        <!-- Charts Section - React Island -->
+        <div id="charts-container">
+            <ChartsIsland client:only="react" />
+        </div>
+
+        <!-- Charts Skeleton (shown until React hydrates) -->
+        <div id="charts-skeleton" class="charts-section grid md:grid-cols-2 gap-8 mb-12">
             <!-- Bar Chart Skeleton -->
             <div class="chart-card bg-[var(--color-accent)]/5 rounded-xl p-6 flex flex-col">
                 <div class="flex justify-between items-center mb-4">
@@ -99,7 +114,7 @@ const clientConfig = {
                         <div class="h-6 w-16 bg-[var(--color-accent)]/20 rounded animate-pulse"></div>
                     </div>
                 </div>
-                <div id="bar-chart-area" class="flex-1 min-h-[220px] flex items-end gap-1">
+                <div class="flex-1 min-h-[220px] flex items-end gap-1">
                     {[1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12].map(() => (
                         <div class="flex-1 bg-[var(--color-accent)]/20 rounded-t animate-pulse" style="height: 40%"></div>
                     ))}
@@ -120,7 +135,7 @@ const clientConfig = {
             </div>
         </div>
 
-        <!-- Grade Pyramid (with skeleton) -->
+        <!-- Grade Pyramid Skeleton -->
         <div id="pyramid-container" class="chart-card bg-[var(--color-accent)]/5 rounded-xl p-6 mb-12">
             <div class="flex justify-between items-center mb-4">
                 <div class="h-6 bg-[var(--color-accent)]/20 rounded w-32 animate-pulse"></div>
@@ -253,5 +268,131 @@ const clientConfig = {
     :global(.bar-column),
     :global(.bar) {
         overflow: visible !important;
+    }
+
+    /* Pyramid mode button wrapper and tooltip styles */
+    :global(.mode-btn-wrapper) {
+        position: relative;
+    }
+
+    :global(.pyramid-tooltip) {
+        position: absolute;
+        bottom: 100%;
+        left: 50%;
+        transform: translateX(-50%);
+        padding: 0.5rem 0.75rem;
+        background-color: var(--color-text);
+        color: var(--color-bg);
+        font-size: 0.75rem;
+        line-height: 1.2;
+        border-radius: 0.375rem;
+        white-space: nowrap;
+        opacity: 0;
+        visibility: hidden;
+        transition: opacity 0.15s, visibility 0.15s;
+        pointer-events: none;
+        z-index: 50;
+        margin-bottom: 0.5rem;
+    }
+
+    :global(.pyramid-tooltip::after) {
+        content: '';
+        position: absolute;
+        top: 100%;
+        left: 50%;
+        transform: translateX(-50%);
+        border: 6px solid transparent;
+        border-top-color: var(--color-text);
+    }
+
+    :global(.mode-btn-wrapper:hover .pyramid-tooltip),
+    :global(.pyramid-mode-btn:focus + .pyramid-tooltip) {
+        opacity: 1;
+        visibility: visible;
+    }
+
+    /* Mobile tooltip positioning for rightmost button */
+    @media (max-width: 640px) {
+        :global(.pyramid-tooltip) {
+            white-space: normal;
+            max-width: 150px;
+            text-align: center;
+        }
+
+        :global(.mode-btn-wrapper:last-child .pyramid-tooltip) {
+            left: auto;
+            right: 0;
+            transform: none;
+        }
+
+        :global(.mode-btn-wrapper:last-child .pyramid-tooltip::after) {
+            left: auto;
+            right: 1rem;
+            transform: none;
+        }
+    }
+
+    /* Fade in animation for loaded content */
+    @keyframes fadeIn {
+        from {
+            opacity: 0;
+            transform: translateY(10px);
+        }
+        to {
+            opacity: 1;
+            transform: translateY(0);
+        }
+    }
+
+    :global(.stat-card) {
+        animation: fadeIn 0.4s ease-out forwards;
+        animation-delay: calc(var(--card-index, 0) * 100ms);
+    }
+
+    :global(.goals-dashboard) {
+        animation: fadeIn 0.5s ease-out forwards;
+    }
+
+    :global(.tick-item) {
+        animation: fadeIn 0.3s ease-out forwards;
+    }
+
+    /* Bar chart bar grow animation */
+    @keyframes growBar {
+        from {
+            transform: scaleY(0);
+        }
+        to {
+            transform: scaleY(1);
+        }
+    }
+
+    :global(.bar) {
+        transform-origin: bottom;
+        animation: growBar 0.5s ease-out forwards;
+    }
+
+    /* Pyramid bar width transitions */
+    :global(.pyramid-bar) {
+        transition: width 0.5s cubic-bezier(0.4, 0, 0.2, 1), background-color 0.3s ease;
+    }
+
+    /* Pyramid row enter/exit animations */
+    :global(.pyramid-row) {
+        transition: opacity 0.3s ease, transform 0.3s ease, max-height 0.3s ease;
+        max-height: 40px;
+        overflow: hidden;
+    }
+
+    :global(.pyramid-row-enter) {
+        opacity: 0;
+        transform: translateY(-10px);
+        max-height: 0;
+    }
+
+    :global(.pyramid-row-exit) {
+        opacity: 0;
+        transform: translateY(10px);
+        max-height: 0;
     }
 </style>

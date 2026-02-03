@@ -151,19 +151,21 @@ function getYearlyActivity(byMonth: Record<string, number>, pitchesByMonth: Reco
 }
 
 // Rendering functions
-function renderStatsCards(stats: TickStats): void {
+function renderStatsCards(stats: TickStats, isEveryoneView: boolean): void {
     const container = document.getElementById('stats-container');
     if (!container) return;
 
     const cards = [
-        { value: stats.totalTicks, label: 'Routes Climbed' },
-        { value: stats.leadPitches, label: 'Lead Pitches' },
-        { value: stats.uniqueDays, label: 'Days Outside' },
-        { value: stats.highestRedpoint || '—', label: 'Highest Redpoint' },
+        { value: stats.totalPitches, label: 'Pitches Climbed' },
+        { value: stats.leadPitches, label: 'Pitches Led' },
+        { value: stats.uniqueDays, label: 'Days Out' },
+        // Only show Hardest Redpoint for individual person view
+        ...(!isEveryoneView ? [{ value: stats.highestRedpoint || '—', label: 'Hardest Redpoint' }] : []),
     ];
 
+    const gridCols = isEveryoneView ? 'lg:grid-cols-3' : 'lg:grid-cols-4';
     container.innerHTML = `
-        <div class="stats-cards grid grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
+        <div class="stats-cards grid grid-cols-2 ${gridCols} gap-4 mb-8">
             ${cards.map((card, i) => `
                 <div class="stat-card bg-[var(--color-accent)]/10 rounded-lg p-4 text-center transition-transform hover:scale-105" style="--card-index: ${i};">
                     <div class="text-2xl font-bold text-[var(--color-header)]">${card.value}</div>
@@ -179,226 +181,138 @@ function renderStatsCards(stats: TickStats): void {
     `;
 }
 
-function renderBarChart(data: ActivityData[], title: string): void {
-    const container = document.getElementById('charts-container');
-    if (!container) return;
+function renderCharts(
+    activityData: ActivityData[],
+    routeTypeData: Array<{ label: string; value: number }>,
+    gradePyramidData: GradePyramidData,
+    showAllTime: boolean,
+    showLast12Months: boolean,
+    selectedYear?: number
+): void {
+    // Hide skeleton when charts data is ready
+    const skeleton = document.getElementById('charts-skeleton');
+    const pyramidSkeleton = document.getElementById('pyramid-container');
+    if (skeleton) skeleton.style.display = 'none';
+    if (pyramidSkeleton) pyramidSkeleton.style.display = 'none';
 
-    const chartCard = container.querySelector('.chart-card:first-child');
-    if (!chartCard) return;
-
-    const maxPitches = Math.max(...data.map(d => d.pitches), 1);
-    const maxClimbs = Math.max(...data.map(d => d.climbs), 1);
-    const barColor = 'var(--color-header)';
-
-    chartCard.innerHTML = `
-        <div class="bar-chart-container" data-mode="pitches" style="display: flex; flex-direction: column; height: 100%;">
-            <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-2 mb-4">
-                <h3 class="text-lg font-semibold">${title}</h3>
-                <div class="bar-chart-toggle flex gap-1 text-xs" role="group">
-                    <button type="button" class="bar-toggle-btn active px-2 py-1 rounded" data-mode="pitches">Pitches</button>
-                    <button type="button" class="bar-toggle-btn px-2 py-1 rounded" data-mode="climbs">Climbs</button>
-                </div>
-            </div>
-            <div class="bar-chart" style="position: relative; flex: 1; min-height: 220px;">
-                <div class="chart-grid" style="position: absolute; inset: 0; display: flex; flex-direction: column; justify-content: space-between; padding-bottom: 30px; pointer-events: none; opacity: 0.3;">
-                    <div style="border-bottom: 1px solid currentColor;"></div>
-                    <div style="border-bottom: 1px solid currentColor;"></div>
-                    <div style="border-bottom: 1px solid currentColor;"></div>
-                </div>
-                <div class="bars-group pitches-bars" style="position: absolute; top: 0; left: 0; right: 0; bottom: 30px; display: grid; grid-auto-columns: 1fr; grid-auto-flow: column; gap: 4px; overflow: visible;">
-                    ${data.map(point => {
-                        const heightPercent = maxPitches > 0 ? (point.pitches / maxPitches) * 100 : 0;
-                        return `<div class="bar-column" style="height: 100%; display: flex; align-items: flex-end; overflow: visible;">
-                            <div class="bar" style="width: 100%; height: ${heightPercent}%; background-color: ${barColor}; min-height: 4px; border-radius: 4px 4px 0 0; position: relative; cursor: pointer; overflow: visible;">
-                                <span class="bar-tooltip">${point.pitches} pitches</span>
-                            </div>
-                        </div>`;
-                    }).join('')}
-                </div>
-                <div class="bars-group climbs-bars" style="position: absolute; top: 0; left: 0; right: 0; bottom: 30px; display: none; grid-auto-columns: 1fr; grid-auto-flow: column; gap: 4px; overflow: visible;">
-                    ${data.map(point => {
-                        const heightPercent = maxClimbs > 0 ? (point.climbs / maxClimbs) * 100 : 0;
-                        return `<div class="bar-column" style="height: 100%; display: flex; align-items: flex-end; overflow: visible;">
-                            <div class="bar" style="width: 100%; height: ${heightPercent}%; background-color: ${barColor}; min-height: 4px; border-radius: 4px 4px 0 0; position: relative; cursor: pointer; overflow: visible;">
-                                <span class="bar-tooltip">${point.climbs} climbs</span>
-                            </div>
-                        </div>`;
-                    }).join('')}
-                </div>
-                <div class="x-labels" style="position: absolute; bottom: 0; left: 0; right: 0; display: flex;">
-                    ${data.map(point => `<span style="flex: 1; text-align: center; font-size: 0.75rem; opacity: 0.7;">${point.label}</span>`).join('')}
-                </div>
-            </div>
-        </div>
-    `;
-
-    // Add toggle functionality
-    const toggleBtns = chartCard.querySelectorAll('.bar-toggle-btn');
-    const pitchesBars = chartCard.querySelector('.pitches-bars') as HTMLElement;
-    const climbsBars = chartCard.querySelector('.climbs-bars') as HTMLElement;
-
-    toggleBtns.forEach(btn => {
-        btn.addEventListener('click', () => {
-            const mode = btn.getAttribute('data-mode');
-            toggleBtns.forEach(b => b.classList.toggle('active', b === btn));
-            if (pitchesBars && climbsBars) {
-                pitchesBars.style.display = mode === 'pitches' ? 'grid' : 'none';
-                climbsBars.style.display = mode === 'climbs' ? 'grid' : 'none';
-            }
-        });
-    });
-}
-
-function renderDonutChart(data: Array<{ label: string; value: number }>, title: string): void {
-    const container = document.getElementById('charts-container');
-    if (!container) return;
-
-    const chartCard = container.querySelector('.chart-card:last-child');
-    if (!chartCard) return;
-
-    const total = data.reduce((sum, d) => sum + d.value, 0);
-    const colors = [
-        'var(--color-header)', '#a8a29e', 'var(--color-accent)',
-        '#78716c', '#d6d3d1', '#57534e', '#e7e5e4'
-    ];
-
-    // Create SVG donut
-    let cumulativePercent = 0;
-    const radius = 60;
-    const circumference = 2 * Math.PI * radius;
-
-    const segments = data.slice(0, 7).map((item, i) => {
-        const percent = total > 0 ? item.value / total : 0;
-        const offset = cumulativePercent * circumference;
-        const length = percent * circumference;
-        cumulativePercent += percent;
-        return `<circle cx="80" cy="80" r="${radius}" fill="none" stroke="${colors[i % colors.length]}" stroke-width="20"
-            stroke-dasharray="${length} ${circumference - length}" stroke-dashoffset="${-offset}" transform="rotate(-90 80 80)" />`;
-    }).join('');
-
-    chartCard.innerHTML = `
-        <h3 class="text-lg font-semibold mb-4">${title}</h3>
-        <div class="flex flex-col sm:flex-row items-center justify-center gap-6">
-            <div class="relative">
-                <svg width="160" height="160" viewBox="0 0 160 160">
-                    ${segments}
-                </svg>
-                <div class="absolute inset-0 flex items-center justify-center flex-col">
-                    <span class="text-2xl font-bold">${total}</span>
-                    <span class="text-xs opacity-70">total</span>
-                </div>
-            </div>
-            <div class="flex flex-col gap-1 text-sm">
-                ${data.slice(0, 12).map((item, i) => `
-                    <div class="flex items-center gap-2">
-                        <span class="w-3 h-3 rounded-full" style="background-color: ${colors[i % colors.length]};"></span>
-                        <span>${item.label}</span>
-                        <span class="opacity-70">(${item.value})</span>
-                    </div>
-                `).join('')}
-            </div>
-        </div>
-    `;
-}
-
-function renderGradePyramid(gradePyramid: GradePyramidData): void {
-    const container = document.getElementById('pyramid-container');
-    if (!container) return;
-
-    const colors = [
-        'var(--color-header)', '#d6d3d1', 'var(--color-accent)',
-        '#a8a29e', '#78716c', '#57534e', '#e7e5e4'
-    ];
-
-    const modes = {
-        redpoints: gradePyramid.redpoints,
-        leads: gradePyramid.leads,
-        allRoutes: gradePyramid.all
+    const chartsData = {
+        activityData,
+        routeTypeData,
+        gradePyramidData,
+        showAllTime,
+        showLast12Months,
+        selectedYear,
     };
-    let currentMode = 'redpoints';
 
-    function renderBars(data: Array<{ grade: string; count: number }>) {
-        const maxValue = Math.max(...data.map(d => d.count), 1);
-        const barsContainer = container?.querySelector('.pyramid-bars');
-        if (!barsContainer) return;
+    // Store on window so React island can access it if it mounts after the event
+    (window as unknown as { __CHARTS_DATA__: typeof chartsData }).__CHARTS_DATA__ = chartsData;
 
-        barsContainer.innerHTML = data.slice(0, 15).map((item, i) => {
-            const widthPercent = maxValue > 0 ? (item.count / maxValue) * 100 : 0;
-            return `
-                <div class="flex items-center w-full gap-2 group cursor-pointer">
-                    <span class="w-12 text-right text-sm font-mono opacity-80 shrink-0">${item.grade}</span>
-                    <div class="flex-1 h-6 flex items-center gap-2">
-                        <div class="h-full rounded-r transition-all duration-300 group-hover:opacity-80"
-                            style="width: ${Math.max(widthPercent, 2)}%; background-color: ${colors[i % colors.length]}; min-width: 4px;"></div>
-                        ${item.count > 0 ? `<span class="text-xs font-medium shrink-0 opacity-70">${item.count}</span>` : ''}
-                    </div>
-                </div>
-            `;
-        }).join('');
-    }
-
-    container.innerHTML = `
-        <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-2 mb-4">
-            <h3 class="text-lg font-semibold">Grade Pyramid</h3>
-            <div class="flex gap-1 text-xs" role="group">
-                <button type="button" class="pyramid-mode-btn active px-2 py-1 rounded" data-mode="redpoints" title="Lead, no falls">Hardo</button>
-                <button type="button" class="pyramid-mode-btn px-2 py-1 rounded" data-mode="leads" title="All lead climbs">Normal</button>
-                <button type="button" class="pyramid-mode-btn px-2 py-1 rounded" data-mode="allRoutes" title="All routes including TR">Top Rope Tough Guy</button>
-            </div>
-        </div>
-        <div class="pyramid-bars space-y-2"></div>
-    `;
-
-    renderBars(modes[currentMode as keyof typeof modes]);
-
-    // Add toggle functionality
-    const buttons = container.querySelectorAll('.pyramid-mode-btn');
-    buttons.forEach(btn => {
-        btn.addEventListener('click', () => {
-            currentMode = btn.getAttribute('data-mode') || 'redpoints';
-            buttons.forEach(b => b.classList.toggle('active', b === btn));
-            renderBars(modes[currentMode as keyof typeof modes]);
-        });
-    });
+    // Dispatch event for React island to receive data
+    window.dispatchEvent(new CustomEvent('charts-data-update', {
+        detail: chartsData
+    }));
 }
 
 function renderGoalsDashboard(goals: GoalProgress[], personName?: string, goalYear?: number): void {
     const container = document.getElementById('goals-container');
     if (!container || goals.length === 0) return;
 
-    const sortedGoals = [...goals].sort((a, b) => {
-        if (a.isComplete !== b.isComplete) return a.isComplete ? 1 : -1;
-        return b.percent - a.percent;
-    });
+    const isEveryoneView = !personName;
 
-    const completedCount = goals.filter(g => g.isComplete).length;
-    const allComplete = completedCount === goals.length;
+    if (isEveryoneView) {
+        // Group goals by person
+        const goalsByPerson = new Map<string, GoalProgress[]>();
+        goals.forEach(progress => {
+            const name = progress.goal.person?.name || 'Unknown';
+            if (!goalsByPerson.has(name)) {
+                goalsByPerson.set(name, []);
+            }
+            goalsByPerson.get(name)!.push(progress);
+        });
 
-    container.innerHTML = `
-        <div class="goals-dashboard bg-[var(--color-accent)]/5 rounded-xl p-6 mb-8">
-            <div class="flex items-center justify-between mb-4">
-                <h2 class="text-xl font-bold">
-                    ${personName ? `${personName}'s ${goalYear || ''} Goals` : `${goalYear || ''} Goals`}
-                </h2>
-                ${allComplete ? '<span class="text-sm bg-green-100 text-green-800 px-3 py-1 rounded-full">All goals complete! 🎉</span>' : ''}
-                ${!allComplete && completedCount > 0 ? `<span class="text-sm opacity-70">${completedCount} of ${goals.length} complete</span>` : ''}
+        // Sort each person's goals
+        goalsByPerson.forEach((personGoals, name) => {
+            personGoals.sort((a, b) => {
+                if (a.isComplete !== b.isComplete) return a.isComplete ? 1 : -1;
+                return b.percent - a.percent;
+            });
+        });
+
+        const totalCompleted = goals.filter(g => g.isComplete).length;
+        const allComplete = totalCompleted === goals.length;
+
+        container.innerHTML = `
+            <div class="goals-dashboard bg-[var(--color-accent)]/5 rounded-xl p-6 mb-8">
+                <div class="flex items-center justify-between mb-6">
+                    <h2 class="text-xl font-bold">${goalYear || ''} Goals</h2>
+                    ${allComplete ? '<span class="text-sm bg-green-100 text-green-800 px-3 py-1 rounded-full">All goals complete!</span>' : ''}
+                    ${!allComplete && totalCompleted > 0 ? `<span class="text-sm opacity-70">${totalCompleted} of ${goals.length} complete</span>` : ''}
+                </div>
+                <div class="space-y-6">
+                    ${Array.from(goalsByPerson.entries()).map(([name, personGoals]) => {
+                        const personCompleted = personGoals.filter(g => g.isComplete).length;
+                        const personAllComplete = personCompleted === personGoals.length;
+                        return `
+                            <div class="person-goals">
+                                <div class="flex items-center gap-2 mb-3">
+                                    <h3 class="font-semibold text-[var(--color-header)]">${name}</h3>
+                                    ${personAllComplete ? '<span class="text-xs bg-green-100 text-green-800 px-2 py-0.5 rounded-full">Complete!</span>' : ''}
+                                    ${!personAllComplete && personCompleted > 0 ? `<span class="text-xs opacity-70">${personCompleted}/${personGoals.length}</span>` : ''}
+                                </div>
+                                <div class="goals-list space-y-2 pl-2 border-l-2 border-[var(--color-accent)]/30">
+                                    ${personGoals.map(progress => `
+                                        <div class="progress-bar-container">
+                                            <div class="flex justify-between mb-1">
+                                                <span class="text-sm font-medium ${progress.isComplete ? 'line-through opacity-60' : ''}">${progress.goal.title}</span>
+                                                <span class="text-sm opacity-70">${progress.current} / ${progress.target}</span>
+                                            </div>
+                                            <div class="h-2 bg-[var(--color-accent)]/20 rounded-full overflow-hidden">
+                                                <div class="h-full rounded-full transition-all duration-500 ${progress.isComplete ? 'bg-green-500' : 'bg-[var(--color-header)]'}"
+                                                    style="width: ${progress.percent}%;"></div>
+                                            </div>
+                                        </div>
+                                    `).join('')}
+                                </div>
+                            </div>
+                        `;
+                    }).join('')}
+                </div>
             </div>
-            <div class="goals-list space-y-3">
-                ${sortedGoals.map(progress => `
-                    <div class="progress-bar-container">
-                        <div class="flex justify-between mb-1">
-                            <span class="text-sm font-medium ${progress.isComplete ? 'line-through opacity-60' : ''}">${progress.goal.title}</span>
-                            <span class="text-sm opacity-70">${progress.current} / ${progress.target}</span>
+        `;
+    } else {
+        // Single person view
+        const sortedGoals = [...goals].sort((a, b) => {
+            if (a.isComplete !== b.isComplete) return a.isComplete ? 1 : -1;
+            return b.percent - a.percent;
+        });
+
+        const completedCount = goals.filter(g => g.isComplete).length;
+        const allComplete = completedCount === goals.length;
+
+        container.innerHTML = `
+            <div class="goals-dashboard bg-[var(--color-accent)]/5 rounded-xl p-6 mb-8">
+                <div class="flex items-center justify-between mb-4">
+                    <h2 class="text-xl font-bold">${personName}'s ${goalYear || ''} Goals</h2>
+                    ${allComplete ? '<span class="text-sm bg-green-100 text-green-800 px-3 py-1 rounded-full">All goals complete!</span>' : ''}
+                    ${!allComplete && completedCount > 0 ? `<span class="text-sm opacity-70">${completedCount} of ${goals.length} complete</span>` : ''}
+                </div>
+                <div class="goals-list space-y-3">
+                    ${sortedGoals.map(progress => `
+                        <div class="progress-bar-container">
+                            <div class="flex justify-between mb-1">
+                                <span class="text-sm font-medium ${progress.isComplete ? 'line-through opacity-60' : ''}">${progress.goal.title}</span>
+                                <span class="text-sm opacity-70">${progress.current} / ${progress.target}</span>
+                            </div>
+                            <div class="h-2 bg-[var(--color-accent)]/20 rounded-full overflow-hidden">
+                                <div class="h-full rounded-full transition-all duration-500 ${progress.isComplete ? 'bg-green-500' : 'bg-[var(--color-header)]'}"
+                                    style="width: ${progress.percent}%;"></div>
+                            </div>
                         </div>
-                        <div class="h-2 bg-[var(--color-accent)]/20 rounded-full overflow-hidden">
-                            <div class="h-full rounded-full transition-all duration-500 ${progress.isComplete ? 'bg-green-500' : 'bg-[var(--color-header)]'}"
-                                style="width: ${progress.percent}%;"></div>
-                        </div>
-                    </div>
-                `).join('')}
+                    `).join('')}
+                </div>
             </div>
-        </div>
-    `;
+        `;
+    }
 }
 
 function renderTickList(ticksByDate: TicksByDate[], strapiUrl: string): void {
@@ -418,14 +332,18 @@ function renderTickList(ticksByDate: TicksByDate[], strapiUrl: string): void {
 
     emptyState?.classList.add('hidden');
 
+    let itemIndex = 0;
     container.innerHTML = ticksByDate.map(({ date, formattedDate, routes }) => `
-        <div class="mb-8" data-date="${date}">
+        <div class="tick-day mb-8" data-date="${date}">
             <h3 class="text-lg font-semibold mb-3 sticky top-0 bg-[var(--color-bg)] py-2 border-b border-[var(--color-accent)]/30">
                 ${formattedDate}
             </h3>
             <div class="space-y-2">
-                ${routes.map(groupedRoute => `
-                    <div class="tick-item flex items-start gap-4 p-3 rounded-lg border border-[var(--color-accent)]/30 hover:border-[var(--color-header)] transition">
+                ${routes.map(groupedRoute => {
+                    const delay = Math.min(itemIndex * 30, 500); // Cap at 500ms
+                    itemIndex++;
+                    return `
+                    <div class="tick-item flex items-start gap-4 p-3 rounded-lg border border-[var(--color-accent)]/30 hover:border-[var(--color-header)] transition" style="animation-delay: ${delay}ms;">
                         <div class="flex-1 min-w-0">
                             <div class="flex items-baseline gap-2 flex-wrap">
                                 <a href="${groupedRoute.route?.mountainProjectUrl || '#'}" target="_blank" rel="noopener noreferrer"
@@ -459,37 +377,57 @@ function renderTickList(ticksByDate: TicksByDate[], strapiUrl: string): void {
                             </div>
                         ` : ''}
                     </div>
-                `).join('')}
+                `;}).join('')}
             </div>
         </div>
     `).join('');
 }
 
-// Main initialization
-async function initTicklist() {
+// Parameters for data loading
+interface LoadParams {
+    personId?: string;
+    year?: string; // 'all', 'last12', or a year number
+    personName?: string;
+}
+
+// Core data loading function
+async function loadTicklistData(params: LoadParams): Promise<void> {
     const config = (window as unknown as { __TICKLIST_CONFIG__: TicklistConfig }).__TICKLIST_CONFIG__;
     if (!config) {
         console.error('Ticklist config not found');
         return;
     }
 
-    const { strapiUrl, selectedPersonId, selectedYear, showAllTime, showLast12Months, currentYear, selectedPersonName } = config;
+    const { strapiUrl, currentYear } = config;
+    const { personId, year, personName } = params;
+
+    // Determine time period settings
+    const showAllTime = year === 'all';
+    const showLast12Months = !year || year === 'last12';
+    const selectedYear = (!showAllTime && !showLast12Months && year) ? parseInt(year) : undefined;
+
+    // Show loading indicator
+    const loadingIndicator = document.getElementById('loading-indicator');
+    loadingIndicator?.classList.remove('hidden');
+
+    // Update header subtitle
+    updateHeaderSubtitle(personName, showAllTime, showLast12Months, selectedYear);
 
     try {
-        // Build the API URL for our cached endpoint
-        const params = new URLSearchParams();
-        if (selectedPersonId) {
-            params.set('person', selectedPersonId);
+        // Build the API URL
+        const apiParams = new URLSearchParams();
+        if (personId) {
+            apiParams.set('person', personId);
         }
         if (showAllTime) {
-            params.set('year', 'all');
+            apiParams.set('year', 'all');
         } else if (selectedYear) {
-            params.set('year', String(selectedYear));
+            apiParams.set('year', String(selectedYear));
         } else if (showLast12Months) {
-            params.set('period', 'last12');
+            apiParams.set('period', 'last12');
         }
 
-        const apiUrl = `/api/ticklist-data?${params.toString()}`;
+        const apiUrl = `/api/ticklist-data?${apiParams.toString()}`;
         const response = await fetch(apiUrl);
 
         if (!response.ok) {
@@ -501,13 +439,13 @@ async function initTicklist() {
 
         // Render stats cards
         if (stats.totalTicks > 0) {
-            renderStatsCards(stats);
+            renderStatsCards(stats, !personId);
         } else {
             const statsContainer = document.getElementById('stats-container');
             if (statsContainer) statsContainer.innerHTML = '';
         }
 
-        // Prepare and render charts
+        // Prepare and render charts with React
         if (stats.totalTicks > 0) {
             const activityData = selectedYear
                 ? getMonthlyActivity(stats.byMonth, stats.pitchesByMonth, selectedYear)
@@ -515,32 +453,33 @@ async function initTicklist() {
                     ? getLast12MonthsActivity(stats.byMonth, stats.pitchesByMonth)
                     : getYearlyActivity(stats.byMonth, stats.pitchesByMonth);
 
-            const chartTitle = showAllTime ? 'Yearly Activity' : 'Monthly Activity';
-            renderBarChart(activityData, chartTitle);
-
             const routeTypeData = Object.entries(stats.byRouteType).map(([label, value]) => ({ label, value }));
-            renderDonutChart(routeTypeData, 'Route Types');
 
-            renderGradePyramid(gradePyramid);
+            renderCharts(activityData, routeTypeData, gradePyramid, showAllTime, showLast12Months, selectedYear);
         } else {
-            const chartsContainer = document.getElementById('charts-container');
-            const pyramidContainer = document.getElementById('pyramid-container');
-            if (chartsContainer) chartsContainer.innerHTML = '';
-            if (pyramidContainer) pyramidContainer.innerHTML = '';
+            // Clear charts if no data - dispatch empty data
+            window.dispatchEvent(new CustomEvent('charts-data-update', {
+                detail: null
+            }));
         }
 
         // Render goals if available
+        const goalsContainer = document.getElementById('goals-container');
         if (goals.length > 0) {
             const goalYear = selectedYear || currentYear;
-            renderGoalsDashboard(goals, selectedPersonName, goalYear);
+            renderGoalsDashboard(goals, personName, goalYear);
+        } else if (goalsContainer) {
+            goalsContainer.innerHTML = '';
         }
+
+        // Update sends header
+        updateSendsHeader(showAllTime, showLast12Months, selectedYear);
 
         // Render tick list
         renderTickList(ticks, strapiUrl);
 
     } catch (error) {
         console.error('Error loading ticklist data:', error);
-        // Show error state
         const statsContainer = document.getElementById('stats-container');
         if (statsContainer) {
             statsContainer.innerHTML = `
@@ -549,9 +488,95 @@ async function initTicklist() {
                 </div>
             `;
         }
+    } finally {
+        const loadingIndicator = document.getElementById('loading-indicator');
+        loadingIndicator?.classList.add('hidden');
     }
+}
+
+// Update header subtitle when filters change
+function updateHeaderSubtitle(personName?: string, showAllTime?: boolean, showLast12Months?: boolean, selectedYear?: number): void {
+    const subtitle = document.getElementById('header-subtitle');
+    if (!subtitle) return;
+
+    let text: string;
+    if (personName) {
+        text = `${personName}'s ${showAllTime ? 'all-time' : showLast12Months ? 'last 12 months' : selectedYear} routes`;
+    } else {
+        text = showAllTime ? 'All-time routes' : showLast12Months ? 'Last 12 months' : `${selectedYear} routes`;
+    }
+    subtitle.textContent = text;
+}
+
+// Update sends section header
+function updateSendsHeader(showAllTime?: boolean, showLast12Months?: boolean, selectedYear?: number): void {
+    const header = document.getElementById('sends-header');
+    if (!header) return;
+
+    const routeCount = document.getElementById('route-count');
+    const countText = routeCount?.textContent || '';
+
+    header.innerHTML = `${showAllTime ? 'All' : showLast12Months ? 'Recent' : selectedYear} Sends <span id="route-count" class="text-lg font-normal opacity-70 ml-2">${countText}</span>`;
+}
+
+// Get person name from the dropdown
+function getPersonNameFromDropdown(personId: string): string | undefined {
+    const personFilter = document.getElementById('person-filter') as HTMLSelectElement;
+    if (!personFilter || !personId) return undefined;
+    const option = personFilter.querySelector(`option[value="${personId}"]`) as HTMLOptionElement;
+    return option?.textContent?.trim();
+}
+
+// Main initialization
+async function initTicklist() {
+    const config = (window as unknown as { __TICKLIST_CONFIG__: TicklistConfig }).__TICKLIST_CONFIG__;
+    if (!config) {
+        console.error('Ticklist config not found');
+        return;
+    }
+
+    const { selectedPersonId, selectedYear, showAllTime, showLast12Months, selectedPersonName } = config;
+
+    // Determine year parameter
+    let year: string | undefined;
+    if (showAllTime) {
+        year = 'all';
+    } else if (selectedYear) {
+        year = String(selectedYear);
+    } else if (showLast12Months) {
+        year = 'last12';
+    }
+
+    await loadTicklistData({
+        personId: selectedPersonId,
+        year,
+        personName: selectedPersonName,
+    });
+}
+
+// Handle filter changes without page reload
+function handleFilterChange(event: CustomEvent<{ personId: string; year: string }>) {
+    const { personId, year } = event.detail;
+    const personName = getPersonNameFromDropdown(personId);
+
+    loadTicklistData({ personId: personId || undefined, year, personName });
+}
+
+// Cleanup function for page transitions
+function cleanup() {
+    // Remove filter change listener
+    window.removeEventListener('ticklist-filter-change', handleFilterChange as EventListener);
 }
 
 // Initialize on page load
 initTicklist();
-document.addEventListener('astro:page-load', initTicklist);
+
+// Listen for filter changes
+window.addEventListener('ticklist-filter-change', handleFilterChange as EventListener);
+
+// Handle Astro page transitions
+document.addEventListener('astro:page-load', () => {
+    initTicklist();
+    window.addEventListener('ticklist-filter-change', handleFilterChange as EventListener);
+});
+document.addEventListener('astro:before-preparation', cleanup);

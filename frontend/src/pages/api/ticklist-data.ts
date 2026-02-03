@@ -329,10 +329,12 @@ export const GET: APIRoute = async ({ url }) => {
         const gradeDataLeads = getSortedGrades(stats.byGradeLeads);
         const gradeDataRedpoints = getSortedGrades(stats.byGradeRedpoints);
 
-        // Fetch and compute goals if person selected
+        // Fetch and compute goals
         let goals: GoalProgress[] = [];
+        const goalYear = selectedYear || currentYear;
+
         if (personId) {
-            const goalYear = selectedYear || currentYear;
+            // Single person view - fetch their goals
             const rawGoals = await fetchClimbingGoals(personId, goalYear);
 
             // For goals, we need ticks for the goal year
@@ -343,6 +345,26 @@ export const GET: APIRoute = async ({ url }) => {
             }
 
             goals = rawGoals.map(goal => computeGoalProgress(goal, ticksForGoals));
+        } else {
+            // Everyone view - fetch all goals and compute progress per person
+            const rawGoals = await fetchClimbingGoals(undefined, goalYear);
+
+            // We need all ticks for the goal year to compute progress
+            let allTicksForGoals: ClimbingTick[];
+            if (selectedYear === goalYear || showAllTime) {
+                allTicksForGoals = ticks;
+            } else {
+                // Fetch ticks for the goal year
+                allTicksForGoals = await fetchAllClimbingTicks(goalYear);
+            }
+
+            // Compute progress for each goal using only that person's ticks
+            goals = rawGoals.map(goal => {
+                const personTicks = goal.person
+                    ? allTicksForGoals.filter(t => t.person?.documentId === goal.person?.documentId)
+                    : [];
+                return computeGoalProgress(goal, personTicks);
+            });
         }
 
         // Group ticks by date and route
