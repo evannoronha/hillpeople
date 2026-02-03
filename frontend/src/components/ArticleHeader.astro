@@ -1,0 +1,57 @@
+---
+interface Props {
+  title: string;
+  authorName: string;
+  publishedDate: string;
+  readingTimeMinutes: number;
+}
+
+const { title, authorName, publishedDate, readingTimeMinutes } = Astro.props;
+
+// Format date for display
+const formattedDate = new Date(publishedDate).toLocaleDateString('en-US', {
+  year: 'numeric',
+  month: 'long',
+  day: 'numeric',
+});
+
+// ISO format for datetime attribute
+const isoDate = new Date(publishedDate).toISOString();
+---
+
+<header class="mb-8">
+  <h1
+    class="text-3xl sm:text-4xl lg:text-5xl font-bold mb-6 leading-tight"
+    itemprop="headline"
+  >
+    {title}
+  </h1>
+
+  <div class="flex flex-wrap items-center gap-x-4 gap-y-2 text-sm opacity-80">
+    <span itemprop="author" itemscope itemtype="https://schema.org/Person">
+      <span itemprop="name">{authorName}</span>
+    </span>
+
+    <span class="hidden sm:inline" aria-hidden="true">&middot;</span>
+
+    <time datetime={isoDate} itemprop="datePublished">
+      {formattedDate}
+    </time>
+
+    <span class="hidden sm:inline" aria-hidden="true">&middot;</span>
+
+    <span aria-label={`${readingTimeMinutes} minute read`}>
+      <svg
+        class="inline-block w-4 h-4 mr-1 -mt-0.5"
+        fill="none"
+        stroke="currentColor"
+        viewBox="0 0 24 24"
+        aria-hidden="true"
+      >
+        <circle cx="12" cy="12" r="10" stroke-width="2" />
+        <path stroke-width="2" d="M12 6v6l4 2" />
+      </svg>
+      {readingTimeMinutes} min read
+    </span>
+  </div>
+</header>
