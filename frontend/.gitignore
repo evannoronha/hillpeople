@@ -17,6 +17,8 @@ pnpm-debug.log*
 .env
 .env.production
 .dev.vars
+.dev.vars.local
+.dev.vars.prod
 
 # wrangler
 .wrangler/
