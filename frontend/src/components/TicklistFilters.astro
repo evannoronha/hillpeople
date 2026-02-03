@@ -1,0 +1,80 @@
+---
+import type { Person } from '../lib/api';
+
+interface Props {
+    people: Person[];
+    selectedPersonId?: string;
+    selectedYear?: number;
+    showAllTime?: boolean;
+    showLast12Months?: boolean;
+    availableYears: number[];
+}
+
+const { people, selectedPersonId, selectedYear, showAllTime, showLast12Months, availableYears } = Astro.props;
+---
+
+<div class="ticklist-filters flex flex-wrap gap-4 mb-8 items-center">
+    <!-- Person Filter -->
+    <div class="filter-group">
+        <label for="person-filter" class="text-sm opacity-70 mr-2">Climber:</label>
+        <select
+            id="person-filter"
+            class="px-3 py-2 rounded-lg border border-[var(--color-accent)] bg-[var(--color-bg)] text-[var(--color-text)] focus:outline-none focus:ring-2 focus:ring-[var(--color-header)]"
+        >
+            <option value="" selected={!selectedPersonId}>Everyone</option>
+            {people.map(person => (
+                <option value={person.documentId} selected={selectedPersonId === person.documentId}>
+                    {person.name}
+                </option>
+            ))}
+        </select>
+    </div>
+
+    <!-- Year Filter -->
+    <div class="filter-group">
+        <label for="year-filter" class="text-sm opacity-70 mr-2">Period:</label>
+        <select
+            id="year-filter"
+            class="px-3 py-2 rounded-lg border border-[var(--color-accent)] bg-[var(--color-bg)] text-[var(--color-text)] focus:outline-none focus:ring-2 focus:ring-[var(--color-header)]"
+        >
+            <option value="last12" selected={showLast12Months}>Last 12 Months</option>
+            <option value="all" selected={showAllTime}>All Time</option>
+            {availableYears.map(year => (
+                <option value={year} selected={!showAllTime && !showLast12Months && selectedYear === year}>
+                    {year}
+                </option>
+            ))}
+        </select>
+    </div>
+</div>
+
+<script>
+    const personFilter = document.getElementById('person-filter') as HTMLSelectElement;
+    const yearFilter = document.getElementById('year-filter') as HTMLSelectElement;
+
+    function updateFilters() {
+        const personId = personFilter?.value || '';
+        const year = yearFilter?.value || 'last12';
+
+        const url = new URL(window.location.href);
+
+        if (personId) {
+            url.searchParams.set('person', personId);
+        } else {
+            url.searchParams.delete('person');
+        }
+
+        if (year === 'all') {
+            url.searchParams.set('year', 'all');
+        } else if (year === 'last12') {
+            url.searchParams.delete('year');
+        } else {
+            url.searchParams.set('year', year);
+        }
+
+        window.location.href = url.toString();
+    }
+
+    personFilter?.addEventListener('change', updateFilters);
+    yearFilter?.addEventListener('change', updateFilters);
+</script>

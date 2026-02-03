@@ -1,0 +1,63 @@
+---
+import type { TickStats } from '../lib/tickStats';
+
+interface Props {
+    stats: TickStats;
+}
+
+const { stats } = Astro.props;
+
+const cards = [
+    {
+        label: 'Routes Climbed',
+        value: stats.totalTicks,
+    },
+    {
+        label: 'Lead Pitches',
+        value: stats.leadPitches,
+    },
+    {
+        label: 'Days Outside',
+        value: stats.uniqueDays,
+    },
+    {
+        label: 'Highest Redpoint',
+        value: stats.highestRedpoint || '—',
+    },
+];
+---
+
+<div class="stats-cards grid grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
+    {cards.map((card, i) => (
+        <div
+            class="stat-card bg-[var(--color-accent)]/10 rounded-lg p-4 text-center transition-transform hover:scale-105"
+            style={`--card-index: ${i};`}
+        >
+            <div class="text-2xl font-bold text-[var(--color-header)]">{card.value}</div>
+            <div class="text-sm opacity-70">{card.label}</div>
+        </div>
+    ))}
+</div>
+
+{stats.favoriteArea && (
+    <div class="favorite-area text-center mb-8 opacity-80">
+        <span class="text-sm">Most climbed area: </span>
+        <span class="font-semibold">{stats.favoriteArea}</span>
+    </div>
+)}
+
+<style>
+    .stat-card {
+        animation: fade-up 0.5s ease-out forwards;
+        animation-delay: calc(var(--card-index, 0) * 100ms);
+        opacity: 0;
+        transform: translateY(10px);
+    }
+
+    @keyframes fade-up {
+        to {
+            opacity: 1;
+            transform: translateY(0);
+        }
+    }
+</style>

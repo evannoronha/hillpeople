@@ -1,0 +1,55 @@
+---
+import ProgressBar from './charts/ProgressBar.astro';
+import type { GoalProgress } from '../lib/tickStats';
+
+interface Props {
+    goals: GoalProgress[];
+    personName?: string;
+    goalYear?: number;
+}
+
+const { goals, personName, goalYear } = Astro.props;
+
+// Sort goals: incomplete first, then by percent descending
+const sortedGoals = [...goals].sort((a, b) => {
+    if (a.isComplete !== b.isComplete) {
+        return a.isComplete ? 1 : -1; // Incomplete first
+    }
+    return b.percent - a.percent; // Higher percent first
+});
+
+const completedCount = goals.filter(g => g.isComplete).length;
+const allComplete = completedCount === goals.length && goals.length > 0;
+---
+
+{goals.length > 0 && (
+    <div class="goals-dashboard bg-[var(--color-accent)]/5 rounded-xl p-6 mb-8">
+        <div class="flex items-center justify-between mb-4">
+            <h2 class="text-xl font-bold">
+                {personName ? `${personName}'s ${goalYear || ''} Goals` : `${goalYear || ''} Goals`}
+            </h2>
+            {allComplete && (
+                <span class="text-sm bg-green-100 text-green-800 px-3 py-1 rounded-full">
+                    All goals complete! 🎉
+                </span>
+            )}
+            {!allComplete && completedCount > 0 && (
+                <span class="text-sm opacity-70">
+                    {completedCount} of {goals.length} complete
+                </span>
+            )}
+        </div>
+
+        <div class="goals-list">
+            {sortedGoals.map(progress => (
+                <ProgressBar
+                    title={progress.goal.title}
+                    current={progress.current}
+                    target={progress.target}
+                    percent={progress.percent}
+                    isComplete={progress.isComplete}
+                />
+            ))}
+        </div>
+    </div>
+)}
