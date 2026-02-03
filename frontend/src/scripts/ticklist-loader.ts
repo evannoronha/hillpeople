@@ -339,35 +339,51 @@ function renderTickList(ticksByDate: TicksByDate[], strapiUrl: string): void {
     `).join('');
 }
 
-// Main initialization
-async function initTicklist() {
+// Parameters for data loading
+interface LoadParams {
+    personId?: string;
+    year?: string; // 'all', 'last12', or a year number
+    personName?: string;
+}
+
+// Core data loading function
+async function loadTicklistData(params: LoadParams): Promise<void> {
     const config = (window as unknown as { __TICKLIST_CONFIG__: TicklistConfig }).__TICKLIST_CONFIG__;
     if (!config) {
         console.error('Ticklist config not found');
         return;
     }
 
-    const { strapiUrl, selectedPersonId, selectedYear, showAllTime, showLast12Months, currentYear, selectedPersonName } = config;
+    const { strapiUrl, currentYear } = config;
+    const { personId, year, personName } = params;
+
+    // Determine time period settings
+    const showAllTime = year === 'all';
+    const showLast12Months = !year || year === 'last12';
+    const selectedYear = (!showAllTime && !showLast12Months && year) ? parseInt(year) : undefined;
 
     // Show loading indicator
     const loadingIndicator = document.getElementById('loading-indicator');
     loadingIndicator?.classList.remove('hidden');
 
+    // Update header subtitle
+    updateHeaderSubtitle(personName, showAllTime, showLast12Months, selectedYear);
+
     try {
-        // Build the API URL for our cached endpoint
-        const params = new URLSearchParams();
-        if (selectedPersonId) {
-            params.set('person', selectedPersonId);
+        // Build the API URL
+        const apiParams = new URLSearchParams();
+        if (personId) {
+            apiParams.set('person', personId);
         }
         if (showAllTime) {
-            params.set('year', 'all');
+            apiParams.set('year', 'all');
         } else if (selectedYear) {
-            params.set('year', String(selectedYear));
+            apiParams.set('year', String(selectedYear));
         } else if (showLast12Months) {
-            params.set('period', 'last12');
+            apiParams.set('period', 'last12');
         }
 
-        const apiUrl = `/api/ticklist-data?${params.toString()}`;
+        const apiUrl = `/api/ticklist-data?${apiParams.toString()}`;
         const response = await fetch(apiUrl);
 
         if (!response.ok) {
@@ -397,24 +413,32 @@ async function initTicklist() {
 
             renderCharts(activityData, routeTypeData, gradePyramid, showAllTime, showLast12Months, selectedYear);
         } else {
-            const chartsContainer = document.getElementById('charts-container');
-            const pyramidContainer = document.getElementById('pyramid-container');
-            if (chartsContainer) chartsContainer.innerHTML = '';
-            if (pyramidContainer) pyramidContainer.innerHTML = '';
+            // Clear charts if no data
+            const reactWrapper = document.getElementById('react-charts-wrapper');
+            if (reactWrapper && chartsRoot) {
+                chartsRoot.unmount();
+                chartsRoot = null;
+                reactWrapper.innerHTML = '';
+            }
         }
 
         // Render goals if available
+        const goalsContainer = document.getElementById('goals-container');
         if (goals.length > 0) {
             const goalYear = selectedYear || currentYear;
-            renderGoalsDashboard(goals, selectedPersonName, goalYear);
+            renderGoalsDashboard(goals, personName, goalYear);
+        } else if (goalsContainer) {
+            goalsContainer.innerHTML = '';
         }
+
+        // Update sends header
+        updateSendsHeader(showAllTime, showLast12Months, selectedYear);
 
         // Render tick list
         renderTickList(ticks, strapiUrl);
 
     } catch (error) {
         console.error('Error loading ticklist data:', error);
-        // Show error state
         const statsContainer = document.getElementById('stats-container');
         if (statsContainer) {
             statsContainer.innerHTML = `
@@ -424,10 +448,77 @@ async function initTicklist() {
             `;
         }
     } finally {
-        // Hide loading indicator
         const loadingIndicator = document.getElementById('loading-indicator');
         loadingIndicator?.classList.add('hidden');
     }
+}
+
+// Update header subtitle when filters change
+function updateHeaderSubtitle(personName?: string, showAllTime?: boolean, showLast12Months?: boolean, selectedYear?: number): void {
+    const subtitle = document.getElementById('header-subtitle');
+    if (!subtitle) return;
+
+    let text: string;
+    if (personName) {
+        text = `${personName}'s ${showAllTime ? 'all-time' : showLast12Months ? 'last 12 months' : selectedYear} routes`;
+    } else {
+        text = showAllTime ? 'All-time routes' : showLast12Months ? 'Last 12 months' : `${selectedYear} routes`;
+    }
+    subtitle.textContent = text;
+}
+
+// Update sends section header
+function updateSendsHeader(showAllTime?: boolean, showLast12Months?: boolean, selectedYear?: number): void {
+    const header = document.getElementById('sends-header');
+    if (!header) return;
+
+    const routeCount = document.getElementById('route-count');
+    const countText = routeCount?.textContent || '';
+
+    header.innerHTML = `${showAllTime ? 'All' : showLast12Months ? 'Recent' : selectedYear} Sends <span id="route-count" class="text-lg font-normal opacity-70 ml-2">${countText}</span>`;
+}
+
+// Get person name from the dropdown
+function getPersonNameFromDropdown(personId: string): string | undefined {
+    const personFilter = document.getElementById('person-filter') as HTMLSelectElement;
+    if (!personFilter || !personId) return undefined;
+    const option = personFilter.querySelector(`option[value="${personId}"]`) as HTMLOptionElement;
+    return option?.textContent?.trim();
+}
+
+// Main initialization
+async function initTicklist() {
+    const config = (window as unknown as { __TICKLIST_CONFIG__: TicklistConfig }).__TICKLIST_CONFIG__;
+    if (!config) {
+        console.error('Ticklist config not found');
+        return;
+    }
+
+    const { selectedPersonId, selectedYear, showAllTime, showLast12Months, selectedPersonName } = config;
+
+    // Determine year parameter
+    let year: string | undefined;
+    if (showAllTime) {
+        year = 'all';
+    } else if (selectedYear) {
+        year = String(selectedYear);
+    } else if (showLast12Months) {
+        year = 'last12';
+    }
+
+    await loadTicklistData({
+        personId: selectedPersonId,
+        year,
+        personName: selectedPersonName,
+    });
+}
+
+// Handle filter changes without page reload
+function handleFilterChange(event: CustomEvent<{ personId: string; year: string }>) {
+    const { personId, year } = event.detail;
+    const personName = getPersonNameFromDropdown(personId);
+
+    loadTicklistData({ personId: personId || undefined, year, personName });
 }
 
 // Cleanup function for page transitions
@@ -436,11 +527,19 @@ function cleanup() {
         chartsRoot.unmount();
         chartsRoot = null;
     }
+    // Remove filter change listener
+    window.removeEventListener('ticklist-filter-change', handleFilterChange as EventListener);
 }
 
 // Initialize on page load
 initTicklist();
 
+// Listen for filter changes
+window.addEventListener('ticklist-filter-change', handleFilterChange as EventListener);
+
 // Handle Astro page transitions
-document.addEventListener('astro:page-load', initTicklist);
+document.addEventListener('astro:page-load', () => {
+    initTicklist();
+    window.addEventListener('ticklist-filter-change', handleFilterChange as EventListener);
+});
 document.addEventListener('astro:before-preparation', cleanup);
