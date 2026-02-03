@@ -1,0 +1,337 @@
+---
+interface GradeData {
+    grade: string;
+    count: number;
+}
+
+interface Props {
+    allRoutes: GradeData[];
+    leads: GradeData[];
+    redpoints: GradeData[];
+    title?: string;
+    maxWidth?: number;
+}
+
+const { allRoutes, leads, redpoints, title, maxWidth = 400 } = Astro.props;
+
+// Colors for the pyramid (gradient from teal to coral)
+const colors = [
+    'var(--color-header)',      // Highest grade - coral
+    '#d77a40',                  // Orange
+    '#b5855a',                  // Tan
+    '#8a8a6c',                  // Olive
+    'var(--color-accent)',      // Teal
+];
+
+// Serialize data for client-side use
+const pyramidData = JSON.stringify({ allRoutes, leads, redpoints });
+
+// Mode descriptions for tooltips
+const modeDescriptions = {
+    redpoints: 'Lead, no falls',
+    leads: 'All lead climbs',
+    allRoutes: 'All routes including top rope and follows',
+};
+---
+
+<div class="pyramid-container">
+    <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-2 mb-4">
+        {title && <h3 class="text-lg font-semibold">{title}</h3>}
+        <div class="pyramid-mode-toggle flex gap-1 text-xs" role="group" aria-label="Grade pyramid filter">
+            <div class="mode-btn-wrapper relative">
+                <button
+                    type="button"
+                    class="pyramid-mode-btn px-2 py-1 rounded transition-colors"
+                    data-mode="redpoints"
+                    aria-pressed="false"
+                    aria-describedby="tooltip-redpoints"
+                >
+                    Hardo
+                </button>
+                <span
+                    id="tooltip-redpoints"
+                    class="pyramid-tooltip"
+                    role="tooltip"
+                >
+                    {modeDescriptions.redpoints}
+                </span>
+            </div>
+            <div class="mode-btn-wrapper relative">
+                <button
+                    type="button"
+                    class="pyramid-mode-btn px-2 py-1 rounded transition-colors active"
+                    data-mode="leads"
+                    aria-pressed="true"
+                    aria-describedby="tooltip-leads"
+                >
+                    Normal
+                </button>
+                <span
+                    id="tooltip-leads"
+                    class="pyramid-tooltip"
+                    role="tooltip"
+                >
+                    {modeDescriptions.leads}
+                </span>
+            </div>
+            <div class="mode-btn-wrapper relative">
+                <button
+                    type="button"
+                    class="pyramid-mode-btn px-2 py-1 rounded transition-colors"
+                    data-mode="allRoutes"
+                    aria-pressed="false"
+                    aria-describedby="tooltip-allRoutes"
+                >
+                    Top Rope Tough Guy
+                </button>
+                <span
+                    id="tooltip-allRoutes"
+                    class="pyramid-tooltip"
+                    role="tooltip"
+                >
+                    {modeDescriptions.allRoutes}
+                </span>
+            </div>
+        </div>
+    </div>
+
+    <div
+        class="pyramid flex flex-col items-center gap-1"
+        style={`max-width: ${maxWidth}px; margin: 0 auto;`}
+        data-pyramid-data={pyramidData}
+        data-colors={JSON.stringify(colors)}
+    >
+        <!-- Pyramid rows will be rendered by JavaScript -->
+    </div>
+
+    <div class="pyramid-empty text-center opacity-60 py-4 hidden">
+        No grade data available
+    </div>
+</div>
+
+<style>
+    .pyramid-mode-btn {
+        background-color: #d4d4d4;
+        color: #555;
+    }
+
+    .pyramid-mode-btn.active {
+        background-color: var(--color-header);
+        color: white;
+    }
+
+    .pyramid-mode-btn:hover:not(.active),
+    .pyramid-mode-btn:focus:not(.active) {
+        background-color: #bbb;
+    }
+
+    :global(.dark) .pyramid-mode-btn {
+        background-color: #444;
+        color: #ccc;
+    }
+
+    :global(.dark) .pyramid-mode-btn:hover:not(.active),
+    :global(.dark) .pyramid-mode-btn:focus:not(.active) {
+        background-color: #555;
+    }
+
+    .pyramid-mode-btn:focus {
+        outline: 2px solid var(--color-header);
+        outline-offset: 2px;
+    }
+
+    .mode-btn-wrapper {
+        position: relative;
+    }
+
+    .pyramid-tooltip {
+        position: absolute;
+        bottom: 100%;
+        left: 50%;
+        transform: translateX(-50%);
+        padding: 0.5rem 0.75rem;
+        background-color: var(--color-text);
+        color: var(--color-bg);
+        font-size: 0.75rem;
+        line-height: 1.2;
+        border-radius: 0.375rem;
+        white-space: nowrap;
+        opacity: 0;
+        visibility: hidden;
+        transition: opacity 0.15s, visibility 0.15s;
+        pointer-events: none;
+        z-index: 10;
+        margin-bottom: 0.5rem;
+    }
+
+    .pyramid-tooltip::after {
+        content: '';
+        position: absolute;
+        top: 100%;
+        left: 50%;
+        transform: translateX(-50%);
+        border: 6px solid transparent;
+        border-top-color: var(--color-text);
+    }
+
+    /* Show tooltip on hover (desktop) */
+    .mode-btn-wrapper:hover .pyramid-tooltip,
+    .pyramid-mode-btn:focus + .pyramid-tooltip {
+        opacity: 1;
+        visibility: visible;
+    }
+
+    /* Show tooltip when button has show-tooltip class (mobile tap) */
+    .mode-btn-wrapper.show-tooltip .pyramid-tooltip {
+        opacity: 1;
+        visibility: visible;
+    }
+
+    .pyramid-bar {
+        transform-origin: left;
+        animation: grow-pyramid 0.6s ease-out forwards;
+        animation-delay: calc(var(--row-index, 0) * 80ms);
+    }
+
+    @keyframes grow-pyramid {
+        from {
+            transform: scaleX(0);
+        }
+        to {
+            transform: scaleX(1);
+        }
+    }
+
+    /* Mobile: make tooltips wider and allow wrapping */
+    @media (max-width: 640px) {
+        .pyramid-tooltip {
+            white-space: normal;
+            max-width: 150px;
+            text-align: center;
+        }
+
+        /* Position rightmost tooltip to the left to avoid overflow */
+        .mode-btn-wrapper:last-child .pyramid-tooltip {
+            left: auto;
+            right: 0;
+            transform: none;
+        }
+
+        .mode-btn-wrapper:last-child .pyramid-tooltip::after {
+            left: auto;
+            right: 1rem;
+            transform: none;
+        }
+    }
+</style>
+
+<script>
+    function initPyramid() {
+        const container = document.querySelector('.pyramid') as HTMLElement;
+        const emptyMsg = document.querySelector('.pyramid-empty') as HTMLElement;
+        const buttons = document.querySelectorAll('.pyramid-mode-btn');
+        const wrappers = document.querySelectorAll('.mode-btn-wrapper');
+
+        if (!container) return;
+
+        const pyramidData = JSON.parse(container.dataset.pyramidData || '{}');
+        const colors = JSON.parse(container.dataset.colors || '[]');
+
+        // Mobile tooltip handling - show on first tap, activate on second
+        let lastTappedWrapper: Element | null = null;
+
+        wrappers.forEach(wrapper => {
+            const btn = wrapper.querySelector('.pyramid-mode-btn');
+            if (!btn) return;
+
+            btn.addEventListener('click', (e) => {
+                // Check if this is a touch device and tooltip isn't showing
+                const isTouchDevice = 'ontouchstart' in window;
+
+                if (isTouchDevice && !wrapper.classList.contains('show-tooltip') && !btn.classList.contains('active')) {
+                    // First tap on inactive button: show tooltip
+                    e.preventDefault();
+                    wrappers.forEach(w => w.classList.remove('show-tooltip'));
+                    wrapper.classList.add('show-tooltip');
+                    lastTappedWrapper = wrapper;
+
+                    // Hide tooltip after 2 seconds
+                    setTimeout(() => {
+                        wrapper.classList.remove('show-tooltip');
+                    }, 2000);
+                } else {
+                    // Second tap or non-touch: activate the mode
+                    wrapper.classList.remove('show-tooltip');
+                    const mode = btn.getAttribute('data-mode') || 'leads';
+                    setActiveMode(mode);
+                }
+            });
+        });
+
+        // Hide tooltips when clicking elsewhere
+        document.addEventListener('click', (e) => {
+            if (lastTappedWrapper && !lastTappedWrapper.contains(e.target as Node)) {
+                lastTappedWrapper.classList.remove('show-tooltip');
+                lastTappedWrapper = null;
+            }
+        });
+
+        function renderPyramid(data: Array<{ grade: string; count: number }>) {
+            if (!data || data.length === 0) {
+                container.innerHTML = '';
+                emptyMsg?.classList.remove('hidden');
+                return;
+            }
+
+            emptyMsg?.classList.add('hidden');
+            const maxValue = Math.max(...data.map(d => d.count), 1);
+            const isDark = document.documentElement.classList.contains('dark');
+            const countColor = isDark ? '#ddd' : '#444';
+
+            container.innerHTML = data.slice(0, 15).map((item, i) => {
+                const widthPercent = maxValue > 0 ? (item.count / maxValue) * 100 : 0;
+                const colorIndex = Math.min(i, colors.length - 1);
+
+                return `
+                    <div class="pyramid-row flex items-center w-full gap-2 group cursor-pointer" data-index="${i}">
+                        <span class="grade-label w-12 text-right text-sm font-mono opacity-80 shrink-0">
+                            ${item.grade}
+                        </span>
+                        <div class="flex-1 h-6 flex items-center gap-2">
+                            <div
+                                class="pyramid-bar h-full rounded-r transition-all duration-500 ease-out group-hover:opacity-80"
+                                style="width: ${Math.max(widthPercent, 2)}%; background-color: ${colors[colorIndex]}; min-width: 4px; --row-index: ${i};"
+                            ></div>
+                            ${item.count > 0 ? `<span class="text-xs font-medium shrink-0" style="color: ${countColor};">${item.count}</span>` : ''}
+                        </div>
+                    </div>
+                `;
+            }).join('');
+        }
+
+        function setActiveMode(mode: string) {
+            buttons.forEach(btn => {
+                const isActive = btn.getAttribute('data-mode') === mode;
+                if (isActive) {
+                    btn.classList.add('active');
+                    btn.setAttribute('aria-pressed', 'true');
+                } else {
+                    btn.classList.remove('active');
+                    btn.setAttribute('aria-pressed', 'false');
+                }
+            });
+
+            const data = pyramidData[mode] || [];
+            renderPyramid(data);
+        }
+
+        // Initial render with default mode (leads/Normal)
+        setActiveMode('leads');
+    }
+
+    // Run on page load
+    initPyramid();
+
+    // Re-run on Astro page transitions
+    document.addEventListener('astro:page-load', initPyramid);
+</script>

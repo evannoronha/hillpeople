@@ -1,0 +1,61 @@
+---
+interface Props {
+    title: string;
+    current: number;
+    target: number;
+    percent: number;
+    isComplete: boolean;
+    color?: string;
+}
+
+const { title, current, target, percent, isComplete, color = 'var(--color-header)' } = Astro.props;
+---
+
+<div class="progress-container mb-4">
+    <div class="flex justify-between items-baseline mb-1">
+        <span class="font-semibold text-sm">{title}</span>
+        <span class="text-sm opacity-70">
+            {current} / {target}
+            {isComplete && <span class="ml-1">🎉</span>}
+        </span>
+    </div>
+    <div class="progress-track h-3 rounded-full bg-[var(--color-accent)]/20 overflow-hidden">
+        <div
+            class="progress-fill h-full rounded-full transition-all duration-1000 ease-out"
+            style={`width: ${percent}%; background-color: ${isComplete ? 'var(--color-success, #22c55e)' : color};`}
+            data-target-width={percent}
+        ></div>
+    </div>
+</div>
+
+<style>
+    .progress-fill {
+        width: 0;
+        animation: fill-progress 1s ease-out forwards;
+        animation-delay: 0.2s;
+    }
+
+    @keyframes fill-progress {
+        to {
+            width: var(--target-width);
+        }
+    }
+</style>
+
+<script>
+    // Animate progress bars when they come into view
+    const progressBars = document.querySelectorAll('.progress-fill');
+
+    const observer = new IntersectionObserver((entries) => {
+        entries.forEach(entry => {
+            if (entry.isIntersecting) {
+                const bar = entry.target as HTMLElement;
+                const targetWidth = bar.dataset.targetWidth || '0';
+                bar.style.setProperty('--target-width', `${targetWidth}%`);
+                observer.unobserve(bar);
+            }
+        });
+    }, { threshold: 0.1 });
+
+    progressBars.forEach(bar => observer.observe(bar));
+</script>

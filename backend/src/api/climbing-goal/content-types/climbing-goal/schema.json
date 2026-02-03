@@ -1,0 +1,53 @@
+{
+  "kind": "collectionType",
+  "collectionName": "climbing_goals",
+  "info": {
+    "singularName": "climbing-goal",
+    "pluralName": "climbing-goals",
+    "displayName": "Climbing Goal",
+    "description": "Climbing goals for tracking progress"
+  },
+  "options": {
+    "draftAndPublish": false
+  },
+  "attributes": {
+    "title": {
+      "type": "string",
+      "required": true
+    },
+    "person": {
+      "type": "relation",
+      "relation": "manyToOne",
+      "target": "api::person.person"
+    },
+    "year": {
+      "type": "integer",
+      "required": true
+    },
+    "goalType": {
+      "type": "enumeration",
+      "enum": [
+        "lead_pitches",
+        "lead_climbs",
+        "redpoints",
+        "onsights",
+        "grade_target"
+      ],
+      "required": true
+    },
+    "targetCount": {
+      "type": "integer",
+      "required": true
+    },
+    "minGrade": {
+      "type": "string"
+    },
+    "routeType": {
+      "type": "string"
+    },
+    "isActive": {
+      "type": "boolean",
+      "default": true
+    }
+  }
+}

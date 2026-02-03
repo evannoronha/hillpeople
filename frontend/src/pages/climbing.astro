@@ -1,26 +1,114 @@
 ---
 import Layout from "../layouts/Layout.astro";
 import PhotoGallery from "../components/PhotoGallery.astro";
-import { fetchClimbingTicksPaginated, fetchSiteSettings, type ClimbingTick, type StrapiImage } from "../lib/api";
+import TicklistFilters from "../components/TicklistFilters.astro";
+import StatsCards from "../components/StatsCards.astro";
+import GoalsDashboard from "../components/GoalsDashboard.astro";
+import BarChart from "../components/charts/BarChart.astro";
+import GradePyramid from "../components/charts/GradePyramid.astro";
+import DonutChart from "../components/charts/DonutChart.astro";
+import {
+    fetchAllPeople,
+    fetchAllClimbingTicks,
+    fetchClimbingTicksForPerson,
+    fetchClimbingTicksLast12Months,
+    fetchClimbingTicksLast12MonthsForPerson,
+    fetchClimbingGoals,
+    fetchSiteSettings,
+    type ClimbingTick,
+    type StrapiImage,
+} from "../lib/api";
+import {
+    computeTickStats,
+    computeGoalProgress,
+    getSortedGrades,
+    getMonthlyActivity,
+    getLast12MonthsActivity,
+    getYearlyActivity,
+    type GoalProgress,
+    type ActivityData,
+} from "../lib/tickStats";
 
-const PAGE_SIZE = 50;
+// Get filter params from URL
+const selectedPersonId = Astro.url.searchParams.get('person') || undefined;
+const currentYear = new Date().getFullYear();
+const yearParam = Astro.url.searchParams.get('year');
 
-const [{ ticks, pagination }, siteSettings] = await Promise.all([
-    fetchClimbingTicksPaginated(1, PAGE_SIZE),
+// Fetch data in parallel
+const [people, siteSettings] = await Promise.all([
+    fetchAllPeople(),
     fetchSiteSettings(),
 ]);
 
-const hasMore = pagination.pageCount > 1;
+// Determine the time period to display
+// Default is "Last 12 Months" (no year param)
+let selectedYear: number | undefined = undefined;
+let showAllTime = yearParam === 'all';
+let showLast12Months = !yearParam; // Default when no year param
+
+// Parse year if it's a number
+if (yearParam && yearParam !== 'all') {
+    const parsed = parseInt(yearParam);
+    if (!isNaN(parsed)) {
+        selectedYear = parsed;
+        showLast12Months = false;
+    }
+}
+
+// Fetch ticks based on the selected period
+let ticks: ClimbingTick[];
+if (showAllTime) {
+    // "All time" selected - fetch without date filter
+    ticks = selectedPersonId
+        ? await fetchClimbingTicksForPerson(selectedPersonId)
+        : await fetchAllClimbingTicks();
+} else if (showLast12Months) {
+    // "Last 12 Months" - default view
+    ticks = selectedPersonId
+        ? await fetchClimbingTicksLast12MonthsForPerson(selectedPersonId)
+        : await fetchClimbingTicksLast12Months();
+} else {
+    // Specific year selected
+    ticks = selectedPersonId
+        ? await fetchClimbingTicksForPerson(selectedPersonId, selectedYear)
+        : await fetchAllClimbingTicks(selectedYear);
+}
+
+// Fetch goals if a person is selected
+// For "Last 12 Months" or "All Time", show current year goals
+// For specific years, show that year's goals
+let goals: GoalProgress[] = [];
+let selectedPerson = people.find(p => p.documentId === selectedPersonId);
+if (selectedPersonId) {
+    const goalYear = selectedYear || currentYear;
+    const rawGoals = await fetchClimbingGoals(selectedPersonId, goalYear);
+    // For goals, we need to compute progress against all ticks for the goal's year
+    const ticksForGoals = selectedYear
+        ? ticks
+        : await fetchClimbingTicksForPerson(selectedPersonId, goalYear);
+    goals = rawGoals.map(goal => computeGoalProgress(goal, ticksForGoals));
+}
+
+// Compute stats
+const stats = computeTickStats(ticks);
+
+// Prepare chart data
+const activityData: ActivityData[] = selectedYear
+    ? getMonthlyActivity(stats.byMonth, stats.pitchesByMonth, selectedYear)
+    : showLast12Months
+        ? getLast12MonthsActivity(stats.byMonth, stats.pitchesByMonth)
+        : getYearlyActivity(stats.byMonth, stats.pitchesByMonth);
+const gradeDataAll = getSortedGrades(stats.byGrade);
+const gradeDataLeads = getSortedGrades(stats.byGradeLeads);
+const gradeDataRedpoints = getSortedGrades(stats.byGradeRedpoints);
+const routeTypeData = Object.entries(stats.byRouteType).map(([label, value]) => ({ label, value }));
+
+// Available years for filter (last 5 years + "All time")
+const availableYears = Array.from({ length: 5 }, (_, i) => currentYear - i);
 
 // SEO data
 const siteName = siteSettings?.siteName || "Hill People";
-const description = "Our climbing log - routes we've climbed, organized by date.";
-
-// Helper function to format route type
-function formatRouteType(routeType: string): string {
-    if (!routeType) return "";
-    return routeType;
-}
+const description = "The Ticklist - our climbing log with stats, goals, and route history.";
 
 // Grouped route entry - dedupes multiple climbers on same route/date
 interface GroupedRoute {
@@ -29,6 +117,8 @@ interface GroupedRoute {
     bestStars: number;
     photos: StrapiImage[];
     notes: string[];
+    style?: string;
+    leadStyle?: string;
 }
 
 // Group ticks by date, then by route (deduping multiple climbers)
@@ -58,6 +148,8 @@ function groupTicksByDateAndRoute(tickList: ClimbingTick[]): TicksByDate[] {
                 bestStars: 0,
                 photos: [],
                 notes: [],
+                style: tick.style,
+                leadStyle: tick.leadStyle,
             });
         }
 
@@ -76,7 +168,6 @@ function groupTicksByDateAndRoute(tickList: ClimbingTick[]): TicksByDate[] {
         // Collect photos from all ticks for this route
         if (tick.photos?.length) {
             for (const photo of tick.photos) {
-                // Avoid duplicates by checking ID
                 if (!groupedRoute.photos.some(p => p.id === photo.id)) {
                     groupedRoute.photos.push(photo);
                 }
@@ -102,96 +193,152 @@ function groupTicksByDateAndRoute(tickList: ClimbingTick[]): TicksByDate[] {
 }
 
 const ticksByDate = groupTicksByDateAndRoute(ticks);
-
-// Count unique routes for display
-const uniqueRouteCount = ticksByDate.reduce((sum, day) => sum + day.routes.length, 0);
 ---
 
 <Layout
-    pageTitle="Climbing Log"
+    pageTitle="The Ticklist"
     description={description}
     siteName={siteName}
 >
-    <div class="max-w-4xl mx-auto px-4 py-10">
-        <h1 class="text-4xl font-bold mb-2">Climbing Log</h1>
-        <p class="text-lg mb-8 opacity-80">
-            {uniqueRouteCount} routes climbed
-        </p>
+    <div class="max-w-5xl mx-auto px-4 py-10">
+        <!-- Header -->
+        <header class="text-center mb-8">
+            <h1 class="text-4xl font-bold mb-2">The Ticklist</h1>
+            <p class="text-lg opacity-80">
+                {selectedPerson
+                    ? `${selectedPerson.name}'s ${showAllTime ? 'all-time' : showLast12Months ? 'last 12 months' : selectedYear} routes`
+                    : showAllTime ? 'All-time routes' : showLast12Months ? 'Last 12 months' : `${selectedYear} routes`}
+            </p>
+        </header>
 
-        <div id="ticks-container">
-            {ticksByDate.map(({ date, formattedDate, routes }) => (
-                <div class="mb-8" data-date={date}>
-                    <h2 class="text-xl font-semibold mb-3 sticky top-0 bg-[var(--color-bg)] py-2 border-b border-[var(--color-accent)]">
-                        {formattedDate}
-                    </h2>
-                    <div class="space-y-2">
-                        {routes.map((groupedRoute) => (
-                            <div class="tick-item flex items-start gap-4 p-3 rounded-lg border border-[var(--color-accent)] hover:border-[var(--color-header)] transition">
-                                <div class="flex-1 min-w-0">
-                                    <div class="flex items-baseline gap-2 flex-wrap">
-                                        <a
-                                            href={groupedRoute.route?.mountainProjectUrl}
-                                            target="_blank"
-                                            rel="noopener noreferrer"
-                                            class="font-semibold hover:underline text-[var(--color-header)]"
-                                        >
-                                            {groupedRoute.route?.name || "Unknown Route"}
-                                        </a>
-                                        {groupedRoute.route?.rating && (
-                                            <span class="text-sm font-mono">{groupedRoute.route.rating}</span>
-                                        )}
-                                        {groupedRoute.route?.routeType && (
-                                            <span class="text-xs opacity-70">{formatRouteType(groupedRoute.route.routeType)}</span>
-                                        )}
-                                    </div>
-                                    {groupedRoute.route?.location && (
-                                        <p class="text-sm truncate">{groupedRoute.route.location}</p>
-                                    )}
-                                    {groupedRoute.climbers.length > 0 && (
-                                        <p class="text-xs mt-1 opacity-70">
-                                            {groupedRoute.climbers.join(" & ")}
-                                        </p>
-                                    )}
-                                    {groupedRoute.notes.length > 0 && (
-                                        <p class="text-sm mt-2 italic opacity-80">
-                                            {groupedRoute.notes.join(" · ")}
-                                        </p>
-                                    )}
-                                    <PhotoGallery
-                                        photos={groupedRoute.photos}
-                                        galleryId={`${date}-${groupedRoute.route?.documentId || 'unknown'}`}
-                                    />
-                                </div>
-                                {groupedRoute.bestStars > 0 && (
-                                    <div class="flex-shrink-0 text-sm text-[var(--color-header)]" title={`${groupedRoute.bestStars} stars`}>
-                                        {"★".repeat(groupedRoute.bestStars)}{"☆".repeat(4 - groupedRoute.bestStars)}
-                                    </div>
-                                )}
-                            </div>
-                        ))}
-                    </div>
-                </div>
-            ))}
-        </div>
+        <!-- Filters -->
+        <TicklistFilters
+            people={people}
+            selectedPersonId={selectedPersonId}
+            selectedYear={selectedYear}
+            showAllTime={showAllTime}
+            showLast12Months={showLast12Months}
+            availableYears={availableYears}
+        />
 
-        {ticks.length === 0 && (
-            <p class="text-center opacity-60 py-10">No climbing ticks yet.</p>
+        <!-- Goals Dashboard (if person selected and has goals) -->
+        {goals.length > 0 && (
+            <GoalsDashboard goals={goals} personName={selectedPerson?.name} goalYear={selectedYear || currentYear} />
         )}
 
-        {hasMore && (
-            <div class="text-center mt-10">
-                <button
-                    id="load-more-ticks"
-                    type="button"
-                    data-page="2"
-                    data-page-size={PAGE_SIZE}
-                    class="bg-[var(--color-fab-bg)] text-[var(--color-fab-text)] border-2 border-[var(--color-fab-text)] px-6 py-3 rounded-lg font-semibold hover:opacity-90 transition w-full sm:w-auto"
-                >
-                    Load more
-                </button>
+        <!-- Stats Cards -->
+        {stats.totalTicks > 0 && (
+            <StatsCards stats={stats} />
+        )}
+
+        <!-- Charts Section -->
+        {stats.totalTicks > 0 && (
+            <div class="charts-section grid md:grid-cols-2 gap-8 mb-12">
+                <!-- Activity Over Time -->
+                {activityData.length > 0 && (
+                    <div class="chart-card bg-[var(--color-accent)]/5 rounded-xl p-6 flex flex-col">
+                        <BarChart data={activityData} title={showAllTime ? "Yearly Activity" : "Monthly Activity"} height={220} />
+                    </div>
+                )}
+
+                <!-- Route Type Breakdown -->
+                <div class="chart-card bg-[var(--color-accent)]/5 rounded-xl p-6 flex flex-col">
+                    <DonutChart data={routeTypeData} title="Route Types" size={160} />
+                </div>
             </div>
         )}
+
+        <!-- Grade Pyramid (full width) -->
+        {gradeDataAll.length > 0 && (
+            <div class="chart-card bg-[var(--color-accent)]/5 rounded-xl p-6 mb-12">
+                <GradePyramid
+                    allRoutes={gradeDataAll}
+                    leads={gradeDataLeads}
+                    redpoints={gradeDataRedpoints}
+                    title="Grade Pyramid"
+                />
+            </div>
+        )}
+
+        <!-- Tick List -->
+        <section>
+            <h2 class="text-2xl font-bold mb-6">
+                {showAllTime ? 'All' : showLast12Months ? 'Recent' : selectedYear} Sends
+                <span class="text-lg font-normal opacity-70 ml-2">({stats.totalTicks} routes)</span>
+            </h2>
+
+            <div id="ticks-container">
+                {ticksByDate.map(({ date, formattedDate, routes }) => (
+                    <div class="mb-8" data-date={date}>
+                        <h3 class="text-lg font-semibold mb-3 sticky top-0 bg-[var(--color-bg)] py-2 border-b border-[var(--color-accent)]/30">
+                            {formattedDate}
+                        </h3>
+                        <div class="space-y-2">
+                            {routes.map((groupedRoute) => (
+                                <div class="tick-item flex items-start gap-4 p-3 rounded-lg border border-[var(--color-accent)]/30 hover:border-[var(--color-header)] transition">
+                                    <div class="flex-1 min-w-0">
+                                        <div class="flex items-baseline gap-2 flex-wrap">
+                                            <a
+                                                href={groupedRoute.route?.mountainProjectUrl}
+                                                target="_blank"
+                                                rel="noopener noreferrer"
+                                                class="font-semibold hover:underline text-[var(--color-header)]"
+                                            >
+                                                {groupedRoute.route?.name || "Unknown Route"}
+                                            </a>
+                                            {groupedRoute.route?.rating && (
+                                                <span class="text-sm font-mono">{groupedRoute.route.rating}</span>
+                                            )}
+                                            {groupedRoute.route?.routeType && (
+                                                <span class="text-xs opacity-70">{groupedRoute.route.routeType}</span>
+                                            )}
+                                            {groupedRoute.style && (
+                                                <span class="text-xs px-2 py-0.5 rounded bg-[var(--color-accent)]/20">
+                                                    {groupedRoute.style}
+                                                    {groupedRoute.leadStyle && ` · ${groupedRoute.leadStyle}`}
+                                                </span>
+                                            )}
+                                        </div>
+                                        {groupedRoute.route?.location && (
+                                            <p class="text-sm truncate opacity-80">{groupedRoute.route.location}</p>
+                                        )}
+                                        {groupedRoute.climbers.length > 0 && (
+                                            <p class="text-xs mt-1 opacity-70">
+                                                {groupedRoute.climbers.join(" & ")}
+                                            </p>
+                                        )}
+                                        {groupedRoute.notes.length > 0 && (
+                                            <p class="text-sm mt-2 italic opacity-80">
+                                                {groupedRoute.notes.join(" · ")}
+                                            </p>
+                                        )}
+                                        <PhotoGallery
+                                            photos={groupedRoute.photos}
+                                            galleryId={`${date}-${groupedRoute.route?.documentId || 'unknown'}`}
+                                        />
+                                    </div>
+                                    {groupedRoute.bestStars > 0 && (
+                                        <div class="flex-shrink-0 text-sm text-[var(--color-header)]" title={`${groupedRoute.bestStars} stars`}>
+                                            {"★".repeat(groupedRoute.bestStars)}{"☆".repeat(4 - groupedRoute.bestStars)}
+                                        </div>
+                                    )}
+                                </div>
+                            ))}
+                        </div>
+                    </div>
+                ))}
+            </div>
+
+            {ticks.length === 0 && (
+                <div class="text-center py-16 opacity-60">
+                    <p class="text-lg mb-2">No climbs logged{showAllTime ? '' : showLast12Months ? ' in the last 12 months' : ` for ${selectedYear}`}</p>
+                    <p class="text-sm">
+                        {selectedPerson
+                            ? `${selectedPerson.name} hasn't logged any climbs yet.`
+                            : 'Try selecting a different period or person.'}
+                    </p>
+                </div>
+            )}
+        </section>
     </div>
 </Layout>
-
-<script src="../scripts/load-more-ticks.ts"></script>

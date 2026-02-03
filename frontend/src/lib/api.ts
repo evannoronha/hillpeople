@@ -156,6 +156,21 @@ export interface Person {
     name: string;
 }
 
+export type GoalType = 'lead_pitches' | 'lead_climbs' | 'redpoints' | 'onsights' | 'grade_target';
+
+export interface ClimbingGoal {
+    id: number;
+    documentId: string;
+    title: string;
+    year: number;
+    goalType: GoalType;
+    targetCount: number;
+    minGrade?: string;
+    routeType?: string;
+    isActive: boolean;
+    person?: Person;
+}
+
 export interface ClimbingTick {
     id: number;
     documentId: string;
@@ -214,6 +229,128 @@ export async function fetchClimbingTicksByDateRange(startDate: string, endDate: 
         return data.data || []
     } catch (error) {
         console.error("Error fetching climbing ticks by date range:", error)
+        return []
+    }
+}
+
+export async function fetchAllPeople(): Promise<Person[]> {
+    try {
+        const reqUrl = `${STRAPI_URL}/api/people?sort=name:asc`
+        console.debug("Fetching all people from:", reqUrl)
+        const response = await strapiFetch(reqUrl)
+
+        if (!response.ok) {
+            throw new Error(`Failed to fetch people: ${response.status}`)
+        }
+
+        const data = await response.json()
+        return data.data || []
+    } catch (error) {
+        console.error("Error fetching people:", error)
+        return []
+    }
+}
+
+export async function fetchClimbingGoals(personDocumentId?: string, year?: number): Promise<ClimbingGoal[]> {
+    try {
+        let reqUrl = `${STRAPI_URL}/api/climbing-goals?populate=*&filters[isActive][$eq]=true`
+        if (personDocumentId) {
+            reqUrl += `&filters[person][documentId][$eq]=${personDocumentId}`
+        }
+        if (year) {
+            reqUrl += `&filters[year][$eq]=${year}`
+        }
+        console.debug("Fetching climbing goals from:", reqUrl)
+        const response = await strapiFetch(reqUrl)
+
+        if (!response.ok) {
+            throw new Error(`Failed to fetch climbing goals: ${response.status}`)
+        }
+
+        const data = await response.json()
+        return data.data || []
+    } catch (error) {
+        console.error("Error fetching climbing goals:", error)
+        return []
+    }
+}
+
+// Helper to fetch all pages of climbing ticks
+async function fetchAllTicksWithPagination(baseUrl: string): Promise<ClimbingTick[]> {
+    const allTicks: ClimbingTick[] = [];
+    let page = 1;
+    const pageSize = 100;
+    let hasMore = true;
+
+    while (hasMore) {
+        const reqUrl = `${baseUrl}&pagination[page]=${page}&pagination[pageSize]=${pageSize}`;
+        console.debug(`Fetching climbing ticks page ${page} from:`, reqUrl);
+        const response = await strapiFetch(reqUrl);
+
+        if (!response.ok) {
+            throw new Error(`Failed to fetch climbing ticks: ${response.status}`);
+        }
+
+        const data = await response.json();
+        const ticks = data.data || [];
+        allTicks.push(...ticks);
+
+        const pagination = data.meta?.pagination;
+        hasMore = pagination && page < pagination.pageCount;
+        page++;
+    }
+
+    return allTicks;
+}
+
+export async function fetchAllClimbingTicks(year?: number): Promise<ClimbingTick[]> {
+    try {
+        let baseUrl = `${STRAPI_URL}/api/climbing-ticks?populate=*&sort=tickDate:desc`
+        if (year) {
+            baseUrl += `&filters[tickDate][$gte]=${year}-01-01&filters[tickDate][$lte]=${year}-12-31`
+        }
+        return await fetchAllTicksWithPagination(baseUrl);
+    } catch (error) {
+        console.error("Error fetching all climbing ticks:", error)
+        return []
+    }
+}
+
+export async function fetchClimbingTicksForPerson(personDocumentId: string, year?: number): Promise<ClimbingTick[]> {
+    try {
+        let baseUrl = `${STRAPI_URL}/api/climbing-ticks?populate=*&sort=tickDate:desc&filters[person][documentId][$eq]=${personDocumentId}`
+        if (year) {
+            baseUrl += `&filters[tickDate][$gte]=${year}-01-01&filters[tickDate][$lte]=${year}-12-31`
+        }
+        return await fetchAllTicksWithPagination(baseUrl);
+    } catch (error) {
+        console.error("Error fetching climbing ticks for person:", error)
+        return []
+    }
+}
+
+export async function fetchClimbingTicksLast12Months(): Promise<ClimbingTick[]> {
+    try {
+        const now = new Date();
+        const endDate = now.toISOString().split('T')[0];
+        const startDate = new Date(now.getFullYear() - 1, now.getMonth(), now.getDate()).toISOString().split('T')[0];
+        const baseUrl = `${STRAPI_URL}/api/climbing-ticks?populate=*&sort=tickDate:desc&filters[tickDate][$gte]=${startDate}&filters[tickDate][$lte]=${endDate}`
+        return await fetchAllTicksWithPagination(baseUrl);
+    } catch (error) {
+        console.error("Error fetching climbing ticks for last 12 months:", error)
+        return []
+    }
+}
+
+export async function fetchClimbingTicksLast12MonthsForPerson(personDocumentId: string): Promise<ClimbingTick[]> {
+    try {
+        const now = new Date();
+        const endDate = now.toISOString().split('T')[0];
+        const startDate = new Date(now.getFullYear() - 1, now.getMonth(), now.getDate()).toISOString().split('T')[0];
+        const baseUrl = `${STRAPI_URL}/api/climbing-ticks?populate=*&sort=tickDate:desc&filters[person][documentId][$eq]=${personDocumentId}&filters[tickDate][$gte]=${startDate}&filters[tickDate][$lte]=${endDate}`
+        return await fetchAllTicksWithPagination(baseUrl);
+    } catch (error) {
+        console.error("Error fetching climbing ticks for last 12 months for person:", error)
         return []
     }
 }

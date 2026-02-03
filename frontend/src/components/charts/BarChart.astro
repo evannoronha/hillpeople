@@ -1,0 +1,264 @@
+---
+interface ActivityData {
+    label: string;
+    climbs: number;
+    pitches: number;
+}
+
+interface Props {
+    data: ActivityData[];
+    title?: string;
+    height?: number;
+    barColor?: string;
+}
+
+const { data, title, height = 200, barColor = 'var(--color-header)' } = Astro.props;
+
+// Calculate max values for scaling
+const maxPitches = Math.max(...data.map(d => d.pitches), 1);
+const maxClimbs = Math.max(...data.map(d => d.climbs), 1);
+---
+
+<div class="bar-chart-container" data-mode="pitches">
+    <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-2 mb-4">
+        {title && <h3 class="text-lg font-semibold">{title}</h3>}
+        <div class="bar-chart-toggle flex gap-1 text-xs" role="group" aria-label="Activity metric">
+            <button
+                type="button"
+                class="bar-toggle-btn active"
+                data-mode="pitches"
+                aria-pressed="true"
+            >
+                Pitches
+            </button>
+            <button
+                type="button"
+                class="bar-toggle-btn"
+                data-mode="climbs"
+                aria-pressed="false"
+            >
+                Climbs
+            </button>
+        </div>
+    </div>
+
+    <div class="bar-chart" style={`min-height: ${height}px;`}>
+        <!-- Grid lines -->
+        <div class="chart-grid">
+            <div class="grid-line"></div>
+            <div class="grid-line"></div>
+            <div class="grid-line"></div>
+        </div>
+
+        <!-- Pitches bars (shown by default) -->
+        <div class="bars-group pitches-bars">
+            {data.map((point) => {
+                const heightPercent = maxPitches > 0 ? (point.pitches / maxPitches) * 100 : 0;
+                return (
+                    <div class="bar-column">
+                        <div
+                            class="bar"
+                            style={`height: ${heightPercent}%; background-color: ${barColor};`}
+                        >
+                            <span class="bar-tooltip">{point.pitches} pitches</span>
+                        </div>
+                    </div>
+                );
+            })}
+        </div>
+
+        <!-- Climbs bars (hidden by default) -->
+        <div class="bars-group climbs-bars">
+            {data.map((point) => {
+                const heightPercent = maxClimbs > 0 ? (point.climbs / maxClimbs) * 100 : 0;
+                return (
+                    <div class="bar-column">
+                        <div
+                            class="bar"
+                            style={`height: ${heightPercent}%; background-color: ${barColor};`}
+                        >
+                            <span class="bar-tooltip">{point.climbs} climbs</span>
+                        </div>
+                    </div>
+                );
+            })}
+        </div>
+
+        <!-- X-axis labels -->
+        <div class="x-labels">
+            {data.map(point => (
+                <span class="x-label">{point.label}</span>
+            ))}
+        </div>
+    </div>
+</div>
+
+<style>
+    .bar-chart-container {
+        position: relative;
+        display: flex;
+        flex-direction: column;
+        height: 100%;
+    }
+
+    .bar-toggle-btn {
+        padding: 0.25rem 0.5rem;
+        border-radius: 0.25rem;
+        transition: background-color 0.2s, color 0.2s;
+        background-color: #d4d4d4;
+        color: #555;
+    }
+
+    .bar-toggle-btn.active {
+        background-color: var(--color-header);
+        color: white;
+    }
+
+    .bar-toggle-btn:hover:not(.active),
+    .bar-toggle-btn:focus:not(.active) {
+        background-color: #bbb;
+    }
+
+    :global(.dark) .bar-toggle-btn {
+        background-color: #444;
+        color: #ccc;
+    }
+
+    :global(.dark) .bar-toggle-btn:hover:not(.active),
+    :global(.dark) .bar-toggle-btn:focus:not(.active) {
+        background-color: #555;
+    }
+
+    .bar-toggle-btn:focus {
+        outline: 2px solid var(--color-header);
+        outline-offset: 2px;
+    }
+
+    .bar-chart {
+        position: relative;
+        flex: 1;
+    }
+
+    .chart-grid {
+        position: absolute;
+        inset: 0;
+        display: flex;
+        flex-direction: column;
+        justify-content: space-between;
+        padding-bottom: 30px;
+        pointer-events: none;
+        opacity: 0.3;
+    }
+
+    .grid-line {
+        border-bottom: 1px solid currentColor;
+    }
+
+    .bars-group {
+        position: absolute;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 30px; /* Leave space for x-labels */
+        display: grid;
+        grid-auto-columns: 1fr;
+        grid-auto-flow: column;
+        gap: 4px;
+    }
+
+    /* Toggle visibility based on container's data-mode */
+    .bar-chart-container[data-mode="pitches"] .pitches-bars {
+        display: grid;
+    }
+    .bar-chart-container[data-mode="pitches"] .climbs-bars {
+        display: none;
+    }
+    .bar-chart-container[data-mode="climbs"] .pitches-bars {
+        display: none;
+    }
+    .bar-chart-container[data-mode="climbs"] .climbs-bars {
+        display: grid;
+    }
+
+    .bar-column {
+        height: 100%;
+        display: flex;
+        align-items: flex-end;
+    }
+
+    .bar {
+        width: 100%;
+        min-height: 4px;
+        border-radius: 4px 4px 0 0;
+        transition: opacity 0.2s;
+        position: relative;
+        cursor: pointer;
+    }
+
+    .bar:hover {
+        opacity: 0.8;
+    }
+
+    .bar-tooltip {
+        position: absolute;
+        top: -32px;
+        left: 50%;
+        transform: translateX(-50%);
+        background-color: var(--color-text);
+        color: var(--color-bg);
+        padding: 4px 8px;
+        border-radius: 4px;
+        font-size: 0.75rem;
+        white-space: nowrap;
+        opacity: 0;
+        pointer-events: none;
+        transition: opacity 0.2s;
+    }
+
+    .bar:hover .bar-tooltip {
+        opacity: 1;
+    }
+
+    .x-labels {
+        position: absolute;
+        bottom: 0;
+        left: 0;
+        right: 0;
+        display: flex;
+    }
+
+    .x-label {
+        flex: 1;
+        text-align: center;
+        font-size: 0.75rem;
+        opacity: 0.7;
+    }
+</style>
+
+<script>
+    function initBarChartToggles() {
+        document.querySelectorAll('.bar-chart-container').forEach(container => {
+            const buttons = container.querySelectorAll('.bar-toggle-btn');
+
+            buttons.forEach(btn => {
+                btn.addEventListener('click', () => {
+                    const mode = btn.getAttribute('data-mode');
+                    if (!mode) return;
+
+                    // Update container's data-mode (CSS handles the rest)
+                    container.setAttribute('data-mode', mode);
+
+                    // Update button states
+                    buttons.forEach(b => {
+                        const isActive = b.getAttribute('data-mode') === mode;
+                        b.classList.toggle('active', isActive);
+                        b.setAttribute('aria-pressed', isActive ? 'true' : 'false');
+                    });
+                });
+            });
+        });
+    }
+
+    initBarChartToggles();
+    document.addEventListener('astro:page-load', initBarChartToggles);
+</script>

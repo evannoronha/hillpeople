@@ -466,6 +466,46 @@ export interface ApiAboutAbout extends Struct.SingleTypeSchema {
   };
 }
 
+export interface ApiClimbingGoalClimbingGoal
+  extends Struct.CollectionTypeSchema {
+  collectionName: 'climbing_goals';
+  info: {
+    description: 'Climbing goals for tracking progress';
+    displayName: 'Climbing Goal';
+    pluralName: 'climbing-goals';
+    singularName: 'climbing-goal';
+  };
+  options: {
+    draftAndPublish: false;
+  };
+  attributes: {
+    createdAt: Schema.Attribute.DateTime;
+    createdBy: Schema.Attribute.Relation<'oneToOne', 'admin::user'> &
+      Schema.Attribute.Private;
+    goalType: Schema.Attribute.Enumeration<
+      ['lead_pitches', 'lead_climbs', 'redpoints', 'onsights', 'grade_target']
+    > &
+      Schema.Attribute.Required;
+    isActive: Schema.Attribute.Boolean & Schema.Attribute.DefaultTo<true>;
+    locale: Schema.Attribute.String & Schema.Attribute.Private;
+    localizations: Schema.Attribute.Relation<
+      'oneToMany',
+      'api::climbing-goal.climbing-goal'
+    > &
+      Schema.Attribute.Private;
+    minGrade: Schema.Attribute.String;
+    person: Schema.Attribute.Relation<'manyToOne', 'api::person.person'>;
+    publishedAt: Schema.Attribute.DateTime;
+    routeType: Schema.Attribute.String;
+    targetCount: Schema.Attribute.Integer & Schema.Attribute.Required;
+    title: Schema.Attribute.String & Schema.Attribute.Required;
+    updatedAt: Schema.Attribute.DateTime;
+    updatedBy: Schema.Attribute.Relation<'oneToOne', 'admin::user'> &
+      Schema.Attribute.Private;
+    year: Schema.Attribute.Integer & Schema.Attribute.Required;
+  };
+}
+
 export interface ApiClimbingRouteClimbingRoute
   extends Struct.CollectionTypeSchema {
   collectionName: 'climbing_routes';
@@ -1383,6 +1423,7 @@ declare module '@strapi/strapi' {
       'admin::transfer-token-permission': AdminTransferTokenPermission;
       'admin::user': AdminUser;
       'api::about.about': ApiAboutAbout;
+      'api::climbing-goal.climbing-goal': ApiClimbingGoalClimbingGoal;
       'api::climbing-route.climbing-route': ApiClimbingRouteClimbingRoute;
       'api::climbing-tick.climbing-tick': ApiClimbingTickClimbingTick;
       'api::home-page.home-page': ApiHomePageHomePage;
