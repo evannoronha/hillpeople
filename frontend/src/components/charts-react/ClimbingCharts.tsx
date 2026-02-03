@@ -1,4 +1,3 @@
-import React from 'react';
 import GradePyramid from './GradePyramid';
 import BarChart from './BarChart';
 import DonutChart from './DonutChart';

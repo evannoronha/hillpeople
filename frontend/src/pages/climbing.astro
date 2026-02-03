@@ -1,6 +1,7 @@
 ---
 import Layout from "../layouts/Layout.astro";
 import TicklistFilters from "../components/TicklistFilters.astro";
+import ChartsIsland from "../components/charts-react/ChartsIsland";
 import { fetchAllPeople, fetchSiteSettings } from "../lib/api";
 import { STRAPI_API_URL } from 'astro:env/server';
 
@@ -97,8 +98,13 @@ const clientConfig = {
             </div>
         </div>
 
-        <!-- Charts Section (with skeletons) -->
-        <div id="charts-container" class="charts-section grid md:grid-cols-2 gap-8 mb-12">
+        <!-- Charts Section - React Island -->
+        <div id="charts-container">
+            <ChartsIsland client:only="react" />
+        </div>
+
+        <!-- Charts Skeleton (shown until React hydrates) -->
+        <div id="charts-skeleton" class="charts-section grid md:grid-cols-2 gap-8 mb-12">
             <!-- Bar Chart Skeleton -->
             <div class="chart-card bg-[var(--color-accent)]/5 rounded-xl p-6 flex flex-col">
                 <div class="flex justify-between items-center mb-4">
@@ -108,7 +114,7 @@ const clientConfig = {
                         <div class="h-6 w-16 bg-[var(--color-accent)]/20 rounded animate-pulse"></div>
                     </div>
                 </div>
-                <div id="bar-chart-area" class="flex-1 min-h-[220px] flex items-end gap-1">
+                <div class="flex-1 min-h-[220px] flex items-end gap-1">
                     {[1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12].map(() => (
                         <div class="flex-1 bg-[var(--color-accent)]/20 rounded-t animate-pulse" style="height: 40%"></div>
                     ))}
@@ -129,7 +135,7 @@ const clientConfig = {
             </div>
         </div>
 
-        <!-- Grade Pyramid (with skeleton) -->
+        <!-- Grade Pyramid Skeleton -->
         <div id="pyramid-container" class="chart-card bg-[var(--color-accent)]/5 rounded-xl p-6 mb-12">
             <div class="flex justify-between items-center mb-4">
                 <div class="h-6 bg-[var(--color-accent)]/20 rounded w-32 animate-pulse"></div>

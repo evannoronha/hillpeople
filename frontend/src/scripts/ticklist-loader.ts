@@ -1,10 +1,6 @@
 // Client-side data loader for The Ticklist page
 // Fetches pre-computed data from /api/ticklist-data and renders UI components
 
-import React from 'react';
-import { createRoot, Root } from 'react-dom/client';
-import { ClimbingCharts } from '../components/charts-react';
-
 interface TicklistConfig {
     strapiUrl: string; // Still needed for image URLs
     selectedPersonId?: string;
@@ -115,9 +111,6 @@ interface TicklistDataResponse {
     people: Person[];
 }
 
-// Store React root for cleanup on page transitions
-let chartsRoot: Root | null = null;
-
 // Activity data formatting functions
 function getMonthlyActivity(byMonth: Record<string, number>, pitchesByMonth: Record<string, number>, year: number): ActivityData[] {
     const monthNames = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
@@ -194,77 +187,41 @@ function renderCharts(
     showLast12Months: boolean,
     selectedYear?: number
 ): void {
-    // Check if React wrapper already exists (from previous render)
-    let reactWrapper = document.getElementById('react-charts-wrapper');
+    // Hide skeleton when charts data is ready
+    const skeleton = document.getElementById('charts-skeleton');
+    const pyramidSkeleton = document.getElementById('pyramid-container');
+    if (skeleton) skeleton.style.display = 'none';
+    if (pyramidSkeleton) pyramidSkeleton.style.display = 'none';
 
-    if (!reactWrapper) {
-        // First render - need to set up the wrapper
-        const chartsContainer = document.getElementById('charts-container');
-        const pyramidContainer = document.getElementById('pyramid-container');
+    const chartsData = {
+        activityData,
+        routeTypeData,
+        gradePyramidData,
+        showAllTime,
+        showLast12Months,
+        selectedYear,
+    };
 
-        if (!chartsContainer || !pyramidContainer) return;
+    // Store on window so React island can access it if it mounts after the event
+    (window as unknown as { __CHARTS_DATA__: typeof chartsData }).__CHARTS_DATA__ = chartsData;
 
-        // Clear skeleton content
-        chartsContainer.innerHTML = '';
-        pyramidContainer.innerHTML = '';
-
-        // Create a wrapper div for the React root
-        reactWrapper = document.createElement('div');
-        reactWrapper.id = 'react-charts-wrapper';
-        chartsContainer.parentElement?.insertBefore(reactWrapper, chartsContainer);
-
-        // Remove the old skeleton containers
-        chartsContainer.remove();
-        pyramidContainer.remove();
-    }
-
-    // If we have an existing root, just re-render with new props
-    if (chartsRoot) {
-        chartsRoot.render(
-            React.createElement(ClimbingCharts, {
-                activityData,
-                routeTypeData,
-                gradePyramidData,
-                showAllTime,
-                showLast12Months,
-                selectedYear,
-            })
-        );
-    } else {
-        // Create new React root and render
-        chartsRoot = createRoot(reactWrapper);
-        chartsRoot.render(
-            React.createElement(ClimbingCharts, {
-                activityData,
-                routeTypeData,
-                gradePyramidData,
-                showAllTime,
-                showLast12Months,
-                selectedYear,
-            })
-        );
-    }
+    // Dispatch event for React island to receive data
+    window.dispatchEvent(new CustomEvent('charts-data-update', {
+        detail: chartsData
+    }));
 }
 
 function renderGoalsDashboard(goals: GoalProgress[], personName?: string, goalYear?: number): void {
     const container = document.getElementById('goals-container');
     if (!container || goals.length === 0) return;
 
-    // When showing everyone's goals, sort by person then by completion/progress
     const sortedGoals = [...goals].sort((a, b) => {
-        // If no specific person selected, group by person first
-        if (!personName) {
-            const nameA = a.goal.person?.name || '';
-            const nameB = b.goal.person?.name || '';
-            if (nameA !== nameB) return nameA.localeCompare(nameB);
-        }
         if (a.isComplete !== b.isComplete) return a.isComplete ? 1 : -1;
         return b.percent - a.percent;
     });
 
     const completedCount = goals.filter(g => g.isComplete).length;
     const allComplete = completedCount === goals.length;
-    const isEveryoneView = !personName;
 
     container.innerHTML = `
         <div class="goals-dashboard bg-[var(--color-accent)]/5 rounded-xl p-6 mb-8">
@@ -279,10 +236,7 @@ function renderGoalsDashboard(goals: GoalProgress[], personName?: string, goalYe
                 ${sortedGoals.map(progress => `
                     <div class="progress-bar-container">
                         <div class="flex justify-between mb-1">
-                            <div class="flex items-center gap-2">
-                                ${isEveryoneView && progress.goal.person ? `<span class="text-xs px-2 py-0.5 rounded bg-[var(--color-accent)]/20">${progress.goal.person.name}</span>` : ''}
-                                <span class="text-sm font-medium ${progress.isComplete ? 'line-through opacity-60' : ''}">${progress.goal.title}</span>
-                            </div>
+                            <span class="text-sm font-medium ${progress.isComplete ? 'line-through opacity-60' : ''}">${progress.goal.title}</span>
                             <span class="text-sm opacity-70">${progress.current} / ${progress.target}</span>
                         </div>
                         <div class="h-2 bg-[var(--color-accent)]/20 rounded-full overflow-hidden">
@@ -438,13 +392,10 @@ async function loadTicklistData(params: LoadParams): Promise<void> {
 
             renderCharts(activityData, routeTypeData, gradePyramid, showAllTime, showLast12Months, selectedYear);
         } else {
-            // Clear charts if no data
-            const reactWrapper = document.getElementById('react-charts-wrapper');
-            if (reactWrapper && chartsRoot) {
-                chartsRoot.unmount();
-                chartsRoot = null;
-                reactWrapper.innerHTML = '';
-            }
+            // Clear charts if no data - dispatch empty data
+            window.dispatchEvent(new CustomEvent('charts-data-update', {
+                detail: null
+            }));
         }
 
         // Render goals if available
@@ -548,10 +499,6 @@ function handleFilterChange(event: CustomEvent<{ personId: string; year: string 
 
 // Cleanup function for page transitions
 function cleanup() {
-    if (chartsRoot) {
-        chartsRoot.unmount();
-        chartsRoot = null;
-    }
     // Remove filter change listener
     window.removeEventListener('ticklist-filter-change', handleFilterChange as EventListener);
 }
