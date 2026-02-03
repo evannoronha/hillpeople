@@ -1,4 +1,6 @@
-const STRAPI_URL = import.meta.env.STRAPI_API_URL
+import { STRAPI_API_URL } from 'astro:env/server'
+
+const STRAPI_URL = STRAPI_API_URL
 
 export const getMediaUrl = (url?: string): string => {
     if (!url) return '';

@@ -1,0 +1,323 @@
+/* ===========================================
+   Shared CKEditor Content Styles
+
+   This file defines content styling for CKEditor HTML output.
+   It is the single source of truth for how content renders.
+
+   Used by:
+   - Frontend: Imported in global.css, rendered in Prose component
+   - Backend: Read by app.tsx and injected into CKEditor
+
+   CSS Variables (must be defined by the consuming context):
+   - --ck-content-font-family: Font for body text
+   - --ck-content-font-size: Base font size (16px recommended)
+   - --ck-content-line-height: Base line height (1.75 recommended)
+   - --ck-content-color: Text color
+   - --ck-content-color-muted: Muted text (captions, etc.)
+   - --ck-content-color-link: Link color
+   - --ck-content-color-heading: Heading color (h1, h2, h3)
+   - --ck-content-color-border: Border color (blockquotes, hr)
+   - --ck-content-max-width: Max content width (768px for blog posts)
+   =========================================== */
+
+/* ---- Base Typography ---- */
+
+.ck-content {
+    font-family: var(--ck-content-font-family);
+    font-size: var(--ck-content-font-size);
+    line-height: var(--ck-content-line-height);
+    color: var(--ck-content-color);
+    max-width: var(--ck-content-max-width);
+    margin-left: auto;
+    margin-right: auto;
+}
+
+.ck-content h1 {
+    font-size: 2.25em;
+    margin-top: 0;
+    margin-bottom: 0.8888889em;
+    line-height: 1.1111111;
+    font-weight: 800;
+    color: var(--ck-content-color-heading);
+}
+
+.ck-content h2 {
+    font-size: 1.5em;
+    margin-top: 2em;
+    margin-bottom: 1em;
+    line-height: 1.3333333;
+    font-weight: 700;
+    color: var(--ck-content-color-heading);
+}
+
+.ck-content h3 {
+    font-size: 1.25em;
+    margin-top: 1.6em;
+    margin-bottom: 0.6em;
+    line-height: 1.6;
+    font-weight: 600;
+    color: var(--ck-content-color-heading);
+}
+
+.ck-content h4 {
+    font-size: 1em;
+    margin-top: 1.5em;
+    margin-bottom: 0.5em;
+    line-height: 1.5;
+    font-weight: 600;
+    color: var(--ck-content-color-heading);
+}
+
+.ck-content p {
+    margin-top: 1.25em;
+    margin-bottom: 1.25em;
+}
+
+.ck-content a {
+    color: var(--ck-content-color-link);
+    text-decoration: underline;
+}
+
+.ck-content strong {
+    font-weight: 600;
+    color: inherit;
+}
+
+.ck-content em {
+    font-style: italic;
+}
+
+.ck-content code {
+    font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
+    font-size: 0.875em;
+    background-color: var(--ck-content-color-code-bg, rgba(0, 0, 0, 0.05));
+    padding: 0.2em 0.4em;
+    border-radius: 0.25em;
+}
+
+.ck-content pre {
+    font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
+    font-size: 0.875em;
+    line-height: 1.7142857;
+    margin-top: 1.7142857em;
+    margin-bottom: 1.7142857em;
+    border-radius: 0.375rem;
+    padding: 0.8571429em 1.1428571em;
+    background-color: var(--ck-content-color-code-bg, rgba(0, 0, 0, 0.05));
+    overflow-x: auto;
+}
+
+.ck-content pre code {
+    background-color: transparent;
+    padding: 0;
+    font-size: inherit;
+}
+
+/* ---- Blockquotes ---- */
+
+.ck-content blockquote {
+    font-style: italic;
+    border-left: 4px solid var(--ck-content-color-border);
+    padding-left: 1em;
+    margin-left: 0;
+    margin-right: 0;
+    margin-top: 1.6em;
+    margin-bottom: 1.6em;
+}
+
+.ck-content blockquote p:first-of-type::before {
+    content: none;
+}
+
+.ck-content blockquote p:last-of-type::after {
+    content: none;
+}
+
+/* ---- Lists ---- */
+
+.ck-content ul {
+    list-style-type: disc;
+    padding-left: 1.625em;
+    margin-top: 1.25em;
+    margin-bottom: 1.25em;
+}
+
+.ck-content ol {
+    list-style-type: decimal;
+    padding-left: 1.625em;
+    margin-top: 1.25em;
+    margin-bottom: 1.25em;
+}
+
+.ck-content li {
+    margin-top: 0.5em;
+    margin-bottom: 0.5em;
+}
+
+.ck-content li > ul,
+.ck-content li > ol {
+    margin-top: 0.5em;
+    margin-bottom: 0.5em;
+}
+
+.ck-content ul > li::marker {
+    color: var(--ck-content-color-muted);
+}
+
+.ck-content ol > li::marker {
+    color: var(--ck-content-color-muted);
+    font-weight: 400;
+}
+
+/* ---- Horizontal Rules ---- */
+
+.ck-content hr {
+    border-color: var(--ck-content-color-border);
+    border-top-width: 1px;
+    margin-top: 3em;
+    margin-bottom: 3em;
+}
+
+/* ---- Images ---- */
+
+.ck-content .image {
+    display: table;
+    clear: both;
+    text-align: center;
+    margin: 1.5em auto;
+    min-width: 50px;
+}
+
+.ck-content .image img {
+    display: block;
+    margin: 0 auto;
+    max-width: 100%;
+    height: auto;
+}
+
+.ck-content .image > figcaption {
+    display: table-caption;
+    caption-side: bottom;
+    word-break: break-word;
+    color: var(--ck-content-color-muted);
+    background-color: transparent;
+    padding: 0.6em;
+    font-size: 0.75em;
+    outline-offset: -1px;
+}
+
+/* Image Alignment */
+.ck-content .image-style-align-center {
+    margin-left: auto;
+    margin-right: auto;
+}
+
+.ck-content .image-style-block-align-left {
+    margin-right: auto;
+}
+
+.ck-content .image-style-block-align-right {
+    margin-left: auto;
+}
+
+.ck-content .image-style-align-left {
+    float: left;
+    margin-right: 1.5em;
+    margin-top: 0.5em;
+    margin-bottom: 0.5em;
+}
+
+.ck-content .image-style-align-right {
+    float: right;
+    margin-left: 1.5em;
+    margin-top: 0.5em;
+    margin-bottom: 0.5em;
+}
+
+.ck-content .image-style-side {
+    float: right;
+    margin-left: 1.5em;
+    max-width: 50%;
+}
+
+/* Resized Images (for side-by-side) */
+.ck-content .image.image_resized {
+    display: inline-block;
+    max-width: 100%;
+    box-sizing: border-box;
+    margin: 0.5em;
+    vertical-align: top;
+}
+
+.ck-content .image.image_resized img {
+    width: 100%;
+}
+
+.ck-content .image.image_resized.image-style-align-left {
+    float: left;
+    margin-right: 1.5em;
+    margin-left: 0;
+}
+
+.ck-content .image.image_resized.image-style-align-right {
+    float: right;
+    margin-left: 1.5em;
+    margin-right: 0;
+}
+
+/* Clear floats after image groups */
+.ck-content p:has(+ .image),
+.ck-content .image + p {
+    clear: both;
+}
+
+.ck-content p::after {
+    content: "";
+    display: table;
+    clear: both;
+}
+
+/* ---- Video ---- */
+
+.ck-content video {
+    display: block;
+    margin: 1.5em auto;
+    max-width: 100%;
+    height: auto;
+    border-radius: 4px;
+}
+
+/* ---- Tables ---- */
+
+.ck-content table {
+    width: 100%;
+    table-layout: auto;
+    text-align: left;
+    margin-top: 2em;
+    margin-bottom: 2em;
+    font-size: 0.875em;
+    line-height: 1.7142857;
+}
+
+.ck-content thead {
+    border-bottom: 1px solid var(--ck-content-color-border);
+}
+
+.ck-content thead th {
+    font-weight: 600;
+    padding: 0 0.5714286em 0.5714286em;
+    vertical-align: bottom;
+}
+
+.ck-content tbody tr {
+    border-bottom: 1px solid var(--ck-content-color-border);
+}
+
+.ck-content tbody tr:last-child {
+    border-bottom-width: 0;
+}
+
+.ck-content tbody td {
+    padding: 0.5714286em;
+    vertical-align: baseline;
+}
