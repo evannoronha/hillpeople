@@ -385,21 +385,21 @@ function renderBarChart(data: ActivityData[], title: string): void {
                     <div style="border-bottom: 1px solid currentColor;"></div>
                     <div style="border-bottom: 1px solid currentColor;"></div>
                 </div>
-                <div class="bars-group pitches-bars" style="position: absolute; top: 0; left: 0; right: 0; bottom: 30px; display: grid; grid-auto-columns: 1fr; grid-auto-flow: column; gap: 4px;">
+                <div class="bars-group pitches-bars" style="position: absolute; top: 0; left: 0; right: 0; bottom: 30px; display: grid; grid-auto-columns: 1fr; grid-auto-flow: column; gap: 4px; overflow: visible;">
                     ${data.map(point => {
                         const heightPercent = maxPitches > 0 ? (point.pitches / maxPitches) * 100 : 0;
-                        return `<div style="height: 100%; display: flex; align-items: flex-end;">
-                            <div class="bar" style="width: 100%; height: ${heightPercent}%; background-color: ${barColor}; min-height: 4px; border-radius: 4px 4px 0 0; position: relative; cursor: pointer;">
+                        return `<div class="bar-column" style="height: 100%; display: flex; align-items: flex-end; overflow: visible;">
+                            <div class="bar" style="width: 100%; height: ${heightPercent}%; background-color: ${barColor}; min-height: 4px; border-radius: 4px 4px 0 0; position: relative; cursor: pointer; overflow: visible;">
                                 <span class="bar-tooltip">${point.pitches} pitches</span>
                             </div>
                         </div>`;
                     }).join('')}
                 </div>
-                <div class="bars-group climbs-bars" style="position: absolute; top: 0; left: 0; right: 0; bottom: 30px; display: none; grid-auto-columns: 1fr; grid-auto-flow: column; gap: 4px;">
+                <div class="bars-group climbs-bars" style="position: absolute; top: 0; left: 0; right: 0; bottom: 30px; display: none; grid-auto-columns: 1fr; grid-auto-flow: column; gap: 4px; overflow: visible;">
                     ${data.map(point => {
                         const heightPercent = maxClimbs > 0 ? (point.climbs / maxClimbs) * 100 : 0;
-                        return `<div style="height: 100%; display: flex; align-items: flex-end;">
-                            <div class="bar" style="width: 100%; height: ${heightPercent}%; background-color: ${barColor}; min-height: 4px; border-radius: 4px 4px 0 0; position: relative; cursor: pointer;">
+                        return `<div class="bar-column" style="height: 100%; display: flex; align-items: flex-end; overflow: visible;">
+                            <div class="bar" style="width: 100%; height: ${heightPercent}%; background-color: ${barColor}; min-height: 4px; border-radius: 4px 4px 0 0; position: relative; cursor: pointer; overflow: visible;">
                                 <span class="bar-tooltip">${point.climbs} climbs</span>
                             </div>
                         </div>`;

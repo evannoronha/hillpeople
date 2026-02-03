@@ -237,9 +237,18 @@ const clientConfig = {
         opacity: 0;
         pointer-events: none;
         transition: opacity 0.2s;
+        z-index: 10;
     }
 
     :global(.bar:hover .bar-tooltip) {
         opacity: 1;
+    }
+
+    /* Allow tooltips to overflow their containers */
+    :global(.bar-chart-container),
+    :global(.bar-chart),
+    :global(.bars-group),
+    :global(.bar-column) {
+        overflow: visible;
     }
 </style>
