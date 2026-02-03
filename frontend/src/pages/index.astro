@@ -46,6 +46,14 @@ const itemListData = {
     position: index + 1,
   })),
 };
+
+// Preload first post image for LCP optimization
+const firstPost = posts[0];
+const preloadImage = firstPost?.coverImage?.formats?.medium?.url
+  ? getMediaUrl(firstPost.coverImage.formats.medium.url)
+  : firstPost?.coverImage?.url
+    ? getMediaUrl(firstPost.coverImage.url)
+    : undefined;
 ---
 
 <Layout
@@ -53,6 +61,7 @@ const itemListData = {
   description={description}
   ogImage={ogImage}
   siteName={siteName}
+  preloadImage={preloadImage}
 >
   <StructuredData data={webSiteData} />
   <StructuredData data={itemListData} />
@@ -64,7 +73,9 @@ const itemListData = {
   <section aria-label="Recent posts" class="max-w-6xl mx-auto px-4 pb-10">
     <h2 class="sr-only">Recent Posts</h2>
     <div id="posts-grid" class="grid gap-8 sm:grid-cols-2 lg:grid-cols-3">
-      {posts.map((post: any) => <PostCard post={post} />)}
+      {posts.map((post: any, index: number) => (
+        <PostCard post={post} priority={index < 3} />
+      ))}
     </div>
     {hasMore && (
       <div class="text-center mt-10">

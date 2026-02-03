@@ -14,9 +14,10 @@ interface Props {
     };
     coverImage?: StrapiImage;
   };
+  priority?: boolean;
 }
 
-const { post } = Astro.props;
+const { post, priority = false } = Astro.props;
 const { title, slug, publishedDate, seo, coverImage, richContent } = post;
 const excerpt = seo?.excerpt;
 const postUrl = `/blog/${slug}`;
@@ -68,8 +69,9 @@ const formattedDate = new Date(publishedDate).toLocaleDateString(undefined, {
         width={coverImage.width}
         height={coverImage.height}
         alt={coverImage.alternativeText || title}
-        loading="lazy"
+        loading={priority ? "eager" : "lazy"}
         decoding="async"
+        fetchpriority={priority ? "high" : undefined}
         class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
       />
     </div>
