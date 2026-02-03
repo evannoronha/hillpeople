@@ -27,15 +27,20 @@ export const POST: APIRoute = async ({ request }) => {
             body: JSON.stringify({ data: { email } }),
         });
 
-        const data = await response.json();
-
         if (response.ok) {
-            return new Response(JSON.stringify(data), {
+            // Don't leak Strapi response data (contains confirmation token)
+            return new Response(JSON.stringify({ success: true }), {
                 status: 200,
                 headers: { 'Content-Type': 'application/json' },
             });
         } else {
-            return new Response(JSON.stringify(data), {
+            // Only return sanitized error message
+            const data = await response.json();
+            const errorMessage = data?.error?.message || 'Subscription failed';
+            const isAlreadySubscribed = errorMessage.includes('unique') || errorMessage.includes('already');
+            return new Response(JSON.stringify({
+                error: { message: isAlreadySubscribed ? 'This email is already subscribed.' : 'Subscription failed. Please try again.' }
+            }), {
                 status: response.status,
                 headers: { 'Content-Type': 'application/json' },
             });
