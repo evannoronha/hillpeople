@@ -23,22 +23,19 @@ const colors = [
 export default function DonutChart({ data, title }: Props) {
     const total = data.reduce((sum, d) => sum + d.value, 0);
     const radius = 60;
-    const circumference = 2 * Math.PI * radius;
 
-    // Calculate segments
+    // Calculate segments using pathLength=100 for simpler math
     let cumulativePercent = 0;
     const segments = data.slice(0, 7).map((item, i) => {
-        const percent = total > 0 ? item.value / total : 0;
-        const offset = cumulativePercent * circumference;
-        const length = percent * circumference;
+        const percent = total > 0 ? (item.value / total) * 100 : 0;
+        const offset = cumulativePercent;
         cumulativePercent += percent;
 
         return {
             item,
             color: colors[i % colors.length],
             offset,
-            length,
-            percent,
+            length: percent,
         };
     });
 
@@ -57,12 +54,16 @@ export default function DonutChart({ data, title }: Props) {
                                 fill="none"
                                 stroke={seg.color}
                                 strokeWidth="20"
-                                strokeDasharray={`${seg.length} ${circumference - seg.length}`}
-                                strokeDashoffset={-seg.offset}
+                                pathLength={100}
                                 transform="rotate(-90 80 80)"
-                                initial={{ strokeDasharray: `0 ${circumference}` }}
+                                style={{
+                                    strokeDashoffset: -seg.offset,
+                                }}
+                                initial={{
+                                    strokeDasharray: `0 100`,
+                                }}
                                 animate={{
-                                    strokeDasharray: `${seg.length} ${circumference - seg.length}`,
+                                    strokeDasharray: `${seg.length} ${100 - seg.length}`,
                                 }}
                                 transition={{
                                     duration: 0.8,
