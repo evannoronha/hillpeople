@@ -61,15 +61,11 @@ export function initNewsletterSignup() {
     submitButton.textContent = 'Subscribing...';
 
     try {
-      const strapiUrl = form.dataset.strapiUrl;
-      if (!strapiUrl) {
-        throw new Error('Strapi URL not configured');
-      }
-
-      const res = await fetch(`${strapiUrl}/api/subscribers`, {
+      // Use our proxy endpoint instead of calling Strapi directly
+      const res = await fetch('/api/subscribe', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ data: { email } }),
+        body: JSON.stringify({ email }),
       });
 
       if (res.ok) {

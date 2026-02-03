@@ -1,59 +1,14 @@
 // Client-side data loader for The Ticklist page
-// Fetches data from Strapi and renders UI components
+// Fetches pre-computed data from /api/ticklist-data and renders UI components
 
 interface TicklistConfig {
-    strapiUrl: string;
+    strapiUrl: string; // Still needed for image URLs
     selectedPersonId?: string;
     selectedYear?: number;
     showAllTime: boolean;
     showLast12Months: boolean;
     currentYear: number;
     selectedPersonName?: string;
-}
-
-interface ClimbingTick {
-    id: number;
-    documentId: string;
-    tickDate: string;
-    style?: string;
-    leadStyle?: string;
-    notes?: string;
-    yourStars?: number;
-    route?: {
-        documentId: string;
-        name: string;
-        rating: string;
-        routeType?: string;
-        pitches?: number;
-        location?: string;
-        mountainProjectUrl?: string;
-    };
-    person?: {
-        documentId: string;
-        name: string;
-    };
-    photos?: Array<{
-        id: number;
-        url: string;
-        formats?: {
-            small?: { url: string };
-            medium?: { url: string };
-            thumbnail?: { url: string };
-        };
-    }>;
-}
-
-interface ClimbingGoal {
-    id: number;
-    documentId: string;
-    title: string;
-    year: number;
-    goalType: string;
-    targetCount: number;
-    minGrade?: string;
-    routeType?: string;
-    isActive: boolean;
-    person?: { documentId: string; name: string };
 }
 
 interface TickStats {
@@ -83,6 +38,19 @@ interface ActivityData {
     pitches: number;
 }
 
+interface ClimbingGoal {
+    id: number;
+    documentId: string;
+    title: string;
+    year: number;
+    goalType: string;
+    targetCount: number;
+    minGrade?: string;
+    routeType?: string;
+    isActive: boolean;
+    person?: { documentId: string; name: string };
+}
+
 interface GoalProgress {
     goal: ClimbingGoal;
     current: number;
@@ -91,201 +59,59 @@ interface GoalProgress {
     isComplete: boolean;
 }
 
-// Grade ordering for comparisons
-const GRADE_ORDER = [
-    '5.0', '5.1', '5.2', '5.3', '5.4', '5.5', '5.6', '5.7', '5.8', '5.9',
-    '5.10a', '5.10b', '5.10c', '5.10d', '5.10',
-    '5.11a', '5.11b', '5.11c', '5.11d', '5.11',
-    '5.12a', '5.12b', '5.12c', '5.12d', '5.12',
-    '5.13a', '5.13b', '5.13c', '5.13d', '5.13',
-    '5.14a', '5.14b', '5.14c', '5.14d', '5.14',
-    '5.15a', '5.15b', '5.15c', '5.15d', '5.15',
-];
-
-function parseGrade(rating: string): number {
-    if (!rating) return -1;
-    const match = rating.match(/5\.\d+[a-d]?/i);
-    if (!match) return -1;
-    const grade = match[0].toLowerCase();
-    const index = GRADE_ORDER.indexOf(grade);
-    if (index === -1) {
-        const baseMatch = rating.match(/5\.\d+/);
-        if (baseMatch) return GRADE_ORDER.indexOf(baseMatch[0]);
-    }
-    return index;
+interface GroupedRoute {
+    route: {
+        documentId?: string;
+        name: string;
+        rating: string;
+        routeType?: string;
+        pitches?: number;
+        location?: string;
+        mountainProjectUrl?: string;
+    } | null;
+    climbers: string[];
+    bestStars: number;
+    photos?: Array<{
+        id: number;
+        url: string;
+        formats?: {
+            small?: { url: string };
+            medium?: { url: string };
+            thumbnail?: { url: string };
+        };
+    }>;
+    notes: string[];
+    style?: string;
+    leadStyle?: string;
 }
 
-function extractGrade(rating: string): string {
-    if (!rating) return 'Unknown';
-    const match = rating.match(/5\.\d+[a-d]?/i);
-    return match ? match[0] : rating.split(' ')[0];
+interface TicksByDate {
+    date: string;
+    formattedDate: string;
+    routes: GroupedRoute[];
 }
 
-function isGradeAtOrAbove(rating: string, minGrade: string): boolean {
-    const ratingValue = parseGrade(rating);
-    const minValue = parseGrade(minGrade);
-    if (ratingValue === -1 || minValue === -1) return false;
-    return ratingValue >= minValue;
+interface GradePyramidData {
+    all: Array<{ grade: string; count: number }>;
+    leads: Array<{ grade: string; count: number }>;
+    redpoints: Array<{ grade: string; count: number }>;
 }
 
-// Fetch all pages of ticks
-async function fetchAllTicks(baseUrl: string): Promise<ClimbingTick[]> {
-    const allTicks: ClimbingTick[] = [];
-    let page = 1;
-    const pageSize = 100;
-    let hasMore = true;
-
-    while (hasMore) {
-        const url = `${baseUrl}&pagination[page]=${page}&pagination[pageSize]=${pageSize}`;
-        const response = await fetch(url);
-        if (!response.ok) throw new Error(`Failed to fetch: ${response.status}`);
-        const data = await response.json();
-        const ticks = data.data || [];
-        allTicks.push(...ticks);
-        const pagination = data.meta?.pagination;
-        hasMore = pagination && page < pagination.pageCount;
-        page++;
-    }
-    return allTicks;
+interface Person {
+    id: number;
+    documentId: string;
+    name: string;
 }
 
-// Compute stats from ticks
-function computeTickStats(ticks: ClimbingTick[]): TickStats {
-    const stats: TickStats = {
-        totalTicks: ticks.length,
-        totalPitches: 0,
-        leadCount: 0,
-        leadPitches: 0,
-        redpointCount: 0,
-        onsightCount: 0,
-        flashCount: 0,
-        byGrade: {},
-        byGradeLeads: {},
-        byGradeRedpoints: {},
-        byRouteType: {},
-        byMonth: {},
-        pitchesByMonth: {},
-        multipitchCount: 0,
-        singlepitchCount: 0,
-        uniqueDays: 0,
-        highestRedpoint: '',
-        favoriteArea: '',
-    };
-
-    const uniqueDates = new Set<string>();
-    const areaCount: Record<string, number> = {};
-    let highestRedpointValue = -1;
-
-    for (const tick of ticks) {
-        const route = tick.route;
-        if (!route) continue;
-
-        const pitches = route.pitches || 1;
-        stats.totalPitches += pitches;
-
-        if (tick.tickDate) uniqueDates.add(tick.tickDate);
-
-        const isLead = tick.style?.toLowerCase() === 'lead';
-        if (isLead) {
-            stats.leadCount++;
-            stats.leadPitches += pitches;
-        }
-
-        const leadStyle = tick.leadStyle?.toLowerCase();
-        const isRedpoint = leadStyle === 'redpoint' || leadStyle === 'onsight' || leadStyle === 'flash' || (isLead && !leadStyle);
-        if (leadStyle === 'redpoint') stats.redpointCount++;
-        if (leadStyle === 'onsight') stats.onsightCount++;
-        if (leadStyle === 'flash') stats.flashCount++;
-
-        const grade = extractGrade(route.rating);
-        stats.byGrade[grade] = (stats.byGrade[grade] || 0) + 1;
-
-        if (isLead) {
-            stats.byGradeLeads[grade] = (stats.byGradeLeads[grade] || 0) + 1;
-        }
-
-        if (isRedpoint) {
-            stats.byGradeRedpoints[grade] = (stats.byGradeRedpoints[grade] || 0) + 1;
-            const gradeValue = parseGrade(route.rating);
-            if (gradeValue > highestRedpointValue) {
-                highestRedpointValue = gradeValue;
-                stats.highestRedpoint = grade;
-            }
-        }
-
-        const routeType = route.routeType || 'Unknown';
-        stats.byRouteType[routeType] = (stats.byRouteType[routeType] || 0) + 1;
-
-        if (pitches > 1) stats.multipitchCount++;
-        else stats.singlepitchCount++;
-
-        if (tick.tickDate) {
-            const month = tick.tickDate.substring(0, 7);
-            stats.byMonth[month] = (stats.byMonth[month] || 0) + 1;
-            stats.pitchesByMonth[month] = (stats.pitchesByMonth[month] || 0) + pitches;
-        }
-
-        if (route.location) {
-            const area = route.location.split(' > ')[0];
-            areaCount[area] = (areaCount[area] || 0) + 1;
-        }
-    }
-
-    stats.uniqueDays = uniqueDates.size;
-
-    let maxAreaCount = 0;
-    for (const [area, count] of Object.entries(areaCount)) {
-        if (count > maxAreaCount) {
-            maxAreaCount = count;
-            stats.favoriteArea = area;
-        }
-    }
-
-    return stats;
+interface TicklistDataResponse {
+    ticks: TicksByDate[];
+    stats: TickStats;
+    gradePyramid: GradePyramidData;
+    goals: GoalProgress[];
+    people: Person[];
 }
 
-function computeGoalProgress(goal: ClimbingGoal, ticks: ClimbingTick[]): GoalProgress {
-    let current = 0;
-    let filteredTicks = ticks;
-
-    if (goal.person?.documentId) {
-        filteredTicks = ticks.filter(t => t.person?.documentId === goal.person?.documentId);
-    }
-
-    filteredTicks = filteredTicks.filter(t => {
-        if (!t.tickDate) return false;
-        const tickYear = parseInt(t.tickDate.substring(0, 4));
-        return tickYear === goal.year;
-    });
-
-    switch (goal.goalType) {
-        case 'lead_pitches':
-            current = filteredTicks
-                .filter(t => t.style?.toLowerCase() === 'lead')
-                .reduce((sum, t) => sum + (t.route?.pitches || 1), 0);
-            break;
-        case 'lead_climbs':
-            current = filteredTicks.filter(t => t.style?.toLowerCase() === 'lead').length;
-            break;
-        case 'redpoints':
-            current = filteredTicks.filter(t => t.leadStyle?.toLowerCase() === 'redpoint').length;
-            break;
-        case 'onsights':
-            current = filteredTicks.filter(t => t.leadStyle?.toLowerCase() === 'onsight').length;
-            break;
-        case 'grade_target':
-            current = filteredTicks.filter(t => {
-                if (goal.minGrade && !isGradeAtOrAbove(t.route?.rating || '', goal.minGrade)) return false;
-                if (goal.routeType && t.route?.routeType?.toLowerCase() !== goal.routeType.toLowerCase()) return false;
-                return true;
-            }).length;
-            break;
-    }
-
-    const percent = Math.min(100, Math.round((current / goal.targetCount) * 100));
-    return { goal, current, target: goal.targetCount, percent, isComplete: current >= goal.targetCount };
-}
-
+// Activity data formatting functions
 function getMonthlyActivity(byMonth: Record<string, number>, pitchesByMonth: Record<string, number>, year: number): ActivityData[] {
     const monthNames = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
     return Array.from({ length: 12 }, (_, m) => {
@@ -322,12 +148,6 @@ function getYearlyActivity(byMonth: Record<string, number>, pitchesByMonth: Reco
         climbs: climbsByYear[year] || 0,
         pitches: pitchesByYear[year] || 0,
     }));
-}
-
-function getSortedGrades(byGrade: Record<string, number>): Array<{ grade: string; count: number }> {
-    return Object.entries(byGrade)
-        .map(([grade, count]) => ({ grade, count }))
-        .sort((a, b) => parseGrade(b.grade) - parseGrade(a.grade));
 }
 
 // Rendering functions
@@ -481,11 +301,7 @@ function renderDonutChart(data: Array<{ label: string; value: number }>, title: 
     `;
 }
 
-function renderGradePyramid(
-    allRoutes: Array<{ grade: string; count: number }>,
-    leads: Array<{ grade: string; count: number }>,
-    redpoints: Array<{ grade: string; count: number }>
-): void {
+function renderGradePyramid(gradePyramid: GradePyramidData): void {
     const container = document.getElementById('pyramid-container');
     if (!container) return;
 
@@ -494,7 +310,11 @@ function renderGradePyramid(
         '#a8a29e', '#78716c', '#57534e', '#e7e5e4'
     ];
 
-    const modes = { redpoints, leads, allRoutes };
+    const modes = {
+        redpoints: gradePyramid.redpoints,
+        leads: gradePyramid.leads,
+        allRoutes: gradePyramid.all
+    };
     let currentMode = 'redpoints';
 
     function renderBars(data: Array<{ grade: string; count: number }>) {
@@ -581,77 +401,6 @@ function renderGoalsDashboard(goals: GoalProgress[], personName?: string, goalYe
     `;
 }
 
-interface GroupedRoute {
-    route: ClimbingTick['route'];
-    climbers: string[];
-    bestStars: number;
-    photos: ClimbingTick['photos'];
-    notes: string[];
-    style?: string;
-    leadStyle?: string;
-}
-
-interface TicksByDate {
-    date: string;
-    formattedDate: string;
-    routes: GroupedRoute[];
-}
-
-function groupTicksByDateAndRoute(ticks: ClimbingTick[]): TicksByDate[] {
-    const byDate = new Map<string, Map<string, GroupedRoute>>();
-
-    for (const tick of ticks) {
-        const date = tick.tickDate;
-        const routeUrl = tick.route?.mountainProjectUrl || 'unknown';
-
-        if (!byDate.has(date)) byDate.set(date, new Map());
-        const dateRoutes = byDate.get(date)!;
-
-        if (!dateRoutes.has(routeUrl)) {
-            dateRoutes.set(routeUrl, {
-                route: tick.route,
-                climbers: [],
-                bestStars: 0,
-                photos: [],
-                notes: [],
-                style: tick.style,
-                leadStyle: tick.leadStyle,
-            });
-        }
-
-        const groupedRoute = dateRoutes.get(routeUrl)!;
-
-        if (tick.person?.name && !groupedRoute.climbers.includes(tick.person.name)) {
-            groupedRoute.climbers.push(tick.person.name);
-        }
-
-        if (tick.yourStars && tick.yourStars > groupedRoute.bestStars) {
-            groupedRoute.bestStars = tick.yourStars;
-        }
-
-        if (tick.photos?.length) {
-            for (const photo of tick.photos) {
-                if (!groupedRoute.photos?.some(p => p.id === photo.id)) {
-                    groupedRoute.photos = groupedRoute.photos || [];
-                    groupedRoute.photos.push(photo);
-                }
-            }
-        }
-
-        if (tick.notes && !groupedRoute.notes.includes(tick.notes)) {
-            groupedRoute.notes.push(tick.notes);
-        }
-    }
-
-    return Array.from(byDate.entries()).map(([date, routesMap]) => ({
-        date,
-        formattedDate: new Date(date + 'T00:00:00').toLocaleDateString(undefined, {
-            weekday: 'long', year: 'numeric', month: 'long', day: 'numeric',
-        }),
-        routes: Array.from(routesMap.values()),
-    }));
-}
-
 function renderTickList(ticksByDate: TicksByDate[], strapiUrl: string): void {
     const container = document.getElementById('ticks-container');
     const routeCount = document.getElementById('route-count');
@@ -727,29 +476,28 @@ async function initTicklist() {
     const { strapiUrl, selectedPersonId, selectedYear, showAllTime, showLast12Months, currentYear, selectedPersonName } = config;
 
     try {
-        // Build the fetch URL
-        let ticksUrl = `${strapiUrl}/api/climbing-ticks?populate=*&sort=tickDate:desc`;
-
+        // Build the API URL for our cached endpoint
+        const params = new URLSearchParams();
         if (selectedPersonId) {
-            ticksUrl += `&filters[person][documentId][$eq]=${selectedPersonId}`;
+            params.set('person', selectedPersonId);
+        }
+        if (showAllTime) {
+            params.set('year', 'all');
+        } else if (selectedYear) {
+            params.set('year', String(selectedYear));
+        } else if (showLast12Months) {
+            params.set('period', 'last12');
         }
 
-        if (!showAllTime) {
-            if (showLast12Months) {
-                const now = new Date();
-                const endDate = now.toISOString().split('T')[0];
-                const startDate = new Date(now.getFullYear() - 1, now.getMonth(), now.getDate()).toISOString().split('T')[0];
-                ticksUrl += `&filters[tickDate][$gte]=${startDate}&filters[tickDate][$lte]=${endDate}`;
-            } else if (selectedYear) {
-                ticksUrl += `&filters[tickDate][$gte]=${selectedYear}-01-01&filters[tickDate][$lte]=${selectedYear}-12-31`;
-            }
+        const apiUrl = `/api/ticklist-data?${params.toString()}`;
+        const response = await fetch(apiUrl);
+
+        if (!response.ok) {
+            throw new Error(`Failed to fetch: ${response.status}`);
         }
 
-        // Fetch ticks
-        const ticks = await fetchAllTicks(ticksUrl);
-
-        // Compute stats
-        const stats = computeTickStats(ticks);
+        const data: TicklistDataResponse = await response.json();
+        const { ticks, stats, gradePyramid, goals } = data;
 
         // Render stats cards
         if (stats.totalTicks > 0) {
@@ -773,10 +521,7 @@ async function initTicklist() {
             const routeTypeData = Object.entries(stats.byRouteType).map(([label, value]) => ({ label, value }));
             renderDonutChart(routeTypeData, 'Route Types');
 
-            const gradeDataAll = getSortedGrades(stats.byGrade);
-            const gradeDataLeads = getSortedGrades(stats.byGradeLeads);
-            const gradeDataRedpoints = getSortedGrades(stats.byGradeRedpoints);
-            renderGradePyramid(gradeDataAll, gradeDataLeads, gradeDataRedpoints);
+            renderGradePyramid(gradePyramid);
         } else {
             const chartsContainer = document.getElementById('charts-container');
             const pyramidContainer = document.getElementById('pyramid-container');
@@ -784,31 +529,14 @@ async function initTicklist() {
             if (pyramidContainer) pyramidContainer.innerHTML = '';
         }
 
-        // Fetch and render goals if person selected
-        if (selectedPersonId) {
+        // Render goals if available
+        if (goals.length > 0) {
             const goalYear = selectedYear || currentYear;
-            const goalsUrl = `${strapiUrl}/api/climbing-goals?populate=*&filters[isActive][$eq]=true&filters[person][documentId][$eq]=${selectedPersonId}&filters[year][$eq]=${goalYear}`;
-            const goalsResponse = await fetch(goalsUrl);
-            if (goalsResponse.ok) {
-                const goalsData = await goalsResponse.json();
-                const rawGoals: ClimbingGoal[] = goalsData.data || [];
-
-                // For goals, need ticks for the goal year
-                let ticksForGoals = ticks;
-                if (!selectedYear) {
-                    // Fetch ticks for the current year for goal progress
-                    const goalTicksUrl = `${strapiUrl}/api/climbing-ticks?populate=*&sort=tickDate:desc&filters[person][documentId][$eq]=${selectedPersonId}&filters[tickDate][$gte]=${goalYear}-01-01&filters[tickDate][$lte]=${goalYear}-12-31`;
-                    ticksForGoals = await fetchAllTicks(goalTicksUrl);
-                }
-
-                const goals = rawGoals.map(goal => computeGoalProgress(goal, ticksForGoals));
-                renderGoalsDashboard(goals, selectedPersonName, goalYear);
-            }
+            renderGoalsDashboard(goals, selectedPersonName, goalYear);
         }
 
         // Render tick list
-        const ticksByDate = groupTicksByDateAndRoute(ticks);
-        renderTickList(ticksByDate, strapiUrl);
+        renderTickList(ticks, strapiUrl);
 
     } catch (error) {
         console.error('Error loading ticklist data:', error);
