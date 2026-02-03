@@ -217,39 +217,102 @@ function renderGoalsDashboard(goals: GoalProgress[], personName?: string, goalYe
     const container = document.getElementById('goals-container');
     if (!container || goals.length === 0) return;
 
-    const sortedGoals = [...goals].sort((a, b) => {
-        if (a.isComplete !== b.isComplete) return a.isComplete ? 1 : -1;
-        return b.percent - a.percent;
-    });
+    const isEveryoneView = !personName;
 
-    const completedCount = goals.filter(g => g.isComplete).length;
-    const allComplete = completedCount === goals.length;
+    if (isEveryoneView) {
+        // Group goals by person
+        const goalsByPerson = new Map<string, GoalProgress[]>();
+        goals.forEach(progress => {
+            const name = progress.goal.person?.name || 'Unknown';
+            if (!goalsByPerson.has(name)) {
+                goalsByPerson.set(name, []);
+            }
+            goalsByPerson.get(name)!.push(progress);
+        });
 
-    container.innerHTML = `
-        <div class="goals-dashboard bg-[var(--color-accent)]/5 rounded-xl p-6 mb-8">
-            <div class="flex items-center justify-between mb-4">
-                <h2 class="text-xl font-bold">
-                    ${personName ? `${personName}'s ${goalYear || ''} Goals` : `${goalYear || ''} Goals`}
-                </h2>
-                ${allComplete ? '<span class="text-sm bg-green-100 text-green-800 px-3 py-1 rounded-full">All goals complete!</span>' : ''}
-                ${!allComplete && completedCount > 0 ? `<span class="text-sm opacity-70">${completedCount} of ${goals.length} complete</span>` : ''}
+        // Sort each person's goals
+        goalsByPerson.forEach((personGoals, name) => {
+            personGoals.sort((a, b) => {
+                if (a.isComplete !== b.isComplete) return a.isComplete ? 1 : -1;
+                return b.percent - a.percent;
+            });
+        });
+
+        const totalCompleted = goals.filter(g => g.isComplete).length;
+        const allComplete = totalCompleted === goals.length;
+
+        container.innerHTML = `
+            <div class="goals-dashboard bg-[var(--color-accent)]/5 rounded-xl p-6 mb-8">
+                <div class="flex items-center justify-between mb-6">
+                    <h2 class="text-xl font-bold">${goalYear || ''} Goals</h2>
+                    ${allComplete ? '<span class="text-sm bg-green-100 text-green-800 px-3 py-1 rounded-full">All goals complete!</span>' : ''}
+                    ${!allComplete && totalCompleted > 0 ? `<span class="text-sm opacity-70">${totalCompleted} of ${goals.length} complete</span>` : ''}
+                </div>
+                <div class="space-y-6">
+                    ${Array.from(goalsByPerson.entries()).map(([name, personGoals]) => {
+                        const personCompleted = personGoals.filter(g => g.isComplete).length;
+                        const personAllComplete = personCompleted === personGoals.length;
+                        return `
+                            <div class="person-goals">
+                                <div class="flex items-center gap-2 mb-3">
+                                    <h3 class="font-semibold text-[var(--color-header)]">${name}</h3>
+                                    ${personAllComplete ? '<span class="text-xs bg-green-100 text-green-800 px-2 py-0.5 rounded-full">Complete!</span>' : ''}
+                                    ${!personAllComplete && personCompleted > 0 ? `<span class="text-xs opacity-70">${personCompleted}/${personGoals.length}</span>` : ''}
+                                </div>
+                                <div class="goals-list space-y-2 pl-2 border-l-2 border-[var(--color-accent)]/30">
+                                    ${personGoals.map(progress => `
+                                        <div class="progress-bar-container">
+                                            <div class="flex justify-between mb-1">
+                                                <span class="text-sm font-medium ${progress.isComplete ? 'line-through opacity-60' : ''}">${progress.goal.title}</span>
+                                                <span class="text-sm opacity-70">${progress.current} / ${progress.target}</span>
+                                            </div>
+                                            <div class="h-2 bg-[var(--color-accent)]/20 rounded-full overflow-hidden">
+                                                <div class="h-full rounded-full transition-all duration-500 ${progress.isComplete ? 'bg-green-500' : 'bg-[var(--color-header)]'}"
+                                                    style="width: ${progress.percent}%;"></div>
+                                            </div>
+                                        </div>
+                                    `).join('')}
+                                </div>
+                            </div>
+                        `;
+                    }).join('')}
+                </div>
             </div>
-            <div class="goals-list space-y-3">
-                ${sortedGoals.map(progress => `
-                    <div class="progress-bar-container">
-                        <div class="flex justify-between mb-1">
-                            <span class="text-sm font-medium ${progress.isComplete ? 'line-through opacity-60' : ''}">${progress.goal.title}</span>
-                            <span class="text-sm opacity-70">${progress.current} / ${progress.target}</span>
+        `;
+    } else {
+        // Single person view
+        const sortedGoals = [...goals].sort((a, b) => {
+            if (a.isComplete !== b.isComplete) return a.isComplete ? 1 : -1;
+            return b.percent - a.percent;
+        });
+
+        const completedCount = goals.filter(g => g.isComplete).length;
+        const allComplete = completedCount === goals.length;
+
+        container.innerHTML = `
+            <div class="goals-dashboard bg-[var(--color-accent)]/5 rounded-xl p-6 mb-8">
+                <div class="flex items-center justify-between mb-4">
+                    <h2 class="text-xl font-bold">${personName}'s ${goalYear || ''} Goals</h2>
+                    ${allComplete ? '<span class="text-sm bg-green-100 text-green-800 px-3 py-1 rounded-full">All goals complete!</span>' : ''}
+                    ${!allComplete && completedCount > 0 ? `<span class="text-sm opacity-70">${completedCount} of ${goals.length} complete</span>` : ''}
+                </div>
+                <div class="goals-list space-y-3">
+                    ${sortedGoals.map(progress => `
+                        <div class="progress-bar-container">
+                            <div class="flex justify-between mb-1">
+                                <span class="text-sm font-medium ${progress.isComplete ? 'line-through opacity-60' : ''}">${progress.goal.title}</span>
+                                <span class="text-sm opacity-70">${progress.current} / ${progress.target}</span>
+                            </div>
+                            <div class="h-2 bg-[var(--color-accent)]/20 rounded-full overflow-hidden">
+                                <div class="h-full rounded-full transition-all duration-500 ${progress.isComplete ? 'bg-green-500' : 'bg-[var(--color-header)]'}"
+                                    style="width: ${progress.percent}%;"></div>
+                            </div>
                         </div>
-                        <div class="h-2 bg-[var(--color-accent)]/20 rounded-full overflow-hidden">
-                            <div class="h-full rounded-full transition-all duration-500 ${progress.isComplete ? 'bg-green-500' : 'bg-[var(--color-header)]'}"
-                                style="width: ${progress.percent}%;"></div>
-                        </div>
-                    </div>
-                `).join('')}
+                    `).join('')}
+                </div>
             </div>
-        </div>
-    `;
+        `;
+    }
 }
 
 function renderTickList(ticksByDate: TicksByDate[], strapiUrl: string): void {
