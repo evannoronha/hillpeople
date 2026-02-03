@@ -1,83 +1,123 @@
 ---
-import Layout from "../../layouts/Layout.astro";
-import Prose from "../../components/Prose.astro";
-import { fetchPostBySlug, fetchSiteSettings } from "../../lib/api";
-import { getMediaUrl, getLargestImage, transformContentUrls } from "../../lib/imageUrl";
-import StravaEmbed from "../../components/StravaEmbed.astro";
-import ClimbingEmbed from "../../components/ClimbingEmbed.astro";
+import Layout from '../../layouts/Layout.astro';
+import Prose from '../../components/Prose.astro';
+import ResponsiveHeroImage from '../../components/ResponsiveHeroImage.astro';
+import ArticleHeader from '../../components/ArticleHeader.astro';
+import Breadcrumbs from '../../components/Breadcrumbs.astro';
+import TableOfContents from '../../components/TableOfContents.astro';
+import ShareButtons from '../../components/ShareButtons.astro';
+import StructuredData from '../../components/StructuredData.astro';
+import StravaEmbed from '../../components/StravaEmbed.astro';
+import ClimbingEmbed from '../../components/ClimbingEmbed.astro';
+import { fetchPostBySlug, fetchSiteSettings } from '../../lib/api';
+import {
+  getMediaUrl,
+  getLargestImage,
+  transformContentUrls,
+  injectHeadingIds,
+} from '../../lib/imageUrl';
+import { calculateReadingTime } from '../../lib/readingTime';
 
 const { slug } = Astro.params;
 
-// extract query params
-const previewMode = Astro.url.searchParams.get("status") == "draft";
+// Extract query params for preview mode
+const previewMode = Astro.url.searchParams.get('status') == 'draft';
+
 const [post, siteSettings] = await Promise.all([
-    fetchPostBySlug(slug!, previewMode),
-    fetchSiteSettings(),
+  fetchPostBySlug(slug!, previewMode),
+  fetchSiteSettings(),
 ]);
 
 if (!post) {
-    return Astro.rewrite("/404");
+  return Astro.rewrite('/404');
 }
 
-// Transform relative /uploads/ URLs to absolute Strapi URLs
-const htmlContent = transformContentUrls(post.richContent);
+// Transform content: fix URLs and inject heading IDs for TOC
+let htmlContent = transformContentUrls(post.richContent);
+htmlContent = injectHeadingIds(htmlContent);
 
-const image = getLargestImage(post);
-const imageUrl = getMediaUrl(image?.url);
+// Image data
+const coverImage = post.coverImage;
+const largestImage = getLargestImage(post);
+const imageUrl = getMediaUrl(largestImage?.url);
 
-// SEO data (fields are nested under post.seo component)
+// Meta data
 const seoTitle = post.seo?.metaTitle || post.title;
-const seoDescription = post.seo?.metaDescription || post.seo?.excerpt || "";
-const authorName = post.authorName || `${post.createdBy?.firstname || ""} ${post.createdBy?.lastname || ""}`.trim();
-const siteName = siteSettings?.siteName || "Hill People";
+const seoDescription = post.seo?.metaDescription || post.seo?.excerpt || '';
+const authorName =
+  post.authorName ||
+  `${post.createdBy?.firstname || ''} ${post.createdBy?.lastname || ''}`.trim();
+const siteName = siteSettings?.siteName || 'Hill People';
+const canonicalUrl = `https://hillpeople.net/blog/${slug}`;
+
+// Reading time
+const readingTime = calculateReadingTime(post.richContent || '');
+
+// Breadcrumbs
+const breadcrumbs = [{ name: 'Home', url: '/' }, { name: post.title }];
+
+// Structured data
+const structuredData = {
+  type: 'BlogPosting' as const,
+  title: seoTitle,
+  description: seoDescription,
+  datePublished: post.publishedDate,
+  authorName,
+  imageUrl,
+  url: canonicalUrl,
+  siteName,
+};
 ---
 
 <Layout
-    pageTitle={seoTitle}
-    description={seoDescription}
-    ogImage={imageUrl}
-    ogType="article"
-    publishedTime={post.publishedDate}
-    authorName={authorName}
-    siteName={siteName}
+  pageTitle={seoTitle}
+  description={seoDescription}
+  ogImage={imageUrl}
+  ogType="article"
+  publishedTime={post.publishedDate}
+  authorName={authorName}
+  siteName={siteName}
 >
-    <article class="max-w-3xl mx-auto px-4 py-10">
-        {
-            imageUrl && (
-                <div class="aspect-square overflow-hidden mb-8 rounded-xl">
-                    <img
-                        src={imageUrl}
-                        alt={post.title}
-                        class="w-full h-full object-cover"
-                    />
-                </div>
-            )
-        }
+  <StructuredData data={structuredData} />
 
-        <h1 class="text-4xl font-bold mb-4">{post.title}</h1>
-        <h2 class="text-2xl font-bold mb-3 mt-12">
-            Written by {authorName} on {
-                new Date(post.publishedDate).toLocaleDateString()
-            }
-        </h2>
+  <article itemscope itemtype="https://schema.org/BlogPosting">
+    {coverImage && (
+      <ResponsiveHeroImage
+        image={coverImage}
+        alt={coverImage.alternativeText || post.title}
+        priority={true}
+      />
+    )}
 
-        <Prose set:html={htmlContent} />
+    <div class="max-w-3xl mx-auto px-4 py-8">
+      <Breadcrumbs items={breadcrumbs} />
 
-        {
-            post.stravaActivityId && (
-                <div class="mt-10">
-                    <StravaEmbed activityId={post.stravaActivityId} />
-                </div>
-            )
-        }
+      <ArticleHeader
+        title={post.title}
+        authorName={authorName}
+        publishedDate={post.publishedDate}
+        readingTimeMinutes={readingTime}
+      />
 
-        {
-            post.climbingDateRange?.showClimbingData && post.climbingDateRange?.startDate && (
-                <ClimbingEmbed
-                    startDate={post.climbingDateRange.startDate}
-                    endDate={post.climbingDateRange.endDate}
-                />
-            )
-        }
-    </article>
+      <TableOfContents htmlContent={htmlContent} minHeadings={3} />
+
+      <Prose set:html={htmlContent} />
+
+      {post.stravaActivityId && (
+        <div class="mt-10">
+          <StravaEmbed activityId={post.stravaActivityId} />
+        </div>
+      )}
+
+      {post.climbingDateRange?.showClimbingData &&
+        post.climbingDateRange?.startDate && (
+          <ClimbingEmbed
+            startDate={post.climbingDateRange.startDate}
+            endDate={post.climbingDateRange.endDate}
+          />
+        )}
+
+      <ShareButtons url={canonicalUrl} title={post.title} />
+    </div>
+  </article>
 </Layout>

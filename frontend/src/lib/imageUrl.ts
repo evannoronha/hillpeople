@@ -32,16 +32,41 @@ export const transformContentUrls = (html: string): string => {
         .replace(/type="video\/quicktime"/g, 'type="video/mp4"');
 };
 
-export const getLargestImage = (post:any) => {
-	const { coverImage } = post;
-	if (!coverImage) return null;
+export const getLargestImage = (post: any) => {
+  const { coverImage } = post;
+  if (!coverImage) return null;
 
-	const formats = coverImage.formats;
-	if (!formats) return null;
+  const formats = coverImage.formats;
+  if (!formats) return null;
 
-	const largestFormat = Object.keys(formats).reduce((largest, key) => {
-		return formats[key].size > formats[largest].size ? key : largest;
-	}, Object.keys(formats)[0]);
+  const largestFormat = Object.keys(formats).reduce((largest, key) => {
+    return formats[key].size > formats[largest].size ? key : largest;
+  }, Object.keys(formats)[0]);
 
-	return formats[largestFormat]
+  return formats[largestFormat];
+};
+
+/**
+ * Injects ID attributes into h2/h3 headings for table of contents anchor links.
+ * Skips headings that already have an ID.
+ */
+export const injectHeadingIds = (html: string): string => {
+  if (!html) return '';
+
+  return html.replace(
+    /<(h[23])([^>]*)>([^<]+)<\/\1>/gi,
+    (match, tag, attrs, text) => {
+      // Skip if ID already exists
+      if (attrs.includes('id="')) return match;
+
+      // Generate slug from heading text
+      const id = text
+        .trim()
+        .toLowerCase()
+        .replace(/[^a-z0-9]+/g, '-')
+        .replace(/(^-|-$)/g, '');
+
+      return `<${tag}${attrs} id="${id}">${text}</${tag}>`;
+    }
+  );
 };

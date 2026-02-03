@@ -1,0 +1,5 @@
+# Copy this file to .dev.vars and fill in your values
+# .dev.vars is gitignored and used by wrangler pages dev
+
+STRAPI_API_URL=https://journal.hillpeople.net
+STRAPI_API_TOKEN=your_strapi_api_token_here

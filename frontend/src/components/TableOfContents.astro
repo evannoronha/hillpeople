@@ -1,0 +1,90 @@
+---
+interface Heading {
+  level: number;
+  text: string;
+  id: string;
+}
+
+interface Props {
+  htmlContent: string;
+  minHeadings?: number;
+}
+
+const { htmlContent, minHeadings = 3 } = Astro.props;
+
+// Extract h2 and h3 headings from HTML content
+function extractHeadings(html: string): Heading[] {
+  const headings: Heading[] = [];
+  // Match h2 and h3 tags, capturing id attribute and text content
+  const headingRegex = /<(h[23])[^>]*?(?:id="([^"]*)")?[^>]*>([^<]+)<\/\1>/gi;
+  let match;
+
+  while ((match = headingRegex.exec(html)) !== null) {
+    const level = parseInt(match[1][1]);
+    const existingId = match[2];
+    const text = match[3].trim();
+    // Generate ID if not present (should match injectHeadingIds logic)
+    const id =
+      existingId ||
+      text
+        .toLowerCase()
+        .replace(/[^a-z0-9]+/g, '-')
+        .replace(/(^-|-$)/g, '');
+
+    headings.push({ level, text, id });
+  }
+
+  return headings;
+}
+
+const headings = extractHeadings(htmlContent);
+const showToc = headings.length >= minHeadings;
+---
+
+{
+  showToc && (
+    <nav
+      aria-label="Table of contents"
+      class="mb-8 p-4 bg-[var(--color-bg)] border border-[var(--color-accent)] rounded-lg"
+    >
+      <details class="group" open>
+        <summary class="cursor-pointer font-semibold mb-3 list-none flex items-center justify-between">
+          <span>Contents</span>
+          <svg
+            class="w-5 h-5 transition-transform group-open:rotate-180"
+            fill="none"
+            stroke="currentColor"
+            viewBox="0 0 24 24"
+            aria-hidden="true"
+          >
+            <path
+              stroke-linecap="round"
+              stroke-linejoin="round"
+              stroke-width="2"
+              d="M19 9l-7 7-7-7"
+            />
+          </svg>
+        </summary>
+        <ol class="space-y-1 text-sm">
+          {headings.map((heading) => (
+            <li class={heading.level === 3 ? 'ml-4' : ''}>
+              <a
+                href={`#${heading.id}`}
+                class="block py-1 hover:underline opacity-80 hover:opacity-100 transition-opacity"
+              >
+                {heading.text}
+              </a>
+            </li>
+          ))}
+        </ol>
+      </details>
+    </nav>
+  )
+}
+
+<style>
+  /* Smooth scroll behavior for anchor links */
+  :global(html) {
+    scroll-behavior: smooth;
+  }
+</style>
