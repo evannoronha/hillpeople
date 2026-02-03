@@ -368,8 +368,8 @@ function renderGradePyramid(gradePyramid: GradePyramidData): void {
                 newRow.innerHTML = `
                     <span class="w-12 text-right text-sm font-mono opacity-80 shrink-0">${item.grade}</span>
                     <div class="flex-1 h-6 flex items-center gap-2">
-                        <div class="pyramid-bar h-full rounded-r transition-all duration-300 group-hover:opacity-80"
-                            style="width: ${Math.max(widthPercent, 2)}%; background-color: ${colors[i % colors.length]}; min-width: 4px; --row-index: ${i};"></div>
+                        <div class="pyramid-bar h-full rounded-r group-hover:opacity-80"
+                            style="width: ${Math.max(widthPercent, 2)}%; background-color: ${colors[i % colors.length]}; min-width: 4px;"></div>
                         ${item.count > 0 ? `<span class="pyramid-count text-xs font-medium shrink-0 opacity-70">${item.count}</span>` : ''}
                     </div>
                 `;
