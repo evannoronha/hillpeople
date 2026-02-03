@@ -366,19 +366,27 @@ const clientConfig = {
         animation: growBar 0.5s ease-out forwards;
     }
 
-    /* Pyramid bar animation */
+    /* Pyramid bar width transitions */
     :global(.pyramid-bar) {
-        transform-origin: left;
-        animation: growPyramid 0.6s ease-out forwards;
-        animation-delay: calc(var(--row-index, 0) * 80ms);
+        transition: width 0.4s ease-out, background-color 0.3s ease;
     }
 
-    @keyframes growPyramid {
-        from {
-            transform: scaleX(0);
-        }
-        to {
-            transform: scaleX(1);
-        }
+    /* Pyramid row enter/exit animations */
+    :global(.pyramid-row) {
+        transition: opacity 0.3s ease, transform 0.3s ease, max-height 0.3s ease;
+        max-height: 40px;
+        overflow: hidden;
+    }
+
+    :global(.pyramid-row-enter) {
+        opacity: 0;
+        transform: translateY(-10px);
+        max-height: 0;
+    }
+
+    :global(.pyramid-row-exit) {
+        opacity: 0;
+        transform: translateY(10px);
+        max-height: 0;
     }
 </style>

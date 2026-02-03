@@ -317,24 +317,93 @@ function renderGradePyramid(gradePyramid: GradePyramidData): void {
     };
     let currentMode = 'redpoints';
 
-    function renderBars(data: Array<{ grade: string; count: number }>) {
+    function renderBars(data: Array<{ grade: string; count: number }>, isInitial = false) {
         const maxValue = Math.max(...data.map(d => d.count), 1);
-        const barsContainer = container?.querySelector('.pyramid-bars');
+        const barsContainer = container?.querySelector('.pyramid-bars') as HTMLElement;
         if (!barsContainer) return;
 
-        barsContainer.innerHTML = data.slice(0, 15).map((item, i) => {
+        const newGrades = data.slice(0, 15).map(d => d.grade);
+        const existingRows = barsContainer.querySelectorAll('.pyramid-row');
+        const existingGrades = Array.from(existingRows).map(row => row.getAttribute('data-grade'));
+
+        // Remove grades that are no longer present
+        existingRows.forEach(row => {
+            const grade = row.getAttribute('data-grade');
+            if (!newGrades.includes(grade || '')) {
+                row.classList.add('pyramid-row-exit');
+                setTimeout(() => row.remove(), 300);
+            }
+        });
+
+        // Update or add grades
+        data.slice(0, 15).forEach((item, i) => {
             const widthPercent = maxValue > 0 ? (item.count / maxValue) * 100 : 0;
-            return `
-                <div class="pyramid-row flex items-center w-full gap-2 group cursor-pointer">
+            const existingRow = barsContainer.querySelector(`[data-grade="${item.grade}"]`) as HTMLElement;
+
+            if (existingRow) {
+                // Update existing bar width and count
+                const bar = existingRow.querySelector('.pyramid-bar') as HTMLElement;
+                const countSpan = existingRow.querySelector('.pyramid-count') as HTMLElement;
+
+                if (bar) {
+                    bar.style.width = `${Math.max(widthPercent, 2)}%`;
+                    bar.style.backgroundColor = colors[i % colors.length];
+                }
+                if (countSpan) {
+                    countSpan.textContent = item.count > 0 ? String(item.count) : '';
+                } else if (item.count > 0) {
+                    const barContainer = existingRow.querySelector('.flex-1');
+                    if (barContainer) {
+                        const newCount = document.createElement('span');
+                        newCount.className = 'pyramid-count text-xs font-medium shrink-0 opacity-70';
+                        newCount.textContent = String(item.count);
+                        barContainer.appendChild(newCount);
+                    }
+                }
+            } else {
+                // Create new row
+                const newRow = document.createElement('div');
+                newRow.className = `pyramid-row flex items-center w-full gap-2 group cursor-pointer ${isInitial ? '' : 'pyramid-row-enter'}`;
+                newRow.setAttribute('data-grade', item.grade);
+                newRow.innerHTML = `
                     <span class="w-12 text-right text-sm font-mono opacity-80 shrink-0">${item.grade}</span>
                     <div class="flex-1 h-6 flex items-center gap-2">
                         <div class="pyramid-bar h-full rounded-r transition-all duration-300 group-hover:opacity-80"
                             style="width: ${Math.max(widthPercent, 2)}%; background-color: ${colors[i % colors.length]}; min-width: 4px; --row-index: ${i};"></div>
-                        ${item.count > 0 ? `<span class="text-xs font-medium shrink-0 opacity-70">${item.count}</span>` : ''}
+                        ${item.count > 0 ? `<span class="pyramid-count text-xs font-medium shrink-0 opacity-70">${item.count}</span>` : ''}
                     </div>
-                </div>
-            `;
-        }).join('');
+                `;
+
+                // Insert at correct position
+                const existingIndex = existingGrades.indexOf(item.grade);
+                if (existingIndex === -1) {
+                    // Find where to insert based on position in new data
+                    const nextGrade = newGrades[i + 1];
+                    const nextRow = nextGrade ? barsContainer.querySelector(`[data-grade="${nextGrade}"]`) : null;
+                    if (nextRow) {
+                        barsContainer.insertBefore(newRow, nextRow);
+                    } else {
+                        barsContainer.appendChild(newRow);
+                    }
+                }
+
+                // Trigger animation after insert
+                if (!isInitial) {
+                    requestAnimationFrame(() => {
+                        newRow.classList.remove('pyramid-row-enter');
+                    });
+                }
+            }
+        });
+
+        // Reorder if needed
+        const currentRows = Array.from(barsContainer.querySelectorAll('.pyramid-row:not(.pyramid-row-exit)'));
+        newGrades.forEach((grade, i) => {
+            const row = currentRows.find(r => r.getAttribute('data-grade') === grade);
+            if (row && row.parentElement) {
+                barsContainer.appendChild(row);
+            }
+        });
     }
 
     container.innerHTML = `
@@ -358,7 +427,7 @@ function renderGradePyramid(gradePyramid: GradePyramidData): void {
         <div class="pyramid-bars space-y-2"></div>
     `;
 
-    renderBars(modes[currentMode as keyof typeof modes]);
+    renderBars(modes[currentMode as keyof typeof modes], true);
 
     // Add toggle functionality
     const buttons = container.querySelectorAll('.pyramid-mode-btn');
