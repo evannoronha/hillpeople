@@ -156,10 +156,10 @@ function renderStatsCards(stats: TickStats): void {
     if (!container) return;
 
     const cards = [
-        { value: stats.totalTicks, label: 'Routes Climbed' },
-        { value: stats.leadPitches, label: 'Lead Pitches' },
-        { value: stats.uniqueDays, label: 'Days Outside' },
-        { value: stats.highestRedpoint || '—', label: 'Highest Redpoint' },
+        { value: stats.totalPitches, label: 'Pitches Climbed' },
+        { value: stats.leadPitches, label: 'Pitches Led' },
+        { value: stats.uniqueDays, label: 'Days Out' },
+        { value: stats.highestRedpoint || '—', label: 'Hardest Redpoint' },
     ];
 
     container.innerHTML = `
