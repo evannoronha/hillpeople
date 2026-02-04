@@ -76,7 +76,7 @@ Located in `frontend/src/lib/api.ts`, the `responseCache` Map caches Strapi API 
 - **TTL**: 1 hour
 - **Scope**: Per-isolate (different users may hit different isolates)
 - **Skips caching**: 404s and empty responses
-- **Invalidation**: Automatic on TTL expiry, or manual via `/api/cachebust`
+- **Invalidation**: Automatic on TTL expiry, or manual via `?bustcache` query param on any page
 
 ### Layer 2: Cloudflare Edge Cache
 
@@ -91,9 +91,10 @@ HTTP `Cache-Control` headers enable Cloudflare's edge caching for rendered pages
 
 ### Cache Invalidation
 
-**Manual**: Visit `/api/cachebust` to clear both caches:
+**Manual**: Append `?bustcache` to any URL (e.g., `https://hillpeople.net/climbing?bustcache`) to clear both caches:
 1. Clears the isolate's in-memory `responseCache`
 2. Purges Cloudflare edge cache via API (requires `CLOUDFLARE_ZONE_ID` and `CLOUDFLARE_API_TOKEN`)
+3. Redirects back to the clean URL
 
 **Automatic**: Strapi lifecycle hooks call `/api/revalidate` when content changes, purging specific URLs:
 
@@ -116,6 +117,34 @@ HTTP `Cache-Control` headers enable Cloudflare's edge caching for rendered pages
 | `CLOUDFLARE_API_TOKEN` | Cloudflare Pages | Token with "Zone.Cache Purge" permission |
 | `REVALIDATE_SECRET` | Both | Shared secret for webhook auth |
 | `FRONTEND_REVALIDATE_URL` | Strapi Cloud | `https://hillpeople.net/api/revalidate` |
+
+## Adding New Frontend Pages
+
+When adding a new page to the frontend:
+
+1. **Lighthouse CI**: Add the URL to `.github/workflows/lighthouse.yml` in the `url` array
+2. **Cache invalidation**: Add the URL to `ALL_CACHEABLE_URLS` in `frontend/src/lib/cache.ts`
+3. **Cache-Control headers**: If the page should be cached at the edge, add appropriate `Cache-Control` headers
+
+## Adding New Strapi Content Types
+
+When adding a new content type in Strapi that affects frontend pages:
+
+1. **Lifecycle hooks**: Create `backend/src/api/{content-type}/content-types/{content-type}/lifecycles.ts`:
+   ```typescript
+   import { invalidateCache } from '../../../../utils/cache-invalidation';
+
+   export default {
+     async afterCreate() { await invalidateCache('{content-type}'); },
+     async afterUpdate() { await invalidateCache('{content-type}'); },
+     async afterDelete() { await invalidateCache('{content-type}'); },
+   };
+   ```
+
+2. **URL mapping**: Add the content type to `CONTENT_TYPE_URLS` in `frontend/src/lib/cache.ts`:
+   ```typescript
+   '{content-type}': ['/affected-page', '/api/affected-endpoint'],
+   ```
 
 ## Deployment
 

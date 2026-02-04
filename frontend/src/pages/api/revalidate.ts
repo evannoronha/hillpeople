@@ -1,62 +1,6 @@
 import type { APIRoute } from 'astro';
 import { getSecret } from 'astro:env/server';
-
-// Map content types to the URLs that need to be purged
-const CONTENT_TYPE_URLS: Record<string, string[]> = {
-  'post': ['/', '/api/posts'],
-  'about': ['/about'],
-  'home-page': ['/'],
-  'site-settings': ['/', '/about', '/climbing', '/privacy'],
-  'climbing-tick': ['/climbing', '/api/ticklist-data'],
-  'climbing-goal': ['/climbing', '/api/ticklist-data'],
-  'person': ['/climbing', '/api/ticklist-data'],
-  'privacy-policy': ['/privacy'],
-};
-
-interface CloudflarePurgeResponse {
-  success: boolean;
-  errors: Array<{ code: number; message: string }>;
-  messages: string[];
-  result: { id: string };
-}
-
-async function purgeCloudflareCache(urls: string[]): Promise<{ success: boolean; error?: string }> {
-  const zoneId = getSecret('CLOUDFLARE_ZONE_ID');
-  const apiToken = getSecret('CLOUDFLARE_API_TOKEN');
-
-  if (!zoneId || !apiToken) {
-    return { success: false, error: 'Missing Cloudflare credentials' };
-  }
-
-  // Convert relative URLs to absolute URLs
-  const baseUrl = 'https://hillpeople.net';
-  const absoluteUrls = urls.map(url => url.startsWith('/') ? `${baseUrl}${url}` : url);
-
-  try {
-    const response = await fetch(
-      `https://api.cloudflare.com/client/v4/zones/${zoneId}/purge_cache`,
-      {
-        method: 'POST',
-        headers: {
-          'Authorization': `Bearer ${apiToken}`,
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({ files: absoluteUrls }),
-      }
-    );
-
-    const data = await response.json() as CloudflarePurgeResponse;
-
-    if (!data.success) {
-      const errorMsg = data.errors?.map(e => e.message).join(', ') || 'Unknown error';
-      return { success: false, error: errorMsg };
-    }
-
-    return { success: true };
-  } catch (error) {
-    return { success: false, error: error instanceof Error ? error.message : 'Unknown error' };
-  }
-}
+import { purgeCloudflareCache, CONTENT_TYPE_URLS } from '../../lib/cache';
 
 export const POST: APIRoute = async ({ request }) => {
   // Verify the secret token
