@@ -2,8 +2,8 @@ import { getSecret, STRAPI_API_URL } from 'astro:env/server'
 
 const STRAPI_URL = STRAPI_API_URL
 
-// Cache TTL in milliseconds (60 seconds)
-const CACHE_TTL_MS = 60 * 1000;
+// Cache TTL in milliseconds (1 hour)
+const CACHE_TTL_MS = 60 * 60 * 1000;
 
 // Isolate-level cache with TTL for Strapi API responses
 // This cache persists across requests within the same Worker isolate,
