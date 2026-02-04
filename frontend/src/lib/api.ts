@@ -2,48 +2,66 @@ import { getSecret, STRAPI_API_URL } from 'astro:env/server'
 
 const STRAPI_URL = STRAPI_API_URL
 
-// Request-level cache to deduplicate identical fetches within the same SSR request
-// This prevents duplicate calls like fetchSiteSettings() from Layout + page
-// We cache the parsed JSON data since Response bodies can only be consumed once
+// Cache TTL in milliseconds (60 seconds)
+const CACHE_TTL_MS = 60 * 1000;
+
+// Isolate-level cache with TTL for Strapi API responses
+// This cache persists across requests within the same Worker isolate,
+// providing performance benefits while ensuring data freshness via TTL
 interface CachedResponse {
     ok: boolean;
     status: number;
     data: unknown;
+    expiresAt: number;
 }
-const requestCache = new Map<string, Promise<CachedResponse>>();
+const responseCache = new Map<string, CachedResponse>();
 
-// Helper to make authenticated requests to Strapi with request-level deduplication
+// Helper to make authenticated requests to Strapi with TTL-based caching
 async function strapiFetch(url: string): Promise<Response> {
-    // Check if we already have an in-flight or completed request for this URL
-    if (requestCache.has(url)) {
-        console.debug("Cache HIT (request-level):", url);
-        const cached = await requestCache.get(url)!;
-        // Return a synthetic Response with the cached data
+    const now = Date.now();
+
+    // Check for valid cached response
+    const cached = responseCache.get(url);
+    if (cached && cached.expiresAt > now) {
+        console.debug(`Cache HIT (TTL: ${Math.round((cached.expiresAt - now) / 1000)}s remaining):`, url);
         return new Response(JSON.stringify(cached.data), {
             status: cached.status,
             headers: { 'Content-Type': 'application/json' },
         });
     }
 
-    console.debug("Cache MISS - fetching:", url);
+    // Cache miss or expired
+    if (cached) {
+        console.debug("Cache EXPIRED - fetching:", url);
+        responseCache.delete(url);
+    } else {
+        console.debug("Cache MISS - fetching:", url);
+    }
+
     const headers: HeadersInit = {}
     const token = getSecret('STRAPI_API_TOKEN')
     if (token) {
         headers['Authorization'] = `Bearer ${token}`
     }
 
-    // Create a promise that fetches and caches the parsed JSON
-    const promise = fetch(url, { headers }).then(async response => {
-        const data = await response.json();
-        return { ok: response.ok, status: response.status, data };
-    });
+    const response = await fetch(url, { headers });
+    const data = await response.json();
 
-    requestCache.set(url, promise);
+    // Only cache successful responses with data
+    const hasData = data?.data !== null &&
+        !(Array.isArray(data?.data) && data.data.length === 0);
 
-    // Wait for the result and return a Response
-    const result = await promise;
-    return new Response(JSON.stringify(result.data), {
-        status: result.status,
+    if (response.ok && hasData) {
+        responseCache.set(url, {
+            ok: response.ok,
+            status: response.status,
+            data,
+            expiresAt: now + CACHE_TTL_MS,
+        });
+    }
+
+    return new Response(JSON.stringify(data), {
+        status: response.status,
         headers: { 'Content-Type': 'application/json' },
     });
 }
