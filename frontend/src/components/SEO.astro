@@ -24,7 +24,9 @@ const {
 } = Astro.props;
 
 const fullTitle = title === 'Home' ? siteName : `${title} - ${siteName}`;
-const url = canonicalUrl || Astro.url.href;
+// Build canonical URL from site config + pathname (no query params, always HTTPS)
+const siteUrl = import.meta.env.SITE || 'https://hillpeople.net';
+const url = canonicalUrl || `${siteUrl}${Astro.url.pathname}`;
 ---
 
 <!-- Primary Meta Tags -->
