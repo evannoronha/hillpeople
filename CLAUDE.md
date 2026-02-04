@@ -95,7 +95,18 @@ HTTP `Cache-Control` headers enable Cloudflare's edge caching for rendered pages
 1. Clears the isolate's in-memory `responseCache`
 2. Purges Cloudflare edge cache via API (requires `CLOUDFLARE_ZONE_ID` and `CLOUDFLARE_API_TOKEN`)
 
-**Automatic** (future): Strapi lifecycle hooks can call `/api/revalidate` to purge specific URLs when content changes.
+**Automatic**: Strapi lifecycle hooks call `/api/revalidate` when content changes, purging specific URLs:
+
+| Content Type | URLs Purged |
+|--------------|-------------|
+| `post` | `/`, `/api/posts`, `/blog/{slug}` |
+| `about` | `/about` |
+| `home-page` | `/` |
+| `site-settings` | `/`, `/about`, `/climbing`, `/privacy` |
+| `climbing-tick` | `/climbing`, `/api/ticklist-data` |
+| `climbing-goal` | `/climbing`, `/api/ticklist-data` |
+| `person` | `/climbing`, `/api/ticklist-data` |
+| `privacy-policy` | `/privacy` |
 
 ### Environment Variables
 
@@ -103,6 +114,8 @@ HTTP `Cache-Control` headers enable Cloudflare's edge caching for rendered pages
 |----------|----------|---------|
 | `CLOUDFLARE_ZONE_ID` | Cloudflare Pages | Zone ID for cache purge API |
 | `CLOUDFLARE_API_TOKEN` | Cloudflare Pages | Token with "Zone.Cache Purge" permission |
+| `REVALIDATE_SECRET` | Both | Shared secret for webhook auth |
+| `FRONTEND_REVALIDATE_URL` | Strapi Cloud | `https://hillpeople.net/api/revalidate` |
 
 ## Deployment
 
