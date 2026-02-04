@@ -22,6 +22,14 @@ const { slug } = Astro.params;
 // Extract query params for preview mode
 const previewMode = Astro.url.searchParams.get('status') == 'draft';
 
+// Set cache headers based on mode
+if (previewMode) {
+  Astro.response.headers.set('Cache-Control', 'private, no-store');
+} else {
+  // Cache for 1 hour, allow stale content while revalidating for up to 1 day
+  Astro.response.headers.set('Cache-Control', 'public, s-maxage=3600, stale-while-revalidate=86400');
+}
+
 const [post, siteSettings] = await Promise.all([
   fetchPostBySlug(slug!, previewMode),
   fetchSiteSettings(),

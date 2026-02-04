@@ -65,6 +65,45 @@ All frontend pages must be included in Lighthouse CI audits. When adding a new p
 1. Add the URL to `.github/workflows/lighthouse.yml` in the `url` array
 2. The workflow runs on PRs that modify `frontend/` files
 
+## Caching Strategy
+
+The frontend uses a two-layer caching strategy to minimize Strapi API calls while ensuring content freshness.
+
+### Layer 1: Isolate Cache (in-memory)
+
+Located in `frontend/src/lib/api.ts`, the `responseCache` Map caches Strapi API responses within a Cloudflare Worker isolate.
+
+- **TTL**: 1 hour
+- **Scope**: Per-isolate (different users may hit different isolates)
+- **Skips caching**: 404s and empty responses
+- **Invalidation**: Automatic on TTL expiry, or manual via `/api/cachebust`
+
+### Layer 2: Cloudflare Edge Cache
+
+HTTP `Cache-Control` headers enable Cloudflare's edge caching for rendered pages.
+
+| Page | Cache-Control |
+|------|---------------|
+| `/blog/[slug]` | `public, s-maxage=3600, stale-while-revalidate=86400` |
+| `/blog/[slug]?status=draft` | `private, no-store` |
+| `/api/posts` | `public, s-maxage=300, stale-while-revalidate=600` |
+| `/api/climbing-ticks` | `public, s-maxage=300, stale-while-revalidate=600` |
+
+### Cache Invalidation
+
+**Manual**: Visit `/api/cachebust` to clear both caches:
+1. Clears the isolate's in-memory `responseCache`
+2. Purges Cloudflare edge cache via API (requires `CLOUDFLARE_ZONE_ID` and `CLOUDFLARE_API_TOKEN`)
+
+**Automatic** (future): Strapi lifecycle hooks can call `/api/revalidate` to purge specific URLs when content changes.
+
+### Environment Variables
+
+| Variable | Location | Purpose |
+|----------|----------|---------|
+| `CLOUDFLARE_ZONE_ID` | Cloudflare Pages | Zone ID for cache purge API |
+| `CLOUDFLARE_API_TOKEN` | Cloudflare Pages | Token with "Zone.Cache Purge" permission |
+
 ## Deployment
 
 Both services auto-deploy on merge to main:
