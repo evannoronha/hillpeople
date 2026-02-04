@@ -1,5 +1,6 @@
 import type { APIRoute } from 'astro';
 import { getSecret } from 'astro:env/server';
+import { clearResponseCache } from '../../lib/api';
 
 // All cacheable URLs
 const ALL_URLS = [
@@ -20,12 +21,20 @@ interface CloudflarePurgeResponse {
 }
 
 export const GET: APIRoute = async () => {
+  // Clear the in-memory isolate cache
+  clearResponseCache();
+
   const zoneId = getSecret('CLOUDFLARE_ZONE_ID');
   const apiToken = getSecret('CLOUDFLARE_API_TOKEN');
 
   if (!zoneId || !apiToken) {
-    return new Response(JSON.stringify({ error: 'Missing Cloudflare credentials' }), {
-      status: 500,
+    // Still return success since we cleared the isolate cache
+    return new Response(JSON.stringify({
+      message: 'Isolate cache cleared (Cloudflare credentials not configured)',
+      isolateCacheCleared: true,
+      cloudflareCacheCleared: false,
+    }), {
+      status: 200,
       headers: { 'Content-Type': 'application/json' },
     });
   }
@@ -65,6 +74,8 @@ export const GET: APIRoute = async () => {
 
     return new Response(JSON.stringify({
       message: 'All caches purged successfully',
+      isolateCacheCleared: true,
+      cloudflareCacheCleared: true,
       purged: ALL_URLS,
     }), {
       status: 200,

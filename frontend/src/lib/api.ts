@@ -16,6 +16,11 @@ interface CachedResponse {
 }
 const responseCache = new Map<string, CachedResponse>();
 
+// Clear the isolate-level cache (called by /api/cachebust)
+export function clearResponseCache() {
+    responseCache.clear();
+}
+
 // Helper to make authenticated requests to Strapi with TTL-based caching
 async function strapiFetch(url: string): Promise<Response> {
     const now = Date.now();
