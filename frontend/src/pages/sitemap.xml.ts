@@ -1,8 +1,8 @@
-import { fetchPosts } from "../lib/api";
+import { fetchAllPosts } from "../lib/api";
 
 export async function GET() {
     const siteUrl = import.meta.env.SITE;
-    const posts = await fetchPosts();
+    const posts = await fetchAllPosts();
 
     const result = `
 <?xml version="1.0" encoding="UTF-8"?>

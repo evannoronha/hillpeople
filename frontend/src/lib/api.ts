@@ -125,6 +125,38 @@ export async function fetchPosts() {
     }
 }
 
+export async function fetchAllPosts(): Promise<any[]> {
+    const allPosts: any[] = [];
+    let page = 1;
+    const pageSize = 100;
+    let hasMore = true;
+
+    while (hasMore) {
+        try {
+            const reqUrl = `${STRAPI_URL}/api/posts?populate=*&sort=publishedDate:desc&pagination[page]=${page}&pagination[pageSize]=${pageSize}`;
+            console.debug(`Fetching all posts page ${page} from:`, reqUrl);
+            const response = await strapiFetch(reqUrl);
+
+            if (!response.ok) {
+                throw new Error(`Failed to fetch posts: ${response.status}`);
+            }
+
+            const data = await response.json();
+            const posts = data.data || [];
+            allPosts.push(...posts);
+
+            const pagination = data.meta?.pagination;
+            hasMore = pagination && page < pagination.pageCount;
+            page++;
+        } catch (error) {
+            console.error("Error fetching all posts:", error);
+            break;
+        }
+    }
+
+    return allPosts;
+}
+
 export async function fetchPostBySlug(slug: string, preview: boolean = false) {
     try {
         let reqUrl = `${STRAPI_URL}/api/posts?filters[slug][$eq]=${slug}&populate=*`
