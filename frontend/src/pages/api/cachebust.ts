@@ -19,18 +19,7 @@ interface CloudflarePurgeResponse {
   result: { id: string };
 }
 
-export const GET: APIRoute = async ({ url }) => {
-  // Verify the secret token (via query param for browser access)
-  const secret = getSecret('REVALIDATE_SECRET');
-  const providedSecret = url.searchParams.get('secret');
-
-  if (!secret || providedSecret !== secret) {
-    return new Response(JSON.stringify({ error: 'Unauthorized' }), {
-      status: 401,
-      headers: { 'Content-Type': 'application/json' },
-    });
-  }
-
+export const GET: APIRoute = async () => {
   const zoneId = getSecret('CLOUDFLARE_ZONE_ID');
   const apiToken = getSecret('CLOUDFLARE_API_TOKEN');
 
