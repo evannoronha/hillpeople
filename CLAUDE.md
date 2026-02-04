@@ -59,11 +59,11 @@ Strapi admin generates preview URLs like `/blog/{slug}?status=draft`. The fronte
 - PRs are merged via the GitHub UI (not via CLI)
 - Never push directly to `main`
 
-## Lighthouse CI
+## Adding New Pages
 
-All frontend pages must be included in Lighthouse CI audits. When adding a new page:
-1. Add the URL to `.github/workflows/lighthouse.yml` in the `url` array
-2. The workflow runs on PRs that modify `frontend/` files
+When adding a new page to the frontend:
+1. Add the URL to `.github/workflows/lighthouse.yml` in the `url` array (Lighthouse CI)
+2. Add the URL to `frontend/src/pages/sitemap.xml.ts`
 
 ## Caching Strategy
 
