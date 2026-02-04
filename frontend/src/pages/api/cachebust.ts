@@ -19,11 +19,10 @@ interface CloudflarePurgeResponse {
   result: { id: string };
 }
 
-export const POST: APIRoute = async ({ request }) => {
-  // Verify the secret token
+export const GET: APIRoute = async ({ url }) => {
+  // Verify the secret token (via query param for browser access)
   const secret = getSecret('REVALIDATE_SECRET');
-  const authHeader = request.headers.get('Authorization');
-  const providedSecret = authHeader?.replace('Bearer ', '');
+  const providedSecret = url.searchParams.get('secret');
 
   if (!secret || providedSecret !== secret) {
     return new Response(JSON.stringify({ error: 'Unauthorized' }), {
