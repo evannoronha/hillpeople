@@ -5,8 +5,8 @@ import { fetchSingleType, fetchSiteSettings } from "../lib/api";
 import { getMediaUrl, transformContentUrls } from "../lib/imageUrl";
 
 const [about, siteSettings] = await Promise.all([
-    fetchSingleType("about"),
-    fetchSiteSettings(),
+    fetchSingleType("about", Astro.locals),
+    fetchSiteSettings(Astro.locals),
 ]);
 
 // Transform relative /uploads/ URLs to absolute Strapi URLs

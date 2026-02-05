@@ -291,7 +291,7 @@ function getSortedGrades(byGrade: Record<string, number>): Array<{ grade: string
         .sort((a, b) => parseGrade(b.grade) - parseGrade(a.grade));
 }
 
-export const GET: APIRoute = async ({ url }) => {
+export const GET: APIRoute = async ({ url, locals }) => {
     const personId = url.searchParams.get('person') || undefined;
     const yearParam = url.searchParams.get('year');
     const period = url.searchParams.get('period') || 'last12'; // 'last12' | 'year' | 'all'
@@ -306,20 +306,20 @@ export const GET: APIRoute = async ({ url }) => {
         let ticks: ClimbingTick[];
         if (personId) {
             if (showLast12Months) {
-                ticks = await fetchClimbingTicksLast12MonthsForPerson(personId);
+                ticks = await fetchClimbingTicksLast12MonthsForPerson(personId, locals);
             } else {
-                ticks = await fetchClimbingTicksForPerson(personId, selectedYear);
+                ticks = await fetchClimbingTicksForPerson(personId, selectedYear, locals);
             }
         } else {
             if (showLast12Months) {
-                ticks = await fetchClimbingTicksLast12Months();
+                ticks = await fetchClimbingTicksLast12Months(locals);
             } else {
-                ticks = await fetchAllClimbingTicks(selectedYear);
+                ticks = await fetchAllClimbingTicks(selectedYear, locals);
             }
         }
 
         // Fetch people for the filter dropdown
-        const people = await fetchAllPeople();
+        const people = await fetchAllPeople(locals);
 
         // Compute stats
         const stats = computeTickStats(ticks);
@@ -335,19 +335,19 @@ export const GET: APIRoute = async ({ url }) => {
 
         if (personId) {
             // Single person view - fetch their goals
-            const rawGoals = await fetchClimbingGoals(personId, goalYear);
+            const rawGoals = await fetchClimbingGoals(personId, goalYear, locals);
 
             // For goals, we need ticks for the goal year
             let ticksForGoals = ticks;
             if (!selectedYear && showLast12Months) {
                 // Need to fetch current year ticks for goal progress
-                ticksForGoals = await fetchClimbingTicksForPerson(personId, goalYear);
+                ticksForGoals = await fetchClimbingTicksForPerson(personId, goalYear, locals);
             }
 
             goals = rawGoals.map(goal => computeGoalProgress(goal, ticksForGoals));
         } else {
             // Everyone view - fetch all goals and compute progress per person
-            const rawGoals = await fetchClimbingGoals(undefined, goalYear);
+            const rawGoals = await fetchClimbingGoals(undefined, goalYear, locals);
 
             // We need all ticks for the goal year to compute progress
             let allTicksForGoals: ClimbingTick[];
@@ -355,7 +355,7 @@ export const GET: APIRoute = async ({ url }) => {
                 allTicksForGoals = ticks;
             } else {
                 // Fetch ticks for the goal year
-                allTicksForGoals = await fetchAllClimbingTicks(goalYear);
+                allTicksForGoals = await fetchAllClimbingTicks(goalYear, locals);
             }
 
             // Compute progress for each goal using only that person's ticks

@@ -31,8 +31,8 @@ if (previewMode) {
 }
 
 const [post, siteSettings] = await Promise.all([
-  fetchPostBySlug(slug!, previewMode),
-  fetchSiteSettings(),
+  fetchPostBySlug(slug!, previewMode, Astro.locals),
+  fetchSiteSettings(Astro.locals),
 ]);
 
 if (!post) {

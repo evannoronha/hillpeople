@@ -1,5 +1,5 @@
 import { getSecret } from 'astro:env/server';
-import { clearResponseCache } from './api';
+import { clearDOCache } from './do-cache';
 
 // All cacheable URLs
 export const ALL_CACHEABLE_URLS = [
@@ -34,7 +34,7 @@ interface CloudflarePurgeResponse {
 export interface PurgeResult {
   success: boolean;
   error?: string;
-  isolateCacheCleared: boolean;
+  doCacheCleared: boolean;
   cloudflareCacheCleared: boolean;
   purgedUrls?: string[];
 }
@@ -81,20 +81,25 @@ export async function purgeCloudflareCache(urls: string[]): Promise<{ success: b
 }
 
 /**
- * Clear all caches (isolate + Cloudflare edge)
+ * Clear all caches (Durable Object + Cloudflare edge)
  */
-export async function bustAllCaches(): Promise<PurgeResult> {
-  // Clear the in-memory isolate cache
-  clearResponseCache();
+export async function bustAllCaches(locals?: App.Locals): Promise<PurgeResult> {
+  // Clear the Durable Object cache (shared across all isolates)
+  let doCacheCleared = false;
+  if (locals) {
+    doCacheCleared = await clearDOCache(locals);
+  } else {
+    console.warn('No locals provided - DO cache not cleared');
+  }
 
-  // Purge Cloudflare cache
+  // Purge Cloudflare edge cache
   const cfResult = await purgeCloudflareCache(ALL_CACHEABLE_URLS);
 
   if (!cfResult.success) {
     console.error('Cloudflare cache purge failed:', cfResult.error);
     return {
-      success: true, // Still partial success - isolate cache was cleared
-      isolateCacheCleared: true,
+      success: doCacheCleared, // Partial success if DO cache was cleared
+      doCacheCleared,
       cloudflareCacheCleared: false,
       error: cfResult.error,
       purgedUrls: [],
@@ -105,7 +110,7 @@ export async function bustAllCaches(): Promise<PurgeResult> {
 
   return {
     success: true,
-    isolateCacheCleared: true,
+    doCacheCleared,
     cloudflareCacheCleared: true,
     purgedUrls: ALL_CACHEABLE_URLS,
   };

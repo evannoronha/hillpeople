@@ -19,11 +19,11 @@ interface TransformedTick {
     } | null;
 }
 
-export const GET: APIRoute = async ({ url }) => {
+export const GET: APIRoute = async ({ url, locals }) => {
     const page = parseInt(url.searchParams.get('page') || '1', 10);
     const pageSize = parseInt(url.searchParams.get('pageSize') || '50', 10);
 
-    const { ticks, pagination } = await fetchClimbingTicksPaginated(page, pageSize);
+    const { ticks, pagination } = await fetchClimbingTicksPaginated(page, pageSize, locals);
 
     // Transform ticks to include only needed fields
     const transformedTicks: TransformedTick[] = ticks.map((tick: ClimbingTick) => ({

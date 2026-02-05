@@ -1,9 +1,9 @@
 import type { APIRoute } from 'astro';
 import { getSecret } from 'astro:env/server';
 import { purgeCloudflareCache, CONTENT_TYPE_URLS } from '../../lib/cache';
-import { clearResponseCache } from '../../lib/api';
+import { clearDOCache } from '../../lib/do-cache';
 
-export const POST: APIRoute = async ({ request }) => {
+export const POST: APIRoute = async ({ request, locals }) => {
   console.log('Revalidate request received:', request.url);
 
   // Verify the secret token
@@ -56,18 +56,23 @@ export const POST: APIRoute = async ({ request }) => {
     allUrls.push(`/blog/${payload.entry.slug}`);
   }
 
-  // Clear the in-memory isolate cache
-  clearResponseCache();
-  console.log('Isolate cache cleared');
+  // Clear the Durable Object cache (shared across all isolates)
+  const doCacheCleared = await clearDOCache(locals);
+  if (doCacheCleared) {
+    console.log('DO cache cleared');
+  } else {
+    console.warn('DO cache not cleared - binding may not be available');
+  }
 
-  // Purge Cloudflare cache
+  // Purge Cloudflare edge cache
   const result = await purgeCloudflareCache(allUrls);
 
   if (!result.success) {
     console.error('Cloudflare cache purge failed:', result.error);
     return new Response(JSON.stringify({
       error: 'Cache purge failed',
-      details: result.error
+      details: result.error,
+      doCacheCleared,
     }), {
       status: 500,
       headers: { 'Content-Type': 'application/json' },
@@ -80,7 +85,7 @@ export const POST: APIRoute = async ({ request }) => {
     message: 'Cache purged successfully',
     contentType,
     purged: allUrls,
-    isolateCacheCleared: true,
+    doCacheCleared,
   }), {
     status: 200,
     headers: { 'Content-Type': 'application/json' },

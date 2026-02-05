@@ -3,11 +3,11 @@ import { fetchPostsPaginated } from '../../lib/api';
 import { getMediaUrl } from '../../lib/imageUrl';
 import { calculateReadingTime } from '../../lib/readingTime';
 
-export const GET: APIRoute = async ({ url }) => {
+export const GET: APIRoute = async ({ url, locals }) => {
   const page = parseInt(url.searchParams.get('page') || '1', 10);
   const pageSize = parseInt(url.searchParams.get('pageSize') || '6', 10);
 
-  const { posts, pagination } = await fetchPostsPaginated(page, pageSize);
+  const { posts, pagination } = await fetchPostsPaginated(page, pageSize, locals);
 
   // Transform posts to include computed values
   const transformedPosts = posts.map((post: any) => {
