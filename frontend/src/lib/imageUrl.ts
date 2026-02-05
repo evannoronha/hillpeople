@@ -1,34 +1,48 @@
 import { STRAPI_API_URL } from 'astro:env/server'
 
 const STRAPI_URL = STRAPI_API_URL
+const STRAPI_MEDIA_HOST = 'competent-victory-0bdd9770d0.media.strapiapp.com';
 
+/**
+ * Converts a Strapi media URL to a proxied URL for better caching.
+ * Routes images through /img/* which adds long cache headers.
+ */
 export const getMediaUrl = (url?: string): string => {
     if (!url) return '';
 
-    // Check if it's already an absolute URL
+    // Check if it's a Strapi Cloud media URL - proxy it for better caching
+    if (url.includes(STRAPI_MEDIA_HOST)) {
+        const path = url.split(STRAPI_MEDIA_HOST)[1];
+        return `/img${path}`;
+    }
+
+    // Check if it's already an absolute URL (other hosts)
     if (url.startsWith('http')) {
         return url;
     }
 
+    // Relative URL - use Strapi API URL
     const baseUrl = STRAPI_URL;
     return `${baseUrl}${url}`;
 };
 
 /**
- * Transforms relative /uploads/ URLs in HTML content to absolute Strapi URLs.
+ * Transforms relative /uploads/ URLs in HTML content to proxied URLs.
  * This is needed for CKEditor richContent which embeds relative URLs.
- * Also fixes video MIME types for browser compatibility.
+ * Also handles absolute Strapi Cloud URLs and fixes video MIME types.
  */
 export const transformContentUrls = (html: string): string => {
     if (!html) return '';
 
     return html
-        // Replace relative /uploads/ URLs in src, srcset, and href attributes
-        .replace(/src="\/uploads\//g, `src="${STRAPI_URL}/uploads/`)
+        // Replace relative /uploads/ URLs with proxied URLs
+        .replace(/src="\/uploads\//g, `src="/img/uploads/`)
         .replace(/srcset="([^"]+)"/g, (match, srcset) => {
-            const transformed = srcset.replace(/\/uploads\//g, `${STRAPI_URL}/uploads/`);
+            const transformed = srcset.replace(/\/uploads\//g, `/img/uploads/`);
             return `srcset="${transformed}"`;
         })
+        // Replace absolute Strapi Cloud media URLs with proxied URLs
+        .replace(new RegExp(`https://${STRAPI_MEDIA_HOST}/`, 'g'), '/img/')
         // Fix video MIME type: video/quicktime -> video/mp4 for browser compatibility
         // MOV files are often MP4 containers and play fine with the correct MIME type
         .replace(/type="video\/quicktime"/g, 'type="video/mp4"');
