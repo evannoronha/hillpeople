@@ -17,7 +17,14 @@ export const onRequest = defineMiddleware(async ({ url }, next) => {
     const cleanUrl = new URL(url);
     cleanUrl.searchParams.delete('bustcache');
 
-    return Response.redirect(cleanUrl.toString(), 302);
+    // Use 302 redirect with noindex header to prevent indexing
+    return new Response(null, {
+      status: 302,
+      headers: {
+        'Location': cleanUrl.toString(),
+        'X-Robots-Tag': 'noindex, nofollow',
+      },
+    });
   }
 
   return next();
