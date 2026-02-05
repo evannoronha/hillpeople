@@ -15,5 +15,19 @@
     },
     "vars": {
         "STRAPI_API_URL": "https://journal.hillpeople.net"
-    }
+    },
+    "durable_objects": {
+        "bindings": [
+            {
+                "name": "CACHE_STORE",
+                "class_name": "CacheStore"
+            }
+        ]
+    },
+    "migrations": [
+        {
+            "tag": "v1",
+            "new_classes": ["CacheStore"]
+        }
+    ]
 }

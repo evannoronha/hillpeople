@@ -1,5 +1,8 @@
 import { getSecret } from 'astro:env/server';
-import { clearResponseCache } from './api';
+import { doClear } from './do-cache';
+
+// Runtime context type for passing to cache functions
+type Runtime = App.Locals['runtime'];
 
 // All cacheable URLs
 export const ALL_CACHEABLE_URLS = [
@@ -81,11 +84,17 @@ export async function purgeCloudflareCache(urls: string[]): Promise<{ success: b
 }
 
 /**
- * Clear all caches (isolate + Cloudflare edge)
+ * Clear all caches (Durable Object + Cloudflare edge)
  */
-export async function bustAllCaches(): Promise<PurgeResult> {
-  // Clear the in-memory isolate cache
-  clearResponseCache();
+export async function bustAllCaches(runtime?: Runtime): Promise<PurgeResult> {
+  // Clear the Durable Object cache
+  let doCacheCleared = 0;
+  if (runtime) {
+    doCacheCleared = await doClear(runtime);
+    console.log('DO cache cleared:', doCacheCleared, 'entries');
+  } else {
+    console.warn('No runtime context, skipping DO cache clear');
+  }
 
   // Purge Cloudflare cache
   const cfResult = await purgeCloudflareCache(ALL_CACHEABLE_URLS);
@@ -93,8 +102,8 @@ export async function bustAllCaches(): Promise<PurgeResult> {
   if (!cfResult.success) {
     console.error('Cloudflare cache purge failed:', cfResult.error);
     return {
-      success: true, // Still partial success - isolate cache was cleared
-      isolateCacheCleared: true,
+      success: true, // Still partial success - DO cache was cleared
+      isolateCacheCleared: doCacheCleared > 0,
       cloudflareCacheCleared: false,
       error: cfResult.error,
       purgedUrls: [],
@@ -105,7 +114,7 @@ export async function bustAllCaches(): Promise<PurgeResult> {
 
   return {
     success: true,
-    isolateCacheCleared: true,
+    isolateCacheCleared: doCacheCleared > 0,
     cloudflareCacheCleared: true,
     purgedUrls: ALL_CACHEABLE_URLS,
   };

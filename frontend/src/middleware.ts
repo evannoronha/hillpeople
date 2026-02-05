@@ -1,13 +1,13 @@
 import { defineMiddleware } from 'astro:middleware';
 import { bustAllCaches } from './lib/cache';
 
-export const onRequest = defineMiddleware(async ({ url }, next) => {
+export const onRequest = defineMiddleware(async ({ url, locals }, next) => {
   // Check for ?bustcache query param
   if (url.searchParams.has('bustcache')) {
     console.log('Cache bust requested via ?bustcache:', url.toString());
 
-    // Bust all caches
-    const result = await bustAllCaches();
+    // Bust all caches (pass runtime for DO access)
+    const result = await bustAllCaches(locals.runtime);
 
     if (result.error) {
       console.warn('Partial cache bust:', result.error);

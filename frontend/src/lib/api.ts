@@ -1,46 +1,26 @@
 import { getSecret, STRAPI_API_URL } from 'astro:env/server'
+import { doGet, doSet, CACHE_TTL_MS } from './do-cache';
 
 const STRAPI_URL = STRAPI_API_URL
 
-// Cache TTL in milliseconds (1 hour)
-const CACHE_TTL_MS = 60 * 60 * 1000;
+// Runtime context type for passing to API functions
+type Runtime = App.Locals['runtime'];
 
-// Isolate-level cache with TTL for Strapi API responses
-// This cache persists across requests within the same Worker isolate,
-// providing performance benefits while ensuring data freshness via TTL
-interface CachedResponse {
-    ok: boolean;
-    status: number;
-    data: unknown;
-    expiresAt: number;
-}
-const responseCache = new Map<string, CachedResponse>();
-
-// Clear the isolate-level cache (called by /api/cachebust)
-export function clearResponseCache() {
-    responseCache.clear();
-}
-
-// Helper to make authenticated requests to Strapi with TTL-based caching
-async function strapiFetch(url: string): Promise<Response> {
-    const now = Date.now();
-
-    // Check for valid cached response
-    const cached = responseCache.get(url);
-    if (cached && cached.expiresAt > now) {
-        console.debug(`Cache HIT (TTL: ${Math.round((cached.expiresAt - now) / 1000)}s remaining):`, url);
-        return new Response(JSON.stringify(cached.data), {
-            status: cached.status,
-            headers: { 'Content-Type': 'application/json' },
-        });
-    }
-
-    // Cache miss or expired
-    if (cached) {
-        console.debug("Cache EXPIRED - fetching:", url);
-        responseCache.delete(url);
+// Helper to make authenticated requests to Strapi with Durable Object caching
+async function strapiFetch(url: string, runtime?: Runtime): Promise<Response> {
+    // Check Durable Object cache if runtime is available
+    if (runtime) {
+        const cached = await doGet(runtime, url);
+        if (cached.hit) {
+            console.debug(`DO Cache HIT (TTL: ${cached.ttlRemaining}s remaining):`, url);
+            return new Response(JSON.stringify(cached.data), {
+                status: 200,
+                headers: { 'Content-Type': 'application/json' },
+            });
+        }
+        console.debug('DO Cache MISS - fetching:', url);
     } else {
-        console.debug("Cache MISS - fetching:", url);
+        console.debug('No runtime context, fetching without cache:', url);
     }
 
     const headers: HeadersInit = {}
@@ -56,13 +36,8 @@ async function strapiFetch(url: string): Promise<Response> {
     const hasData = data?.data !== null &&
         !(Array.isArray(data?.data) && data.data.length === 0);
 
-    if (response.ok && hasData) {
-        responseCache.set(url, {
-            ok: response.ok,
-            status: response.status,
-            data,
-            expiresAt: now + CACHE_TTL_MS,
-        });
+    if (response.ok && hasData && runtime) {
+        await doSet(runtime, url, data, CACHE_TTL_MS);
     }
 
     return new Response(JSON.stringify(data), {
@@ -83,11 +58,11 @@ export interface PaginatedPostsResponse {
     pagination: PaginationMeta;
 }
 
-export async function fetchPostsPaginated(page: number = 1, pageSize: number = 6): Promise<PaginatedPostsResponse> {
+export async function fetchPostsPaginated(page: number = 1, pageSize: number = 6, runtime?: Runtime): Promise<PaginatedPostsResponse> {
     try {
         const reqUrl = `${STRAPI_URL}/api/posts?populate=*&sort=publishedDate:desc&pagination[page]=${page}&pagination[pageSize]=${pageSize}`
         console.debug("Fetching paginated posts from:", reqUrl)
-        const response = await strapiFetch(reqUrl)
+        const response = await strapiFetch(reqUrl, runtime)
 
         if (!response.ok) {
             throw new Error(`Failed to fetch posts: ${response.status}`)
@@ -107,11 +82,11 @@ export async function fetchPostsPaginated(page: number = 1, pageSize: number = 6
     }
 }
 
-export async function fetchPosts() {
+export async function fetchPosts(runtime?: Runtime) {
     try {
         const reqUrl = `${STRAPI_URL}/api/posts?populate=*&sort=publishedDate:desc`
         console.debug("Fetching posts from:", reqUrl)
-        const response = await strapiFetch(reqUrl)
+        const response = await strapiFetch(reqUrl, runtime)
 
         if (!response.ok) {
             throw new Error(`Failed to fetch posts: ${response.status}`)
@@ -125,7 +100,7 @@ export async function fetchPosts() {
     }
 }
 
-export async function fetchAllPosts(): Promise<any[]> {
+export async function fetchAllPosts(runtime?: Runtime): Promise<any[]> {
     const allPosts: any[] = [];
     let page = 1;
     const pageSize = 100;
@@ -135,7 +110,7 @@ export async function fetchAllPosts(): Promise<any[]> {
         try {
             const reqUrl = `${STRAPI_URL}/api/posts?populate=*&sort=publishedDate:desc&pagination[page]=${page}&pagination[pageSize]=${pageSize}`;
             console.debug(`Fetching all posts page ${page} from:`, reqUrl);
-            const response = await strapiFetch(reqUrl);
+            const response = await strapiFetch(reqUrl, runtime);
 
             if (!response.ok) {
                 throw new Error(`Failed to fetch posts: ${response.status}`);
@@ -157,14 +132,14 @@ export async function fetchAllPosts(): Promise<any[]> {
     return allPosts;
 }
 
-export async function fetchPostBySlug(slug: string, preview: boolean = false) {
+export async function fetchPostBySlug(slug: string, preview: boolean = false, runtime?: Runtime) {
     try {
         let reqUrl = `${STRAPI_URL}/api/posts?filters[slug][$eq]=${slug}&populate=*`
         if (preview) {
             reqUrl += "&status=draft"
         }
         console.debug("Fetching posts from:", reqUrl)
-        const response = await strapiFetch(reqUrl)
+        const response = await strapiFetch(reqUrl, runtime)
 
         if (!response.ok) {
             throw new Error(`Failed to fetch post: ${response.status}`)
@@ -178,11 +153,11 @@ export async function fetchPostBySlug(slug: string, preview: boolean = false) {
     }
 }
 
-export async function fetchSingleType(pageName: string) {
+export async function fetchSingleType(pageName: string, runtime?: Runtime) {
     try {
         const reqUrl = `${STRAPI_URL}/api/${pageName}?populate=*`
         console.debug("Fetching single type from:", reqUrl)
-        const response = await strapiFetch(reqUrl)
+        const response = await strapiFetch(reqUrl, runtime)
 
         if (!response.ok) {
             // 404 is expected if the single type content hasn't been created yet
@@ -200,8 +175,8 @@ export async function fetchSingleType(pageName: string) {
     }
 }
 
-export async function fetchSiteSettings() {
-    return fetchSingleType("site-settings")
+export async function fetchSiteSettings(runtime?: Runtime) {
+    return fetchSingleType("site-settings", runtime)
 }
 
 // Strapi image types
@@ -282,11 +257,11 @@ export interface PaginatedClimbingTicksResponse {
     pagination: PaginationMeta;
 }
 
-export async function fetchClimbingTicksPaginated(page: number = 1, pageSize: number = 50): Promise<PaginatedClimbingTicksResponse> {
+export async function fetchClimbingTicksPaginated(page: number = 1, pageSize: number = 50, runtime?: Runtime): Promise<PaginatedClimbingTicksResponse> {
     try {
         const reqUrl = `${STRAPI_URL}/api/climbing-ticks?populate=*&sort=tickDate:desc&pagination[page]=${page}&pagination[pageSize]=${pageSize}`
         console.debug("Fetching paginated climbing ticks from:", reqUrl)
-        const response = await strapiFetch(reqUrl)
+        const response = await strapiFetch(reqUrl, runtime)
 
         if (!response.ok) {
             throw new Error(`Failed to fetch climbing ticks: ${response.status}`)
@@ -306,11 +281,11 @@ export async function fetchClimbingTicksPaginated(page: number = 1, pageSize: nu
     }
 }
 
-export async function fetchClimbingTicksByDateRange(startDate: string, endDate: string): Promise<ClimbingTick[]> {
+export async function fetchClimbingTicksByDateRange(startDate: string, endDate: string, runtime?: Runtime): Promise<ClimbingTick[]> {
     try {
         const reqUrl = `${STRAPI_URL}/api/climbing-ticks?populate=*&sort=tickDate:asc&filters[tickDate][$gte]=${startDate}&filters[tickDate][$lte]=${endDate}`
         console.debug("Fetching climbing ticks by date range from:", reqUrl)
-        const response = await strapiFetch(reqUrl)
+        const response = await strapiFetch(reqUrl, runtime)
 
         if (!response.ok) {
             throw new Error(`Failed to fetch climbing ticks: ${response.status}`)
@@ -324,11 +299,11 @@ export async function fetchClimbingTicksByDateRange(startDate: string, endDate: 
     }
 }
 
-export async function fetchAllPeople(): Promise<Person[]> {
+export async function fetchAllPeople(runtime?: Runtime): Promise<Person[]> {
     try {
         const reqUrl = `${STRAPI_URL}/api/people?sort=name:asc`
         console.debug("Fetching all people from:", reqUrl)
-        const response = await strapiFetch(reqUrl)
+        const response = await strapiFetch(reqUrl, runtime)
 
         if (!response.ok) {
             throw new Error(`Failed to fetch people: ${response.status}`)
@@ -342,7 +317,7 @@ export async function fetchAllPeople(): Promise<Person[]> {
     }
 }
 
-export async function fetchClimbingGoals(personDocumentId?: string, year?: number): Promise<ClimbingGoal[]> {
+export async function fetchClimbingGoals(personDocumentId?: string, year?: number, runtime?: Runtime): Promise<ClimbingGoal[]> {
     try {
         let reqUrl = `${STRAPI_URL}/api/climbing-goals?populate=*&filters[isActive][$eq]=true`
         if (personDocumentId) {
@@ -352,7 +327,7 @@ export async function fetchClimbingGoals(personDocumentId?: string, year?: numbe
             reqUrl += `&filters[year][$eq]=${year}`
         }
         console.debug("Fetching climbing goals from:", reqUrl)
-        const response = await strapiFetch(reqUrl)
+        const response = await strapiFetch(reqUrl, runtime)
 
         if (!response.ok) {
             throw new Error(`Failed to fetch climbing goals: ${response.status}`)
@@ -367,7 +342,7 @@ export async function fetchClimbingGoals(personDocumentId?: string, year?: numbe
 }
 
 // Helper to fetch all pages of climbing ticks
-async function fetchAllTicksWithPagination(baseUrl: string): Promise<ClimbingTick[]> {
+async function fetchAllTicksWithPagination(baseUrl: string, runtime?: Runtime): Promise<ClimbingTick[]> {
     const allTicks: ClimbingTick[] = [];
     let page = 1;
     const pageSize = 100;
@@ -376,7 +351,7 @@ async function fetchAllTicksWithPagination(baseUrl: string): Promise<ClimbingTic
     while (hasMore) {
         const reqUrl = `${baseUrl}&pagination[page]=${page}&pagination[pageSize]=${pageSize}`;
         console.debug(`Fetching climbing ticks page ${page} from:`, reqUrl);
-        const response = await strapiFetch(reqUrl);
+        const response = await strapiFetch(reqUrl, runtime);
 
         if (!response.ok) {
             throw new Error(`Failed to fetch climbing ticks: ${response.status}`);
@@ -394,52 +369,52 @@ async function fetchAllTicksWithPagination(baseUrl: string): Promise<ClimbingTic
     return allTicks;
 }
 
-export async function fetchAllClimbingTicks(year?: number): Promise<ClimbingTick[]> {
+export async function fetchAllClimbingTicks(year?: number, runtime?: Runtime): Promise<ClimbingTick[]> {
     try {
         let baseUrl = `${STRAPI_URL}/api/climbing-ticks?populate=*&sort=tickDate:desc`
         if (year) {
             baseUrl += `&filters[tickDate][$gte]=${year}-01-01&filters[tickDate][$lte]=${year}-12-31`
         }
-        return await fetchAllTicksWithPagination(baseUrl);
+        return await fetchAllTicksWithPagination(baseUrl, runtime);
     } catch (error) {
         console.error("Error fetching all climbing ticks:", error)
         return []
     }
 }
 
-export async function fetchClimbingTicksForPerson(personDocumentId: string, year?: number): Promise<ClimbingTick[]> {
+export async function fetchClimbingTicksForPerson(personDocumentId: string, year?: number, runtime?: Runtime): Promise<ClimbingTick[]> {
     try {
         let baseUrl = `${STRAPI_URL}/api/climbing-ticks?populate=*&sort=tickDate:desc&filters[person][documentId][$eq]=${personDocumentId}`
         if (year) {
             baseUrl += `&filters[tickDate][$gte]=${year}-01-01&filters[tickDate][$lte]=${year}-12-31`
         }
-        return await fetchAllTicksWithPagination(baseUrl);
+        return await fetchAllTicksWithPagination(baseUrl, runtime);
     } catch (error) {
         console.error("Error fetching climbing ticks for person:", error)
         return []
     }
 }
 
-export async function fetchClimbingTicksLast12Months(): Promise<ClimbingTick[]> {
+export async function fetchClimbingTicksLast12Months(runtime?: Runtime): Promise<ClimbingTick[]> {
     try {
         const now = new Date();
         const endDate = now.toISOString().split('T')[0];
         const startDate = new Date(now.getFullYear() - 1, now.getMonth(), now.getDate()).toISOString().split('T')[0];
         const baseUrl = `${STRAPI_URL}/api/climbing-ticks?populate=*&sort=tickDate:desc&filters[tickDate][$gte]=${startDate}&filters[tickDate][$lte]=${endDate}`
-        return await fetchAllTicksWithPagination(baseUrl);
+        return await fetchAllTicksWithPagination(baseUrl, runtime);
     } catch (error) {
         console.error("Error fetching climbing ticks for last 12 months:", error)
         return []
     }
 }
 
-export async function fetchClimbingTicksLast12MonthsForPerson(personDocumentId: string): Promise<ClimbingTick[]> {
+export async function fetchClimbingTicksLast12MonthsForPerson(personDocumentId: string, runtime?: Runtime): Promise<ClimbingTick[]> {
     try {
         const now = new Date();
         const endDate = now.toISOString().split('T')[0];
         const startDate = new Date(now.getFullYear() - 1, now.getMonth(), now.getDate()).toISOString().split('T')[0];
         const baseUrl = `${STRAPI_URL}/api/climbing-ticks?populate=*&sort=tickDate:desc&filters[person][documentId][$eq]=${personDocumentId}&filters[tickDate][$gte]=${startDate}&filters[tickDate][$lte]=${endDate}`
-        return await fetchAllTicksWithPagination(baseUrl);
+        return await fetchAllTicksWithPagination(baseUrl, runtime);
     } catch (error) {
         console.error("Error fetching climbing ticks for last 12 months for person:", error)
         return []

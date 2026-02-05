@@ -69,14 +69,20 @@ When adding a new page to the frontend:
 
 The frontend uses a two-layer caching strategy to minimize Strapi API calls while ensuring content freshness.
 
-### Layer 1: Isolate Cache (in-memory)
+### Layer 1: Durable Object Cache
 
-Located in `frontend/src/lib/api.ts`, the `responseCache` Map caches Strapi API responses within a Cloudflare Worker isolate.
+Located in `frontend/src/CacheStore.ts`, a Cloudflare Durable Object provides a globally consistent cache shared across all Workers.
 
 - **TTL**: 1 hour
-- **Scope**: Per-isolate (different users may hit different isolates)
+- **Scope**: Global singleton (all requests share the same cache)
+- **Storage**: In-memory for hot data + persistent KV storage for durability
 - **Skips caching**: 404s and empty responses
-- **Invalidation**: Automatic on TTL expiry, or manual via `?bustcache` query param on any page
+- **Invalidation**: Automatic on TTL expiry, or manual via `?bustcache` query param
+
+Key files:
+- **`frontend/src/CacheStore.ts`** - Durable Object class with get/set/clear methods
+- **`frontend/src/lib/do-cache.ts`** - Client utility for interacting with the DO
+- **`frontend/src/lib/api.ts`** - API functions accept optional `runtime` param for DO access
 
 ### Layer 2: Cloudflare Edge Cache
 
@@ -92,7 +98,7 @@ HTTP `Cache-Control` headers enable Cloudflare's edge caching for rendered pages
 ### Cache Invalidation
 
 **Manual**: Append `?bustcache` to any URL (e.g., `https://hillpeople.net/climbing?bustcache`) to clear both caches:
-1. Clears the isolate's in-memory `responseCache`
+1. Clears the Durable Object cache (all entries)
 2. Purges Cloudflare edge cache via API (requires `CLOUDFLARE_ZONE_ID` and `CLOUDFLARE_API_TOKEN`)
 3. Redirects back to the clean URL
 
@@ -117,6 +123,21 @@ HTTP `Cache-Control` headers enable Cloudflare's edge caching for rendered pages
 | `CLOUDFLARE_API_TOKEN` | Cloudflare Pages | Token with "Zone.Cache Purge" permission |
 | `REVALIDATE_SECRET` | Both | Shared secret for webhook auth |
 | `FRONTEND_REVALIDATE_URL` | Strapi Cloud | `https://hillpeople.net/api/revalidate` |
+
+### Passing Runtime Context
+
+API functions in `frontend/src/lib/api.ts` accept an optional `runtime` parameter to enable DO caching. Pass it from Astro pages/API routes:
+
+```typescript
+// In an Astro page
+const posts = await fetchPosts(Astro.locals.runtime);
+
+// In an API route
+export const GET: APIRoute = async ({ locals }) => {
+  const posts = await fetchPosts(locals.runtime);
+  // ...
+};
+```
 
 ## Adding New Frontend Pages
 
