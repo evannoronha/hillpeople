@@ -8,7 +8,8 @@ import cloudflare from '@astrojs/cloudflare';
 // https://astro.build/config
 export default defineConfig({
   output: 'server',
-  site:'https://hillpeople.net',
+  site: 'https://hillpeople.net',
+  trailingSlash: 'never',
 
   env: {
     schema: {
