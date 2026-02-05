@@ -48,8 +48,10 @@ async function convertToWebP(
       return null;
     }
 
-    // Dynamic import to avoid loading WASM in local dev
-    const { PhotonImage } = await import('@cf-wasm/photon/workerd');
+    // Dynamic import with variable path to prevent bundler from analyzing WASM
+    // This ensures the WASM is only loaded at runtime in Cloudflare Workers
+    const modulePath = '@cf-wasm/photon/workerd';
+    const { PhotonImage } = await import(/* @vite-ignore */ modulePath);
 
     const inputBytes = new Uint8Array(imageData);
     const image = PhotonImage.new_from_byteslice(inputBytes);
