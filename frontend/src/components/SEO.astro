@@ -25,8 +25,10 @@ const {
 
 const fullTitle = title === 'Home' ? siteName : `${title} - ${siteName}`;
 // Build canonical URL from site config + pathname (no query params, always HTTPS)
+// Normalize to remove trailing slashes (except for root "/") to match Google's preference
 const siteUrl = import.meta.env.SITE || 'https://hillpeople.net';
-const url = canonicalUrl || `${siteUrl}${Astro.url.pathname}`;
+const pathname = Astro.url.pathname.replace(/\/+$/, '') || '/';
+const url = canonicalUrl || `${siteUrl}${pathname}`;
 ---
 
 <!-- Primary Meta Tags -->
