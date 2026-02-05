@@ -42,6 +42,25 @@ const siteSettings = await fetchSiteSettings();
 	<head>
 		<meta charset="UTF-8" />
 		<meta name="viewport" content="width=device-width" />
+		<!-- Critical CSS inlined to avoid render blocking -->
+		<style>
+			:root {
+				--color-bg: #f4f2ec;
+				--color-text: #643f41;
+				--color-header: #f16e53;
+				--color-sub-header: #f16e53;
+			}
+			@media (prefers-color-scheme: dark) {
+				:root {
+					--color-bg: #101828;
+					--color-text: #e7e7e7;
+					--color-header: #d77a40;
+					--color-sub-header: #dfcec3;
+				}
+			}
+			html { font-family: "Libre Baskerville", Georgia, serif; }
+			body { background-color: var(--color-bg); color: var(--color-text); }
+		</style>
 		<SEO
 			title={pageTitle}
 			description={description}
@@ -56,10 +75,24 @@ const siteSettings = await fetchSiteSettings();
 		<Favicons />
 		<link rel="preconnect" href="https://fonts.googleapis.com" />
 		<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+		<!-- Load Google Fonts asynchronously to avoid render blocking -->
+		<link
+			rel="preload"
+			as="style"
+			href="https://fonts.googleapis.com/css2?family=Libre+Baskerville:ital,wght@0,400;0,700;1,400&display=swap"
+		/>
 		<link
 			href="https://fonts.googleapis.com/css2?family=Libre+Baskerville:ital,wght@0,400;0,700;1,400&display=swap"
 			rel="stylesheet"
+			media="print"
+			onload="this.media='all'"
 		/>
+		<noscript>
+			<link
+				href="https://fonts.googleapis.com/css2?family=Libre+Baskerville:ital,wght@0,400;0,700;1,400&display=swap"
+				rel="stylesheet"
+			/>
+		</noscript>
 		<meta name="generator" content={Astro.generator} />
 		{preloadImage && (
 			<link rel="preload" as="image" href={preloadImage} fetchpriority="high" />
