@@ -37,15 +37,15 @@ export class StrapiCache extends DurableObject {
         if (!entry || entry.expiresAt < now) {
           if (entry) {
             this.cache.delete(key);
-            console.debug(`DO Cache EXPIRED: ${key}`);
+            console.log(`DO Cache EXPIRED: ${key}`);
           } else {
-            console.debug(`DO Cache MISS: ${key}`);
+            console.log(`DO Cache MISS: ${key}`);
           }
           return Response.json({ hit: false });
         }
 
         const ttlRemaining = Math.round((entry.expiresAt - now) / 1000);
-        console.debug(`DO Cache HIT (TTL: ${ttlRemaining}s): ${key}`);
+        console.log(`DO Cache HIT (TTL: ${ttlRemaining}s): ${key}`);
         return Response.json({ hit: true, data: entry.data });
       }
 
@@ -62,14 +62,14 @@ export class StrapiCache extends DurableObject {
           data,
           expiresAt: Date.now() + ttl,
         });
-        console.debug(`DO Cache SET: ${key} (TTL: ${ttl / 1000}s)`);
+        console.log(`DO Cache SET: ${key} (TTL: ${ttl / 1000}s)`);
         return Response.json({ success: true });
       }
 
       case 'clear': {
         const previousSize = this.cache.size;
         this.cache.clear();
-        console.debug(`DO Cache CLEARED: ${previousSize} entries removed`);
+        console.log(`DO Cache CLEARED: ${previousSize} entries removed`);
         return Response.json({ cleared: true, entriesRemoved: previousSize });
       }
 
