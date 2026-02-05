@@ -3,6 +3,9 @@
  *
  * This provides a single cache instance shared across all Worker isolates,
  * enabling instant cache invalidation that affects all requests globally.
+ *
+ * Uses SQLite storage for persistence across DO evictions, with an in-memory
+ * Map as a read-through cache for fast lookups within a single activation.
  */
 import { DurableObject } from 'cloudflare:workers';
 
@@ -19,10 +22,27 @@ interface SetRequest {
 
 export class StrapiCache extends DurableObject {
   private cache: Map<string, CacheEntry> = new Map();
+  private initialized = false;
+
+  /**
+   * Initialize the SQLite table on first use.
+   */
+  private ensureTable() {
+    if (this.initialized) return;
+    this.ctx.storage.sql.exec(
+      `CREATE TABLE IF NOT EXISTS cache (
+        key TEXT PRIMARY KEY,
+        data TEXT NOT NULL,
+        expires_at INTEGER NOT NULL
+      )`
+    );
+    this.initialized = true;
+  }
 
   async fetch(request: Request): Promise<Response> {
+    this.ensureTable();
     const url = new URL(request.url);
-    const action = url.pathname.slice(1); // 'get', 'set', or 'clear'
+    const action = url.pathname.slice(1);
 
     switch (action) {
       case 'get': {
@@ -31,22 +51,49 @@ export class StrapiCache extends DurableObject {
           return Response.json({ error: 'Missing key' }, { status: 400 });
         }
 
-        const entry = this.cache.get(key);
         const now = Date.now();
 
-        if (!entry || entry.expiresAt < now) {
-          if (entry) {
+        // Check in-memory cache first
+        const memEntry = this.cache.get(key);
+        if (memEntry) {
+          if (memEntry.expiresAt < now) {
             this.cache.delete(key);
+            this.ctx.storage.sql.exec('DELETE FROM cache WHERE key = ?', key);
             console.log(`DO Cache EXPIRED: ${key}`);
-          } else {
-            console.log(`DO Cache MISS: ${key}`);
+            return Response.json({ hit: false });
           }
+          const ttlRemaining = Math.round((memEntry.expiresAt - now) / 1000);
+          console.log(`DO Cache HIT (TTL: ${ttlRemaining}s): ${key}`);
+          return Response.json({ hit: true, data: memEntry.data });
+        }
+
+        // Fall through to SQLite
+        const rows = this.ctx.storage.sql.exec(
+          'SELECT data, expires_at FROM cache WHERE key = ?',
+          key
+        ).toArray();
+
+        if (rows.length === 0) {
+          console.log(`DO Cache MISS: ${key}`);
           return Response.json({ hit: false });
         }
 
-        const ttlRemaining = Math.round((entry.expiresAt - now) / 1000);
-        console.log(`DO Cache HIT (TTL: ${ttlRemaining}s): ${key}`);
-        return Response.json({ hit: true, data: entry.data });
+        const row = rows[0];
+        const expiresAt = row.expires_at as number;
+
+        if (expiresAt < now) {
+          this.ctx.storage.sql.exec('DELETE FROM cache WHERE key = ?', key);
+          console.log(`DO Cache EXPIRED: ${key}`);
+          return Response.json({ hit: false });
+        }
+
+        // Populate in-memory cache from SQLite
+        const data = JSON.parse(row.data as string);
+        this.cache.set(key, { data, expiresAt });
+
+        const ttlRemaining = Math.round((expiresAt - now) / 1000);
+        console.log(`DO Cache HIT (TTL: ${ttlRemaining}s, from storage): ${key}`);
+        return Response.json({ hit: true, data });
       }
 
       case 'set': {
@@ -58,39 +105,46 @@ export class StrapiCache extends DurableObject {
           );
         }
 
-        this.cache.set(key, {
-          data,
-          expiresAt: Date.now() + ttl,
-        });
+        const expiresAt = Date.now() + ttl;
+
+        // Write to both in-memory and SQLite
+        this.cache.set(key, { data, expiresAt });
+        this.ctx.storage.sql.exec(
+          `INSERT OR REPLACE INTO cache (key, data, expires_at) VALUES (?, ?, ?)`,
+          key,
+          JSON.stringify(data),
+          expiresAt
+        );
+
         console.log(`DO Cache SET: ${key} (TTL: ${ttl / 1000}s)`);
         return Response.json({ success: true });
       }
 
       case 'clear': {
-        const previousSize = this.cache.size;
+        const result = this.ctx.storage.sql.exec('SELECT COUNT(*) as count FROM cache').toArray();
+        const previousSize = (result[0]?.count as number) || 0;
+
         this.cache.clear();
+        this.ctx.storage.sql.exec('DELETE FROM cache');
+
         console.log(`DO Cache CLEARED: ${previousSize} entries removed`);
         return Response.json({ cleared: true, entriesRemoved: previousSize });
       }
 
       case 'stats': {
-        // Utility endpoint for debugging
         const now = Date.now();
-        let activeEntries = 0;
-        let expiredEntries = 0;
+        const totalResult = this.ctx.storage.sql.exec('SELECT COUNT(*) as count FROM cache').toArray();
+        const activeResult = this.ctx.storage.sql.exec(
+          'SELECT COUNT(*) as count FROM cache WHERE expires_at > ?', now
+        ).toArray();
 
-        for (const [, entry] of this.cache) {
-          if (entry.expiresAt > now) {
-            activeEntries++;
-          } else {
-            expiredEntries++;
-          }
-        }
+        const totalEntries = (totalResult[0]?.count as number) || 0;
+        const activeEntries = (activeResult[0]?.count as number) || 0;
 
         return Response.json({
-          totalEntries: this.cache.size,
+          totalEntries,
           activeEntries,
-          expiredEntries,
+          expiredEntries: totalEntries - activeEntries,
         });
       }
 

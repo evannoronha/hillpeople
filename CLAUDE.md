@@ -79,7 +79,7 @@ A Cloudflare Durable Object (`StrapiCache`) provides a single shared cache insta
 
 - **TTL**: 1 hour
 - **Scope**: Global — shared across all Worker isolates (unlike per-isolate caching)
-- **Storage**: In-memory Map (not persistent; resets on DO eviction)
+- **Storage**: SQLite-backed with in-memory read-through cache (persists across DO evictions)
 - **Skips caching**: 404s and empty responses
 - **Invalidation**: Automatic on TTL expiry, or manual via `?bustcache` query param on any page
 - **Access**: All data-fetching functions accept `Astro.locals` to access the DO binding
