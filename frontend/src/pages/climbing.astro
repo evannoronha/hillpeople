@@ -12,8 +12,8 @@ const yearParam = Astro.url.searchParams.get('year');
 
 // Only fetch minimal data server-side for fast initial render
 const [people, siteSettings] = await Promise.all([
-    fetchAllPeople(),
-    fetchSiteSettings(),
+    fetchAllPeople(Astro.locals),
+    fetchSiteSettings(Astro.locals),
 ]);
 
 // Determine time period from URL params

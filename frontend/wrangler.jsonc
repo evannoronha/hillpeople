@@ -15,5 +15,19 @@
     },
     "vars": {
         "STRAPI_API_URL": "https://journal.hillpeople.net"
-    }
+    },
+    "durable_objects": {
+        "bindings": [
+            {
+                "name": "STRAPI_CACHE",
+                "class_name": "StrapiCache"
+            }
+        ]
+    },
+    "migrations": [
+        {
+            "tag": "v1",
+            "new_sqlite_classes": ["StrapiCache"]
+        }
+    ]
 }

@@ -1,8 +1,9 @@
+import type { APIRoute } from 'astro';
 import { fetchAllPosts } from "../lib/api";
 
-export async function GET() {
+export const GET: APIRoute = async ({ locals }) => {
     const siteUrl = import.meta.env.SITE;
-    const posts = await fetchAllPosts();
+    const posts = await fetchAllPosts(locals);
 
     const result = `
 <?xml version="1.0" encoding="UTF-8"?>
@@ -27,4 +28,4 @@ export async function GET() {
             'Content-Type': 'application/xml',
         },
     });
-}
+};

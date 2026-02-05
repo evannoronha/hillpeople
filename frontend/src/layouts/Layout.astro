@@ -33,8 +33,8 @@ const {
 } = Astro.props;
 
 // Fetch home page content for newsletter FAB (shown on all pages)
-const homePage = await fetchSingleType("home-page");
-const siteSettings = await fetchSiteSettings();
+const homePage = await fetchSingleType("home-page", Astro.locals);
+const siteSettings = await fetchSiteSettings(Astro.locals);
 ---
 
 <!doctype html>

@@ -14,9 +14,9 @@ import { getMediaUrl } from '../lib/imageUrl';
 const PAGE_SIZE = 6;
 
 const [{ posts, pagination }, homePage, siteSettings] = await Promise.all([
-  fetchPostsPaginated(1, PAGE_SIZE),
-  fetchSingleType('home-page'),
-  fetchSiteSettings(),
+  fetchPostsPaginated(1, PAGE_SIZE, Astro.locals),
+  fetchSingleType('home-page', Astro.locals),
+  fetchSiteSettings(Astro.locals),
 ]);
 
 const hasMore = pagination.pageCount > 1;

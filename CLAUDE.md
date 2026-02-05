@@ -40,8 +40,12 @@ npm run upgrade    # Upgrade Strapi to latest version
 3. Images are served with responsive formats (xlarge, large, medium, small, xsmall)
 
 ### Frontend (`frontend/src/`)
-- **`lib/api.ts`** - Strapi API client: `fetchPosts()`, `fetchPostBySlug()`, `fetchSingleType()`
+- **`lib/api.ts`** - Strapi API client: `fetchPosts()`, `fetchPostBySlug()`, `fetchSingleType()` — all accept optional `locals` param for DO caching
+- **`lib/do-cache.ts`** - Durable Object cache helpers: `getCached()`, `setCached()`, `clearDOCache()`
+- **`lib/cache.ts`** - Cache invalidation: Cloudflare edge purge + DO cache clear
 - **`lib/imageUrl.ts`** - Utilities for constructing Strapi image URLs and selecting formats
+- **`durable-objects/StrapiCache.ts`** - Durable Object class for unified cross-isolate caching
+- **`worker.ts`** - Custom Worker entry point that exports DO alongside Astro SSR handler
 - **`pages/blog/[slug].astro`** - Dynamic post pages; supports `?status=draft` for preview mode
 
 ### Backend (`backend/src/api/`)
@@ -69,14 +73,16 @@ When adding a new page to the frontend:
 
 The frontend uses a two-layer caching strategy to minimize Strapi API calls while ensuring content freshness.
 
-### Layer 1: Isolate Cache (in-memory)
+### Layer 1: Durable Object Cache
 
-Located in `frontend/src/lib/api.ts`, the `responseCache` Map caches Strapi API responses within a Cloudflare Worker isolate.
+A Cloudflare Durable Object (`StrapiCache`) provides a single shared cache instance across all Worker isolates. Located in `frontend/src/durable-objects/StrapiCache.ts`.
 
 - **TTL**: 1 hour
-- **Scope**: Per-isolate (different users may hit different isolates)
+- **Scope**: Global — shared across all Worker isolates (unlike per-isolate caching)
+- **Storage**: SQLite-backed with in-memory read-through cache (persists across DO evictions)
 - **Skips caching**: 404s and empty responses
 - **Invalidation**: Automatic on TTL expiry, or manual via `?bustcache` query param on any page
+- **Access**: All data-fetching functions accept `Astro.locals` to access the DO binding
 
 ### Layer 2: Cloudflare Edge Cache
 
@@ -92,7 +98,7 @@ HTTP `Cache-Control` headers enable Cloudflare's edge caching for rendered pages
 ### Cache Invalidation
 
 **Manual**: Append `?bustcache` to any URL (e.g., `https://hillpeople.net/climbing?bustcache`) to clear both caches:
-1. Clears the isolate's in-memory `responseCache`
+1. Clears the Durable Object cache (affects all isolates instantly)
 2. Purges Cloudflare edge cache via API (requires `CLOUDFLARE_ZONE_ID` and `CLOUDFLARE_API_TOKEN`)
 3. Redirects back to the clean URL
 

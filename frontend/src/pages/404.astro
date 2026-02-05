@@ -2,7 +2,7 @@
 import Layout from "../layouts/Layout.astro";
 import { fetchSiteSettings } from "../lib/api";
 
-const siteSettings = await fetchSiteSettings();
+const siteSettings = await fetchSiteSettings(Astro.locals);
 const siteName = siteSettings?.siteName || "Hill People";
 ---
 
