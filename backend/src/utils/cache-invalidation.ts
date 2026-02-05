@@ -10,6 +10,8 @@ export async function invalidateCache(model: string, entry?: { slug?: string }) 
     return;
   }
 
+  strapi.log.info(`Cache invalidation request: ${revalidateUrl} (model: ${model}, slug: ${entry?.slug || 'n/a'})`);
+
   try {
     const response = await fetch(revalidateUrl, {
       method: 'POST',
@@ -28,6 +30,7 @@ export async function invalidateCache(model: string, entry?: { slug?: string }) 
       strapi.log.info(`Cache invalidated for ${model}:`, data.purged);
     }
   } catch (error) {
-    strapi.log.error('Cache invalidation error:', error);
+    const errorMessage = error instanceof Error ? `${error.name}: ${error.message}` : String(error);
+    strapi.log.error(`Cache invalidation error: ${errorMessage}`);
   }
 }

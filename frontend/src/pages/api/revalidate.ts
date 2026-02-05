@@ -1,8 +1,11 @@
 import type { APIRoute } from 'astro';
 import { getSecret } from 'astro:env/server';
 import { purgeCloudflareCache, CONTENT_TYPE_URLS } from '../../lib/cache';
+import { clearResponseCache } from '../../lib/api';
 
 export const POST: APIRoute = async ({ request }) => {
+  console.log('Revalidate request received:', request.url);
+
   // Verify the secret token
   const secret = getSecret('REVALIDATE_SECRET');
   const authHeader = request.headers.get('Authorization');
@@ -53,6 +56,10 @@ export const POST: APIRoute = async ({ request }) => {
     allUrls.push(`/blog/${payload.entry.slug}`);
   }
 
+  // Clear the in-memory isolate cache
+  clearResponseCache();
+  console.log('Isolate cache cleared');
+
   // Purge Cloudflare cache
   const result = await purgeCloudflareCache(allUrls);
 
@@ -73,6 +80,7 @@ export const POST: APIRoute = async ({ request }) => {
     message: 'Cache purged successfully',
     contentType,
     purged: allUrls,
+    isolateCacheCleared: true,
   }), {
     status: 200,
     headers: { 'Content-Type': 'application/json' },

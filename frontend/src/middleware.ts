@@ -4,7 +4,7 @@ import { bustAllCaches } from './lib/cache';
 export const onRequest = defineMiddleware(async ({ url }, next) => {
   // Check for ?bustcache query param
   if (url.searchParams.has('bustcache')) {
-    console.log('Cache bust requested via ?bustcache');
+    console.log('Cache bust requested via ?bustcache:', url.toString());
 
     // Bust all caches
     const result = await bustAllCaches();
