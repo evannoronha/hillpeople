@@ -1,6 +1,4 @@
 import type { APIRoute } from 'astro';
-// Use workerd import for Cloudflare Workers/Pages
-import { PhotonImage } from '@cf-wasm/photon/workerd';
 
 const STRAPI_MEDIA_HOST = 'competent-victory-0bdd9770d0.media.strapiapp.com';
 
@@ -13,6 +11,9 @@ const MAX_CONVERT_SIZE = 2 * 1024 * 1024;
 
 // Image types we can convert to WebP
 const CONVERTIBLE_TYPES = ['image/jpeg', 'image/png'];
+
+// Check if we're running in Cloudflare Workers (not local dev)
+const isCloudflare = typeof globalThis.caches !== 'undefined';
 
 /**
  * Check if browser supports WebP based on Accept header
@@ -30,6 +31,11 @@ async function convertToWebP(
   imageData: ArrayBuffer,
   contentType: string
 ): Promise<Uint8Array | null> {
+  // Skip if not running in Cloudflare (WASM doesn't work in local Node.js dev)
+  if (!isCloudflare) {
+    return null;
+  }
+
   try {
     // Only convert JPEG and PNG
     if (!CONVERTIBLE_TYPES.includes(contentType)) {
@@ -41,6 +47,9 @@ async function convertToWebP(
       console.log(`Skipping WebP conversion: image too large (${imageData.byteLength} bytes)`);
       return null;
     }
+
+    // Dynamic import to avoid loading WASM in local dev
+    const { PhotonImage } = await import('@cf-wasm/photon/workerd');
 
     const inputBytes = new Uint8Array(imageData);
     const image = PhotonImage.new_from_byteslice(inputBytes);
