@@ -200,8 +200,7 @@ export interface StrapiImage {
     alternativeText: string | null;
     width: number;
     height: number;
-    focalX?: number;  // 0-100
-    focalY?: number;  // 0-100
+    focalPoint?: { x: number; y: number };
     formats?: {
         thumbnail?: StrapiImageFormat;
         small?: StrapiImageFormat;

@@ -52,9 +52,9 @@ export const transformContentUrls = (html: string): string => {
  * Returns an object-position CSS value from Strapi focal point fields.
  * Returns undefined when no focal point is set (falls back to CSS default `center`).
  */
-export function getFocalPointStyle(image: { focalX?: number; focalY?: number }): string | undefined {
-    if (image.focalX == null || image.focalY == null) return undefined;
-    return `${image.focalX}% ${image.focalY}%`;
+export function getFocalPointStyle(image: { focalPoint?: { x: number; y: number } }): string | undefined {
+    if (!image.focalPoint) return undefined;
+    return `${image.focalPoint.x}% ${image.focalPoint.y}%`;
 }
 
 export const getLargestImage = (post: any) => {

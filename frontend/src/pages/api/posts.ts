@@ -43,8 +43,7 @@ export const GET: APIRoute = async ({ url, locals }) => {
             width: coverImage.width,
             height: coverImage.height,
             alt: coverImage.alternativeText || post.title,
-            focalX: coverImage.focalX,
-            focalY: coverImage.focalY,
+            focalPoint: coverImage.focalPoint,
           }
         : null,
     };

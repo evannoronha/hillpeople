@@ -6,8 +6,7 @@ interface PostImage {
   width: number;
   height: number;
   alt: string;
-  focalX?: number;
-  focalY?: number;
+  focalPoint?: { x: number; y: number };
 }
 
 interface PostData {
@@ -48,8 +47,8 @@ function createPostCard(post: PostData): string {
   const isoDate = new Date(post.publishedDate).toISOString();
   const sizes = '(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 33vw';
 
-  const objectPositionStyle = post.image?.focalX != null && post.image?.focalY != null
-    ? ` style="object-position: ${post.image.focalX}% ${post.image.focalY}%"`
+  const objectPositionStyle = post.image?.focalPoint
+    ? ` style="object-position: ${post.image.focalPoint.x}% ${post.image.focalPoint.y}%"`
     : '';
 
   const imageHtml = post.image
