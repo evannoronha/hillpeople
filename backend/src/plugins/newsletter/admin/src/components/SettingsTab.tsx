@@ -10,6 +10,7 @@ import {
   Textarea,
   Toggle,
   NumberInput,
+  Field,
   Grid,
 } from '@strapi/design-system';
 import { useFetchClient } from '@strapi/strapi/admin';
@@ -41,6 +42,20 @@ const DEFAULTS: Settings = {
   cronIntervalMinutes: 30,
   cooldownMinutes: 30,
 };
+
+const ColorSwatch = ({ color }: { color: string }) => (
+  <Box
+    style={{
+      width: 32,
+      height: 32,
+      borderRadius: 4,
+      backgroundColor: color,
+      border: '1px solid #ddd',
+      flexShrink: 0,
+      marginTop: 26,
+    }}
+  />
+);
 
 const SettingsTab = () => {
   const [settings, setSettings] = useState<Settings>(DEFAULTS);
@@ -120,19 +135,23 @@ const SettingsTab = () => {
         </Typography>
         <Box paddingTop={4}>
           <Grid.Root gap={4}>
-            <Grid.Item col={6} s={12}>
-              <TextInput
-                label="Sender Name"
-                value={settings.senderName}
-                onChange={(e: any) => updateField('senderName', e.target.value)}
-              />
+            <Grid.Item col={6} s={12} direction="column" alignItems="stretch">
+              <Field.Root name="senderName">
+                <Field.Label>Sender Name</Field.Label>
+                <TextInput
+                  value={settings.senderName}
+                  onChange={(e: any) => updateField('senderName', e.target.value)}
+                />
+              </Field.Root>
             </Grid.Item>
-            <Grid.Item col={6} s={12}>
-              <TextInput
-                label="Sender Email"
-                value={settings.senderEmail}
-                onChange={(e: any) => updateField('senderEmail', e.target.value)}
-              />
+            <Grid.Item col={6} s={12} direction="column" alignItems="stretch">
+              <Field.Root name="senderEmail">
+                <Field.Label>Sender Email</Field.Label>
+                <TextInput
+                  value={settings.senderEmail}
+                  onChange={(e: any) => updateField('senderEmail', e.target.value)}
+                />
+              </Field.Root>
             </Grid.Item>
           </Grid.Root>
         </Box>
@@ -144,103 +163,79 @@ const SettingsTab = () => {
         </Typography>
         <Box paddingTop={4}>
           <Grid.Root gap={4}>
-            <Grid.Item col={6} s={12}>
-              <TextInput
-                label="Heading Text"
-                value={settings.headingText}
-                onChange={(e: any) => updateField('headingText', e.target.value)}
-              />
-            </Grid.Item>
-            <Grid.Item col={3} s={6}>
-              <Flex gap={2} alignItems="flex-end">
-                <Box style={{ flex: 1 }}>
-                  <TextInput
-                    label="Heading Color"
-                    value={settings.headingColor}
-                    onChange={(e: any) => updateField('headingColor', e.target.value)}
-                  />
-                </Box>
-                <Box
-                  style={{
-                    width: 36,
-                    height: 36,
-                    borderRadius: 4,
-                    backgroundColor: settings.headingColor,
-                    border: '1px solid #ddd',
-                    flexShrink: 0,
-                  }}
+            <Grid.Item col={12} direction="column" alignItems="stretch">
+              <Field.Root name="headingText">
+                <Field.Label>Heading Text</Field.Label>
+                <TextInput
+                  value={settings.headingText}
+                  onChange={(e: any) => updateField('headingText', e.target.value)}
                 />
+              </Field.Root>
+            </Grid.Item>
+            <Grid.Item col={3} s={6} direction="column" alignItems="stretch">
+              <Flex gap={2}>
+                <Box style={{ flex: 1 }}>
+                  <Field.Root name="headingColor">
+                    <Field.Label>Heading Color</Field.Label>
+                    <TextInput
+                      value={settings.headingColor}
+                      onChange={(e: any) => updateField('headingColor', e.target.value)}
+                    />
+                  </Field.Root>
+                </Box>
+                <ColorSwatch color={settings.headingColor} />
               </Flex>
             </Grid.Item>
-            <Grid.Item col={3} s={6}>
-              <Flex gap={2} alignItems="flex-end">
+            <Grid.Item col={3} s={6} direction="column" alignItems="stretch">
+              <Flex gap={2}>
                 <Box style={{ flex: 1 }}>
-                  <TextInput
-                    label="Link Color"
-                    value={settings.linkColor}
-                    onChange={(e: any) => updateField('linkColor', e.target.value)}
-                  />
+                  <Field.Root name="linkColor">
+                    <Field.Label>Link Color</Field.Label>
+                    <TextInput
+                      value={settings.linkColor}
+                      onChange={(e: any) => updateField('linkColor', e.target.value)}
+                    />
+                  </Field.Root>
                 </Box>
-                <Box
-                  style={{
-                    width: 36,
-                    height: 36,
-                    borderRadius: 4,
-                    backgroundColor: settings.linkColor,
-                    border: '1px solid #ddd',
-                    flexShrink: 0,
-                  }}
-                />
+                <ColorSwatch color={settings.linkColor} />
               </Flex>
             </Grid.Item>
-            <Grid.Item col={3} s={6}>
-              <Flex gap={2} alignItems="flex-end">
+            <Grid.Item col={3} s={6} direction="column" alignItems="stretch">
+              <Flex gap={2}>
                 <Box style={{ flex: 1 }}>
-                  <TextInput
-                    label="Button Color"
-                    value={settings.buttonColor}
-                    onChange={(e: any) => updateField('buttonColor', e.target.value)}
-                  />
+                  <Field.Root name="buttonColor">
+                    <Field.Label>Button Color</Field.Label>
+                    <TextInput
+                      value={settings.buttonColor}
+                      onChange={(e: any) => updateField('buttonColor', e.target.value)}
+                    />
+                  </Field.Root>
                 </Box>
-                <Box
-                  style={{
-                    width: 36,
-                    height: 36,
-                    borderRadius: 4,
-                    backgroundColor: settings.buttonColor,
-                    border: '1px solid #ddd',
-                    flexShrink: 0,
-                  }}
-                />
+                <ColorSwatch color={settings.buttonColor} />
               </Flex>
             </Grid.Item>
-            <Grid.Item col={3} s={6}>
-              <Flex gap={2} alignItems="flex-end">
+            <Grid.Item col={3} s={6} direction="column" alignItems="stretch">
+              <Flex gap={2}>
                 <Box style={{ flex: 1 }}>
-                  <TextInput
-                    label="Button Text Color"
-                    value={settings.buttonTextColor}
-                    onChange={(e: any) => updateField('buttonTextColor', e.target.value)}
-                  />
+                  <Field.Root name="buttonTextColor">
+                    <Field.Label>Button Text Color</Field.Label>
+                    <TextInput
+                      value={settings.buttonTextColor}
+                      onChange={(e: any) => updateField('buttonTextColor', e.target.value)}
+                    />
+                  </Field.Root>
                 </Box>
-                <Box
-                  style={{
-                    width: 36,
-                    height: 36,
-                    borderRadius: 4,
-                    backgroundColor: settings.buttonTextColor,
-                    border: '1px solid #ddd',
-                    flexShrink: 0,
-                  }}
-                />
+                <ColorSwatch color={settings.buttonTextColor} />
               </Flex>
             </Grid.Item>
-            <Grid.Item col={12}>
-              <Textarea
-                label="Footer Text"
-                value={settings.footerText}
-                onChange={(e: any) => updateField('footerText', e.target.value)}
-              />
+            <Grid.Item col={12} direction="column" alignItems="stretch">
+              <Field.Root name="footerText">
+                <Field.Label>Footer Text</Field.Label>
+                <Textarea
+                  value={settings.footerText}
+                  onChange={(e: any) => updateField('footerText', e.target.value)}
+                />
+              </Field.Root>
             </Grid.Item>
           </Grid.Root>
         </Box>
@@ -252,32 +247,38 @@ const SettingsTab = () => {
         </Typography>
         <Box paddingTop={4}>
           <Grid.Root gap={4}>
-            <Grid.Item col={4} s={12}>
-              <Toggle
-                label="Auto-send enabled"
-                onLabel="On"
-                offLabel="Off"
-                checked={settings.cronEnabled}
-                onChange={(e: any) => updateField('cronEnabled', e.target.checked)}
-              />
+            <Grid.Item col={4} s={12} direction="column" alignItems="stretch">
+              <Field.Root name="cronEnabled">
+                <Field.Label>Auto-send enabled</Field.Label>
+                <Toggle
+                  onLabel="On"
+                  offLabel="Off"
+                  checked={settings.cronEnabled}
+                  onChange={(e: any) => updateField('cronEnabled', e.target.checked)}
+                />
+              </Field.Root>
             </Grid.Item>
-            <Grid.Item col={4} s={6}>
-              <NumberInput
-                label="Check interval (minutes)"
-                value={settings.cronIntervalMinutes}
-                onValueChange={(value: number) => updateField('cronIntervalMinutes', value)}
-                step={5}
-                min={5}
-              />
+            <Grid.Item col={4} s={6} direction="column" alignItems="stretch">
+              <Field.Root name="cronIntervalMinutes">
+                <Field.Label>Check interval (minutes)</Field.Label>
+                <NumberInput
+                  value={settings.cronIntervalMinutes}
+                  onValueChange={(value: number) => updateField('cronIntervalMinutes', value)}
+                  step={5}
+                  min={5}
+                />
+              </Field.Root>
             </Grid.Item>
-            <Grid.Item col={4} s={6}>
-              <NumberInput
-                label="Post cooldown (minutes)"
-                value={settings.cooldownMinutes}
-                onValueChange={(value: number) => updateField('cooldownMinutes', value)}
-                step={5}
-                min={5}
-              />
+            <Grid.Item col={4} s={6} direction="column" alignItems="stretch">
+              <Field.Root name="cooldownMinutes">
+                <Field.Label>Post cooldown (minutes)</Field.Label>
+                <NumberInput
+                  value={settings.cooldownMinutes}
+                  onValueChange={(value: number) => updateField('cooldownMinutes', value)}
+                  step={5}
+                  min={5}
+                />
+              </Field.Root>
             </Grid.Item>
           </Grid.Root>
         </Box>

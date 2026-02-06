@@ -15,6 +15,7 @@ import {
   TextInput,
   Badge,
   Dialog,
+  Field,
 } from '@strapi/design-system';
 import { Check } from '@strapi/icons';
 import { useFetchClient } from '@strapi/strapi/admin';
@@ -216,12 +217,14 @@ const SendTab = () => {
         </Typography>
         <Flex gap={2} alignItems="flex-end" paddingTop={2}>
           <Box style={{ flex: 1 }}>
-            <TextInput
-              label="Test email"
-              placeholder="you@example.com"
-              value={testEmail}
-              onChange={(e: any) => setTestEmail(e.target.value)}
-            />
+            <Field.Root name="testEmail">
+              <Field.Label>Test email</Field.Label>
+              <TextInput
+                placeholder="you@example.com"
+                value={testEmail}
+                onChange={(e: any) => setTestEmail(e.target.value)}
+              />
+            </Field.Root>
           </Box>
           <Button
             onClick={handleTestSend}
