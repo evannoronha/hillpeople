@@ -15,6 +15,8 @@ jobs:
     permissions:
       contents: read
       pull-requests: write
+    outputs:
+      url: ${{ steps.deploy.outputs.url }}
     steps:
       - uses: actions/checkout@v4
 
@@ -97,6 +99,67 @@ jobs:
                 body,
               });
             }
+
+  lighthouse:
+    needs: deploy
+    if: github.event.action != 'closed'
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      statuses: write
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Fetch latest post slugs
+        id: slugs
+        run: |
+          RESPONSE=$(curl -s -g -H "Authorization: Bearer ${{ secrets.STRAPI_API_TOKEN }}" "https://journal.hillpeople.net/api/posts?pagination[pageSize]=3&sort=publishedDate:desc&fields[0]=slug")
+          SLUG1=$(echo "$RESPONSE" | jq -r '.data[0].slug')
+          SLUG2=$(echo "$RESPONSE" | jq -r '.data[1].slug')
+          SLUG3=$(echo "$RESPONSE" | jq -r '.data[2].slug')
+          echo "slug1=$SLUG1" >> $GITHUB_OUTPUT
+          echo "slug2=$SLUG2" >> $GITHUB_OUTPUT
+          echo "slug3=$SLUG3" >> $GITHUB_OUTPUT
+
+      - name: Generate Lighthouse CI config
+        run: |
+          PREVIEW_URL="${{ needs.deploy.outputs.url }}"
+          node -e "
+            const baseConfig = require('./lighthouserc.js');
+            const previewUrl = process.env.PREVIEW_URL;
+            const urls = [
+              previewUrl + '/',
+              previewUrl + '/climbing',
+              previewUrl + '/blog/${{ steps.slugs.outputs.slug1 }}',
+              previewUrl + '/blog/${{ steps.slugs.outputs.slug2 }}',
+              previewUrl + '/blog/${{ steps.slugs.outputs.slug3 }}'
+            ];
+            baseConfig.ci.collect.url = urls;
+            baseConfig.ci.collect.numberOfRuns = 1;
+            delete baseConfig.ci.collect.startServerCommand;
+            delete baseConfig.ci.collect.startServerReadyPattern;
+            console.log(JSON.stringify(baseConfig, null, 2));
+          " > lighthouserc.json
+        env:
+          PREVIEW_URL: ${{ needs.deploy.outputs.url }}
+
+      - name: Install Chrome
+        uses: browser-actions/setup-chrome@v1
+        with:
+          chrome-version: stable
+
+      - name: Run Lighthouse CI
+        run: |
+          npm install -g @lhci/cli@0.14.x
+          lhci autorun --config=lighthouserc.json
+        env:
+          LHCI_GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          LHCI_BUILD_CONTEXT__CURRENT_HASH: ${{ github.event.pull_request.head.sha }}
 
   cleanup:
     if: github.event.action == 'closed'
