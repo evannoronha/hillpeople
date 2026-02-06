@@ -42,8 +42,8 @@ jobs:
 
       - name: Install plugin dependencies
         run: |
-          cd backend/src/plugins/mp-sync-helper && npm install
-          cd ../newsletter && npm install
+          cd backend/src/plugins/mp-sync-helper && npm install --legacy-peer-deps
+          cd ../newsletter && npm install --legacy-peer-deps
 
       - name: Build backend
         run: cd backend && npm run build
