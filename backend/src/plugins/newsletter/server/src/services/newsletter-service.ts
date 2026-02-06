@@ -1,7 +1,279 @@
 import type { Core } from '@strapi/strapi';
 
+interface SendOptions {
+  trigger: 'cron' | 'manual' | 'test';
+  slugs?: string[];
+  toOverride?: string;
+  applyEligibilityFilters?: boolean;
+  markPostsAsSent?: boolean;
+}
+
+interface Post {
+  documentId: string;
+  title: string;
+  slug: string;
+  publishedDate: string;
+  updatedAt: string;
+  newsletterSent: boolean;
+}
+
+interface Subscriber {
+  documentId: string;
+  email: string;
+  confirmed: boolean;
+  unsubscribeToken: string;
+}
+
 const service = ({ strapi }: { strapi: Core.Strapi }) => ({
-  // Newsletter service will be added in a later commit
+  async getSettings() {
+    const settings = await strapi.documents('api::newsletter-settings.newsletter-settings').findFirst();
+    return settings || {};
+  },
+
+  async getEligiblePosts(): Promise<Post[]> {
+    const settings = await this.getSettings();
+    const cooldownMinutes = (settings as any).cooldownMinutes || 30;
+    const cooldownTime = new Date(Date.now() - cooldownMinutes * 60 * 1000).toISOString();
+
+    const posts = await strapi.documents('api::post.post').findMany({
+      filters: {
+        publishedAt: { $notNull: true },
+        newsletterSent: { $eq: false },
+        updatedAt: { $lt: cooldownTime },
+      },
+      sort: { publishedDate: 'desc' },
+    });
+
+    return posts as unknown as Post[];
+  },
+
+  async sendConfirmationEmail(email: string, confirmationToken: string): Promise<void> {
+    const frontendUrl = strapi.plugin('newsletter').config('frontendUrl');
+    const settings = await this.getSettings();
+
+    const confirmUrl = `${frontendUrl}/newsletter/confirm/${confirmationToken}`;
+
+    const templateService = strapi.plugin('newsletter').service('template-service');
+    const html = templateService.buildConfirmationHtml(confirmUrl, settings);
+
+    const emailService = strapi.plugin('newsletter').service('email-service');
+    await emailService.sendEmail(email, 'Confirm your subscription to Hill People', html);
+
+    strapi.log.info(`Confirmation email sent to ${email}`);
+  },
+
+  async confirmSubscriber(token: string): Promise<{ success: boolean; error?: string }> {
+    const subscribers = await strapi.documents('api::subscriber.subscriber').findMany({
+      filters: { confirmationToken: { $eq: token } },
+    });
+
+    if (!subscribers || subscribers.length === 0) {
+      return { success: false, error: 'Invalid or expired confirmation token' };
+    }
+
+    const subscriber = subscribers[0];
+
+    // Check token expiry
+    if (subscriber.tokenExpiry && new Date(subscriber.tokenExpiry) < new Date()) {
+      return { success: false, error: 'Confirmation token has expired' };
+    }
+
+    await strapi.documents('api::subscriber.subscriber').update({
+      documentId: subscriber.documentId,
+      data: {
+        confirmed: true,
+        subscribedAt: new Date().toISOString(),
+        confirmationToken: null,
+        tokenExpiry: null,
+      } as any,
+    });
+
+    strapi.log.info(`Subscriber confirmed: ${subscriber.email}`);
+    return { success: true };
+  },
+
+  async unsubscribeUser(token: string): Promise<{ success: boolean; error?: string }> {
+    const subscribers = await strapi.documents('api::subscriber.subscriber').findMany({
+      filters: { unsubscribeToken: { $eq: token } },
+    });
+
+    if (!subscribers || subscribers.length === 0) {
+      return { success: false, error: 'Invalid unsubscribe token' };
+    }
+
+    const subscriber = subscribers[0];
+    await strapi.documents('api::subscriber.subscriber').delete({
+      documentId: subscriber.documentId,
+    });
+
+    strapi.log.info(`Subscriber unsubscribed: ${subscriber.email}`);
+    return { success: true };
+  },
+
+  async getSendHistory(page: number = 1, pageSize: number = 20) {
+    const sends = await strapi.documents('api::newsletter-send.newsletter-send').findMany({
+      sort: { sentAt: 'desc' },
+      limit: pageSize,
+      start: (page - 1) * pageSize,
+    });
+
+    const total = await strapi.documents('api::newsletter-send.newsletter-send').count();
+
+    return { results: sends, pagination: { page, pageSize, total } };
+  },
+
+  async getStats() {
+    const subscriberCount = await strapi.documents('api::subscriber.subscriber').count({
+      filters: { confirmed: { $eq: true } },
+    });
+
+    const recentSends = await strapi.documents('api::newsletter-send.newsletter-send').findMany({
+      sort: { sentAt: 'desc' },
+      limit: 1,
+    });
+
+    return {
+      subscriberCount,
+      lastSend: recentSends.length > 0 ? recentSends[0] : null,
+    };
+  },
+
+  async sendNewsletter(options: SendOptions): Promise<void> {
+    const {
+      trigger,
+      slugs,
+      toOverride,
+      applyEligibilityFilters = true,
+      markPostsAsSent = true,
+    } = options;
+
+    const logPrefix = trigger === 'test' ? '[TEST]' : trigger === 'manual' ? '[MANUAL]' : '[CRON]';
+    strapi.log.info(`${logPrefix} Starting newsletter send...`);
+
+    // Fetch settings
+    const settings = await this.getSettings();
+    const frontendUrl = strapi.plugin('newsletter').config('frontendUrl');
+
+    // Fetch posts
+    let posts: Post[];
+
+    if (slugs && slugs.length > 0) {
+      const results = await strapi.documents('api::post.post').findMany({
+        filters: { slug: { $in: slugs } },
+      });
+      posts = results as unknown as Post[];
+    } else if (applyEligibilityFilters) {
+      posts = await this.getEligiblePosts();
+    } else {
+      strapi.log.info(`${logPrefix} No post selection criteria provided`);
+      return;
+    }
+
+    if (posts.length === 0) {
+      strapi.log.info(`${logPrefix} No posts to send`);
+      return;
+    }
+
+    strapi.log.info(`${logPrefix} Found ${posts.length} posts to send`);
+
+    // Get subscribers
+    let subscribers: Subscriber[];
+    if (toOverride) {
+      subscribers = [{
+        documentId: '',
+        email: toOverride,
+        confirmed: true,
+        unsubscribeToken: '',
+      }];
+    } else {
+      const results = await strapi.documents('api::subscriber.subscriber').findMany({
+        filters: { confirmed: { $eq: true } },
+        limit: 1000,
+      });
+      subscribers = results as unknown as Subscriber[];
+    }
+
+    if (subscribers.length === 0) {
+      strapi.log.info(`${logPrefix} No confirmed subscribers`);
+      return;
+    }
+
+    strapi.log.info(`${logPrefix} Sending to ${subscribers.length} subscribers`);
+
+    // Create send record
+    const sendRecord = await strapi.documents('api::newsletter-send.newsletter-send').create({
+      data: {
+        sentAt: new Date().toISOString(),
+        trigger,
+        postSlugs: posts.map(p => ({ title: p.title, slug: p.slug })),
+        recipientCount: subscribers.length,
+        successCount: 0,
+        failureCount: 0,
+        status: 'sending',
+      } as any,
+    });
+
+    // Send to each subscriber
+    const emailService = strapi.plugin('newsletter').service('email-service');
+    const templateService = strapi.plugin('newsletter').service('template-service');
+    let successCount = 0;
+    let failureCount = 0;
+    const errors: Array<{ email: string; error: string }> = [];
+
+    for (const subscriber of subscribers) {
+      try {
+        const unsubscribeUrl = subscriber.unsubscribeToken
+          ? `${frontendUrl}/newsletter/unsubscribe/${subscriber.unsubscribeToken}`
+          : `${frontendUrl}/newsletter/unsubscribe`;
+
+        const html = templateService.buildNewsletterHtml(
+          posts.map(p => ({ title: p.title, slug: p.slug, publishedDate: p.publishedDate })),
+          unsubscribeUrl,
+          frontendUrl,
+          settings,
+        );
+
+        const subject = `New from Hill People: ${posts.length} new post${posts.length > 1 ? 's' : ''}`;
+        await emailService.sendEmail(subscriber.email, subject, html);
+
+        successCount++;
+        strapi.log.info(`${logPrefix} Sent to ${subscriber.email}`);
+      } catch (error: any) {
+        failureCount++;
+        errors.push({ email: subscriber.email, error: error.message });
+        strapi.log.error(`${logPrefix} Failed to send to ${subscriber.email}: ${error.message}`);
+      }
+    }
+
+    // Update send record
+    const status = failureCount === 0 ? 'completed' : successCount === 0 ? 'failed' : 'completed';
+    await strapi.documents('api::newsletter-send.newsletter-send').update({
+      documentId: sendRecord.documentId,
+      data: {
+        successCount,
+        failureCount,
+        status,
+        errorDetails: errors.length > 0 ? errors : null,
+      } as any,
+    });
+
+    // Mark posts as sent
+    if (markPostsAsSent) {
+      for (const post of posts) {
+        try {
+          await strapi.documents('api::post.post').update({
+            documentId: post.documentId,
+            data: { newsletterSent: true } as any,
+          });
+          strapi.log.info(`${logPrefix} Marked post ${post.slug} as sent`);
+        } catch (error: any) {
+          strapi.log.error(`${logPrefix} Failed to mark post ${post.slug} as sent: ${error.message}`);
+        }
+      }
+    }
+
+    strapi.log.info(`${logPrefix} Newsletter send complete: ${successCount} success, ${failureCount} failures`);
+  },
 });
 
 export default service;
