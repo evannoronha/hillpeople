@@ -724,6 +724,103 @@ export interface ApiHomePageHomePage extends Struct.SingleTypeSchema {
   };
 }
 
+export interface ApiNewsletterSendNewsletterSend
+  extends Struct.CollectionTypeSchema {
+  collectionName: 'newsletter_sends';
+  info: {
+    displayName: 'Newsletter Send';
+    pluralName: 'newsletter-sends';
+    singularName: 'newsletter-send';
+  };
+  options: {
+    draftAndPublish: false;
+  };
+  attributes: {
+    createdAt: Schema.Attribute.DateTime;
+    createdBy: Schema.Attribute.Relation<'oneToOne', 'admin::user'> &
+      Schema.Attribute.Private;
+    errorDetails: Schema.Attribute.JSON;
+    failureCount: Schema.Attribute.Integer & Schema.Attribute.DefaultTo<0>;
+    locale: Schema.Attribute.String & Schema.Attribute.Private;
+    localizations: Schema.Attribute.Relation<
+      'oneToMany',
+      'api::newsletter-send.newsletter-send'
+    > &
+      Schema.Attribute.Private;
+    postSlugs: Schema.Attribute.JSON & Schema.Attribute.Required;
+    publishedAt: Schema.Attribute.DateTime;
+    recipientCount: Schema.Attribute.Integer &
+      Schema.Attribute.Required &
+      Schema.Attribute.DefaultTo<0>;
+    sentAt: Schema.Attribute.DateTime & Schema.Attribute.Required;
+    status: Schema.Attribute.Enumeration<
+      ['pending', 'sending', 'completed', 'failed']
+    > &
+      Schema.Attribute.DefaultTo<'pending'>;
+    successCount: Schema.Attribute.Integer & Schema.Attribute.DefaultTo<0>;
+    trigger: Schema.Attribute.Enumeration<['cron', 'manual', 'test']> &
+      Schema.Attribute.Required;
+    updatedAt: Schema.Attribute.DateTime;
+    updatedBy: Schema.Attribute.Relation<'oneToOne', 'admin::user'> &
+      Schema.Attribute.Private;
+  };
+}
+
+export interface ApiNewsletterSettingsNewsletterSettings
+  extends Struct.SingleTypeSchema {
+  collectionName: 'newsletter_settings';
+  info: {
+    displayName: 'Newsletter Settings';
+    pluralName: 'newsletter-settings-items';
+    singularName: 'newsletter-settings';
+  };
+  options: {
+    draftAndPublish: false;
+  };
+  attributes: {
+    buttonColor: Schema.Attribute.String &
+      Schema.Attribute.Required &
+      Schema.Attribute.DefaultTo<'#627f7c'>;
+    buttonTextColor: Schema.Attribute.String &
+      Schema.Attribute.Required &
+      Schema.Attribute.DefaultTo<'#f4f2ec'>;
+    cooldownMinutes: Schema.Attribute.Integer & Schema.Attribute.DefaultTo<30>;
+    createdAt: Schema.Attribute.DateTime;
+    createdBy: Schema.Attribute.Relation<'oneToOne', 'admin::user'> &
+      Schema.Attribute.Private;
+    cronEnabled: Schema.Attribute.Boolean & Schema.Attribute.DefaultTo<true>;
+    cronIntervalMinutes: Schema.Attribute.Integer &
+      Schema.Attribute.DefaultTo<30>;
+    footerText: Schema.Attribute.Text &
+      Schema.Attribute.DefaultTo<'You received this because you subscribed to Hill People newsletter.'>;
+    headingColor: Schema.Attribute.String &
+      Schema.Attribute.Required &
+      Schema.Attribute.DefaultTo<'#643f41'>;
+    headingText: Schema.Attribute.String &
+      Schema.Attribute.Required &
+      Schema.Attribute.DefaultTo<'New from Hill People'>;
+    linkColor: Schema.Attribute.String &
+      Schema.Attribute.Required &
+      Schema.Attribute.DefaultTo<'#f16e53'>;
+    locale: Schema.Attribute.String & Schema.Attribute.Private;
+    localizations: Schema.Attribute.Relation<
+      'oneToMany',
+      'api::newsletter-settings.newsletter-settings'
+    > &
+      Schema.Attribute.Private;
+    publishedAt: Schema.Attribute.DateTime;
+    senderEmail: Schema.Attribute.Email &
+      Schema.Attribute.Required &
+      Schema.Attribute.DefaultTo<'web@hillpeople.net'>;
+    senderName: Schema.Attribute.String &
+      Schema.Attribute.Required &
+      Schema.Attribute.DefaultTo<'Hill People'>;
+    updatedAt: Schema.Attribute.DateTime;
+    updatedBy: Schema.Attribute.Relation<'oneToOne', 'admin::user'> &
+      Schema.Attribute.Private;
+  };
+}
+
 export interface ApiPersonPerson extends Struct.CollectionTypeSchema {
   collectionName: 'people';
   info: {
@@ -1427,6 +1524,8 @@ declare module '@strapi/strapi' {
       'api::climbing-route.climbing-route': ApiClimbingRouteClimbingRoute;
       'api::climbing-tick.climbing-tick': ApiClimbingTickClimbingTick;
       'api::home-page.home-page': ApiHomePageHomePage;
+      'api::newsletter-send.newsletter-send': ApiNewsletterSendNewsletterSend;
+      'api::newsletter-settings.newsletter-settings': ApiNewsletterSettingsNewsletterSettings;
       'api::person.person': ApiPersonPerson;
       'api::post.post': ApiPostPost;
       'api::privacy-policy.privacy-policy': ApiPrivacyPolicyPrivacyPolicy;
