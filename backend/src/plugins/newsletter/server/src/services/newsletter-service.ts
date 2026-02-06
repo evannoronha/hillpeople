@@ -246,7 +246,7 @@ const service = ({ strapi }: { strapi: Core.Strapi }) => ({
     }
 
     // Update send record
-    const status = failureCount === 0 ? 'completed' : successCount === 0 ? 'failed' : 'completed';
+    const status = failureCount === 0 ? 'completed' : successCount === 0 ? 'failed' : 'partial';
     await strapi.documents('api::newsletter-send.newsletter-send').update({
       documentId: sendRecord.documentId,
       data: {
@@ -257,8 +257,8 @@ const service = ({ strapi }: { strapi: Core.Strapi }) => ({
       } as any,
     });
 
-    // Mark posts as sent
-    if (markPostsAsSent) {
+    // Only mark posts as sent if at least one email succeeded
+    if (markPostsAsSent && successCount > 0) {
       for (const post of posts) {
         try {
           await strapi.documents('api::post.post').update({
@@ -273,6 +273,11 @@ const service = ({ strapi }: { strapi: Core.Strapi }) => ({
     }
 
     strapi.log.info(`${logPrefix} Newsletter send complete: ${successCount} success, ${failureCount} failures`);
+
+    // Throw if all sends failed so the controller can report the error
+    if (successCount === 0 && failureCount > 0) {
+      throw new Error(`All sends failed: ${errors[0]?.error || 'Unknown error'}`);
+    }
   },
 });
 

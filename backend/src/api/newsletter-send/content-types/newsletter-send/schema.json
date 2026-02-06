@@ -39,7 +39,7 @@
     },
     "status": {
       "type": "enumeration",
-      "enum": ["pending", "sending", "completed", "failed"],
+      "enum": ["pending", "sending", "completed", "partial", "failed"],
       "default": "pending"
     },
     "errorDetails": {

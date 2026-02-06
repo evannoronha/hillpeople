@@ -16,7 +16,8 @@ const controller = ({ strapi }: { strapi: Core.Strapi }) => ({
       ctx.body = { success: true };
     } catch (error: any) {
       strapi.log.error('Manual newsletter send failed', { error });
-      ctx.throw(500, 'Newsletter send failed', { error: error.message });
+      ctx.status = 500;
+      ctx.body = { error: { message: error.message || 'Newsletter send failed' } };
     }
   },
 
@@ -25,7 +26,9 @@ const controller = ({ strapi }: { strapi: Core.Strapi }) => ({
       const { email, slugs } = ctx.request.body || {};
 
       if (!email) {
-        ctx.throw(400, 'Email address is required');
+        ctx.status = 400;
+        ctx.body = { error: { message: 'Email address is required' } };
+        return;
       }
 
       const newsletterService = strapi.plugin('newsletter').service('newsletter-service');
@@ -41,7 +44,8 @@ const controller = ({ strapi }: { strapi: Core.Strapi }) => ({
       ctx.body = { success: true };
     } catch (error: any) {
       strapi.log.error('Test newsletter send failed', { error });
-      ctx.throw(500, 'Test send failed', { error: error.message });
+      ctx.status = 500;
+      ctx.body = { error: { message: error.message || 'Test send failed' } };
     }
   },
 

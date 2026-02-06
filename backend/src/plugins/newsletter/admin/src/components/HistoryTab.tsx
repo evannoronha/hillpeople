@@ -31,6 +31,7 @@ interface SendRecord {
 
 const STATUS_COLORS: Record<string, { bg: string; text: string }> = {
   completed: { bg: 'success100', text: 'success700' },
+  partial: { bg: 'warning100', text: 'warning700' },
   failed: { bg: 'danger100', text: 'danger700' },
   sending: { bg: 'warning100', text: 'warning700' },
   pending: { bg: 'neutral150', text: 'neutral600' },
