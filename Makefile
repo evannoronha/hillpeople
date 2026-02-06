@@ -59,8 +59,8 @@ build-frontend:
 
 # Build backend (install plugin deps first)
 build-backend:
-	cd backend/src/plugins/mp-sync-helper && npm install
-	cd backend/src/plugins/newsletter && npm install
+	cd backend/src/plugins/mp-sync-helper && npm install --legacy-peer-deps
+	cd backend/src/plugins/newsletter && npm install --legacy-peer-deps
 	cd backend && npm run build
 
 # ─── Utilities ───────────────────────────────────────────────────────
