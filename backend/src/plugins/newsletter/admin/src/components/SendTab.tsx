@@ -143,16 +143,16 @@ const SendTab = () => {
       {stats && (
         <Box background="neutral0" padding={4} shadow="filterShadow" hasRadius marginBottom={4}>
           <Flex gap={6}>
-            <Box>
+            <Flex direction="column" gap={1}>
               <Typography variant="pi" textColor="neutral600">Confirmed Subscribers</Typography>
               <Typography variant="beta">{stats.subscriberCount}</Typography>
-            </Box>
-            <Box>
+            </Flex>
+            <Flex direction="column" gap={1}>
               <Typography variant="pi" textColor="neutral600">Last Send</Typography>
               <Typography variant="beta">
                 {stats.lastSend ? formatDate(stats.lastSend.sentAt) : 'Never'}
               </Typography>
-            </Box>
+            </Flex>
           </Flex>
         </Box>
       )}
