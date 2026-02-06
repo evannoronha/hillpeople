@@ -2,7 +2,6 @@
 import "../styles/global.css";
 import Favicons from "../components/Favicons.astro";
 import Header from "../components/Header.astro";
-import GoogleAnalytics from "../components/GoogleAnalytics.astro";
 import NewsletterSignup from "../components/NewsletterSignup.astro";
 import Footer from "../components/Footer.astro";
 import SEO from "../components/SEO.astro";
@@ -71,7 +70,6 @@ const siteSettings = await fetchSiteSettings(Astro.locals);
 			noindex={noindex}
 			siteName={siteName}
 		/>
-		<GoogleAnalytics />
 		<Favicons />
 		<link rel="preconnect" href="https://fonts.googleapis.com" />
 		<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
