@@ -132,7 +132,13 @@ const controller = ({ strapi }: { strapi: Core.Strapi }) => ({
       }
 
       const html = templateService.buildNewsletterHtml(
-        posts.map((p: any) => ({ title: p.title, slug: p.slug, publishedDate: p.publishedDate })),
+        posts.map((p: any) => ({
+          title: p.title,
+          slug: p.slug,
+          publishedDate: p.publishedDate,
+          coverImageUrl: p.coverImage?.formats?.medium?.url || p.coverImage?.formats?.small?.url || p.coverImage?.url,
+          excerpt: p.seo?.excerpt,
+        })),
         `${frontendUrl}/newsletter/unsubscribe/preview`,
         frontendUrl,
         settings,

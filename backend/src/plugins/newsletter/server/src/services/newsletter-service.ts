@@ -15,6 +15,13 @@ export interface Post {
   publishedDate: string;
   updatedAt: string;
   newsletterSent: boolean;
+  coverImage?: {
+    url: string;
+    formats?: Record<string, { url: string; width: number }>;
+  };
+  seo?: {
+    excerpt?: string;
+  };
 }
 
 export interface Subscriber {
@@ -22,6 +29,21 @@ export interface Subscriber {
   email: string;
   confirmed: boolean;
   unsubscribeToken: string;
+}
+
+/**
+ * Get the best image URL for email use. Prefers the 'medium' format (~750px)
+ * since emails don't need full-size images. Falls back to original URL.
+ */
+function getEmailImageUrl(post: Post): string | undefined {
+  const img = post.coverImage;
+  if (!img) return undefined;
+  const preferred = img.formats?.medium ?? img.formats?.small;
+  const url = preferred?.url ?? img.url;
+  if (!url) return undefined;
+  // Strapi Cloud returns absolute URLs; local dev returns relative
+  if (url.startsWith('http')) return url;
+  return undefined; // Skip relative URLs — they won't work in email clients
 }
 
 const service = ({ strapi }: { strapi: Core.Strapi }) => ({
@@ -42,6 +64,7 @@ const service = ({ strapi }: { strapi: Core.Strapi }) => ({
         updatedAt: { $lt: cooldownTime },
       },
       sort: { publishedDate: 'desc' },
+      populate: ['coverImage', 'seo'],
     });
 
     return posts as unknown as Post[];
@@ -160,6 +183,7 @@ const service = ({ strapi }: { strapi: Core.Strapi }) => ({
     if (slugs && slugs.length > 0) {
       const results = await strapi.documents('api::post.post').findMany({
         filters: { slug: { $in: slugs } },
+        populate: ['coverImage', 'seo'],
       });
       posts = results as unknown as Post[];
     } else if (applyEligibilityFilters) {
@@ -227,7 +251,13 @@ const service = ({ strapi }: { strapi: Core.Strapi }) => ({
           : `${frontendUrl}/newsletter/unsubscribe`;
 
         const html = templateService.buildNewsletterHtml(
-          posts.map(p => ({ title: p.title, slug: p.slug, publishedDate: p.publishedDate })),
+          posts.map(p => ({
+            title: p.title,
+            slug: p.slug,
+            publishedDate: p.publishedDate,
+            coverImageUrl: getEmailImageUrl(p),
+            excerpt: p.seo?.excerpt,
+          })),
           unsubscribeUrl,
           frontendUrl,
           settings,
