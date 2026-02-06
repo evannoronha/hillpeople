@@ -269,14 +269,17 @@ const service = ({ strapi }: { strapi: Core.Strapi }) => ({
       } as any,
     });
 
-    // Send to each subscriber
+    // Send to each subscriber (with delay to respect Resend's 2 req/s rate limit)
     const emailService = strapi.plugin('newsletter').service('email-service');
     const templateService = strapi.plugin('newsletter').service('template-service');
+    const delay = (ms: number) => new Promise(resolve => setTimeout(resolve, ms));
     let successCount = 0;
     let failureCount = 0;
     const errors: Array<{ email: string; error: string }> = [];
 
-    for (const subscriber of subscribers) {
+    for (let i = 0; i < subscribers.length; i++) {
+      if (i > 0) await delay(600);
+      const subscriber = subscribers[i];
       try {
         const unsubscribeUrl = subscriber.unsubscribeToken
           ? `${frontendUrl}/newsletter/unsubscribe/${subscriber.unsubscribeToken}`
