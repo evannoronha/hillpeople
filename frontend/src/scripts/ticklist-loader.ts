@@ -362,11 +362,13 @@ function renderTickList(ticksByDate: TicksByDate[], strapiUrl: string): void {
                             ${groupedRoute.climbers.length > 0 ? `<p class="text-xs mt-1 opacity-70">${groupedRoute.climbers.join(' & ')}</p>` : ''}
                             ${groupedRoute.notes.length > 0 ? `<p class="text-sm mt-2 italic opacity-80">${groupedRoute.notes.join(' · ')}</p>` : ''}
                             ${groupedRoute.photos && groupedRoute.photos.length > 0 ? `
-                                <div class="flex gap-2 mt-2 flex-wrap">
-                                    ${groupedRoute.photos.slice(0, 4).map(photo => {
+                                <div class="photo-gallery flex gap-2 mt-2 flex-wrap">
+                                    ${groupedRoute.photos.slice(0, 4).map((photo, idx) => {
                                         const thumbUrl = photo.formats?.thumbnail?.url || photo.formats?.small?.url || photo.url;
-                                        const fullUrl = thumbUrl.startsWith('http') ? thumbUrl : strapiUrl + thumbUrl;
-                                        return `<img src="${fullUrl}" alt="" class="w-16 h-16 object-cover rounded" loading="lazy" />`;
+                                        const fullUrl = photo.formats?.large?.url || photo.url;
+                                        const resolvedThumb = thumbUrl.startsWith('http') ? thumbUrl : strapiUrl + thumbUrl;
+                                        const resolvedFull = fullUrl.startsWith('http') ? fullUrl : strapiUrl + fullUrl;
+                                        return `<button type="button" class="flex-shrink-0 cursor-pointer border-0 p-0 bg-transparent" data-photo-url="${resolvedFull}" data-photo-alt="Climbing photo" data-photo-index="${idx}"><img src="${resolvedThumb}" alt="Climbing photo" class="h-16 w-16 object-cover rounded hover:opacity-80 transition" loading="lazy" /></button>`;
                                     }).join('')}
                                 </div>
                             ` : ''}
@@ -381,6 +383,69 @@ function renderTickList(ticksByDate: TicksByDate[], strapiUrl: string): void {
             </div>
         </div>
     `).join('');
+}
+
+function initTicklistLightbox(): void {
+    const lightbox = document.getElementById('photo-lightbox');
+    const lightboxImage = document.getElementById('lightbox-image') as HTMLImageElement;
+    const closeBtn = document.getElementById('lightbox-close');
+    const prevBtn = document.getElementById('lightbox-prev');
+    const nextBtn = document.getElementById('lightbox-next');
+    if (!lightbox || !lightboxImage || !closeBtn || !prevBtn || !nextBtn) return;
+
+    let currentGallery: HTMLElement | null = null;
+    let currentIndex = 0;
+
+    function getPhotos(gallery: HTMLElement) {
+        return Array.from(gallery.querySelectorAll('button[data-photo-url]')) as HTMLButtonElement[];
+    }
+
+    function showPhoto(index: number) {
+        if (!currentGallery) return;
+        const photos = getPhotos(currentGallery);
+        if (index < 0 || index >= photos.length) return;
+        currentIndex = index;
+        const photo = photos[index];
+        lightboxImage.src = photo.dataset.photoUrl || '';
+        lightboxImage.alt = photo.dataset.photoAlt || '';
+        prevBtn!.classList.toggle('hidden', index === 0);
+        nextBtn!.classList.toggle('hidden', index === photos.length - 1);
+    }
+
+    function openLightbox(gallery: HTMLElement, index: number) {
+        currentGallery = gallery;
+        showPhoto(index);
+        lightbox!.classList.remove('hidden');
+        lightbox!.classList.add('flex');
+        document.body.style.overflow = 'hidden';
+    }
+
+    function closeLightbox() {
+        lightbox!.classList.add('hidden');
+        lightbox!.classList.remove('flex');
+        document.body.style.overflow = '';
+        currentGallery = null;
+    }
+
+    document.querySelectorAll('#ticks-container .photo-gallery button[data-photo-url]').forEach((btn) => {
+        btn.addEventListener('click', (e) => {
+            const button = e.currentTarget as HTMLButtonElement;
+            const gallery = button.closest('.photo-gallery') as HTMLElement;
+            const index = parseInt(button.dataset.photoIndex || '0', 10);
+            openLightbox(gallery, index);
+        });
+    });
+
+    closeBtn.addEventListener('click', closeLightbox);
+    prevBtn.addEventListener('click', () => showPhoto(currentIndex - 1));
+    nextBtn.addEventListener('click', () => showPhoto(currentIndex + 1));
+    lightbox.addEventListener('click', (e) => { if (e.target === lightbox) closeLightbox(); });
+    document.addEventListener('keydown', (e) => {
+        if (lightbox!.classList.contains('hidden')) return;
+        if (e.key === 'Escape') closeLightbox();
+        if (e.key === 'ArrowLeft') showPhoto(currentIndex - 1);
+        if (e.key === 'ArrowRight') showPhoto(currentIndex + 1);
+    });
 }
 
 // Parameters for data loading
@@ -477,6 +542,7 @@ async function loadTicklistData(params: LoadParams): Promise<void> {
 
         // Render tick list
         renderTickList(ticks, strapiUrl);
+        initTicklistLightbox();
 
     } catch (error) {
         console.error('Error loading ticklist data:', error);

@@ -187,6 +187,20 @@ const clientConfig = {
             </div>
         </section>
     </div>
+
+    <!-- Photo lightbox modal -->
+    <div
+        id="photo-lightbox"
+        class="fixed inset-0 z-50 hidden items-center justify-center bg-black/90 p-4"
+        role="dialog"
+        aria-modal="true"
+        aria-label="Photo viewer"
+    >
+        <button type="button" id="lightbox-close" class="absolute top-4 right-4 text-white text-3xl leading-none hover:opacity-70 transition z-10" aria-label="Close">&times;</button>
+        <button type="button" id="lightbox-prev" class="absolute left-4 top-1/2 -translate-y-1/2 text-white text-4xl leading-none hover:opacity-70 transition z-10 hidden" aria-label="Previous photo">&#8249;</button>
+        <button type="button" id="lightbox-next" class="absolute right-4 top-1/2 -translate-y-1/2 text-white text-4xl leading-none hover:opacity-70 transition z-10 hidden" aria-label="Next photo">&#8250;</button>
+        <img id="lightbox-image" src="" alt="" class="max-h-[90vh] max-w-[90vw] object-contain" />
+    </div>
 </Layout>
 
 <script is:inline define:vars={{ clientConfig }}>
