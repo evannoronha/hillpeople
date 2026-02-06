@@ -48,6 +48,15 @@ export const transformContentUrls = (html: string): string => {
         .replace(/type="video\/quicktime"/g, 'type="video/mp4"');
 };
 
+/**
+ * Returns an object-position CSS value from Strapi focal point fields.
+ * Returns undefined when no focal point is set (falls back to CSS default `center`).
+ */
+export function getFocalPointStyle(image: { focalX?: number; focalY?: number }): string | undefined {
+    if (image.focalX == null || image.focalY == null) return undefined;
+    return `${image.focalX}% ${image.focalY}%`;
+}
+
 export const getLargestImage = (post: any) => {
   const { coverImage } = post;
   if (!coverImage) return null;

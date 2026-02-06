@@ -1,6 +1,6 @@
 ---
 import type { StrapiImage } from '../lib/api';
-import { getMediaUrl } from '../lib/imageUrl';
+import { getMediaUrl, getFocalPointStyle } from '../lib/imageUrl';
 
 interface Props {
   image: StrapiImage;
@@ -36,6 +36,9 @@ const sizes = '(max-width: 1024px) 100vw, 1024px';
 // Use original image dimensions for aspect ratio
 const width = image.width;
 const height = image.height;
+
+// Focal point for object-position
+const objectPosition = getFocalPointStyle(image);
 ---
 
 <div class="w-full overflow-hidden">
@@ -49,6 +52,7 @@ const height = image.height;
     fetchpriority={priority ? 'high' : 'auto'}
     decoding="async"
     class="w-full h-auto object-cover max-h-[70vh]"
+    style={objectPosition ? `object-position: ${objectPosition}` : undefined}
     itemprop="image"
   />
 </div>
