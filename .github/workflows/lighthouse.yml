@@ -29,7 +29,7 @@ jobs:
       - name: Fetch latest post slugs
         id: slugs
         run: |
-          RESPONSE=$(curl -s -g "https://journal.hillpeople.net/api/posts?pagination[pageSize]=3&sort=publishedDate:desc&fields[0]=slug")
+          RESPONSE=$(curl -s -g -H "Authorization: Bearer ${{ secrets.STRAPI_API_TOKEN }}" "https://journal.hillpeople.net/api/posts?pagination[pageSize]=3&sort=publishedDate:desc&fields[0]=slug")
           SLUG1=$(echo "$RESPONSE" | jq -r '.data[0].slug')
           SLUG2=$(echo "$RESPONSE" | jq -r '.data[1].slug')
           SLUG3=$(echo "$RESPONSE" | jq -r '.data[2].slug')
@@ -49,6 +49,7 @@ jobs:
           STRAPI_API_URL=https://journal.hillpeople.net
           STRAPI_API_TOKEN=${{ secrets.STRAPI_API_TOKEN }}
           EOF
+          sed -i 's/^          //' frontend/.dev.vars
 
       - name: Generate Lighthouse CI config with blog posts
         run: |
