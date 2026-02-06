@@ -152,6 +152,44 @@ When adding a new content type in Strapi that affects frontend pages:
    '{content-type}': ['/affected-page', '/api/affected-endpoint'],
    ```
 
+## Newsletter
+
+The newsletter system is a Strapi plugin at `backend/src/plugins/newsletter/`. It sends emails via Resend when new posts are published.
+
+### How it works
+- **Cron job** checks for eligible posts (published, `newsletterSent=false`, past cooldown period) on a configurable interval
+- **Admin UI** at Newsletter in the Strapi sidebar: Send tab (manual send, test send, email preview), History tab, Settings tab
+- **Confirm/unsubscribe** endpoints are proxied through the Astro frontend (`/newsletter/confirm/[token]`, `/newsletter/unsubscribe/[token]`) to keep Strapi unexposed
+- **Subscriber lifecycle** in `backend/src/api/subscriber/` sends confirmation emails via the plugin service on new signups
+
+### Plugin structure
+- `server/src/services/email-service.ts` — Resend API wrapper
+- `server/src/services/template-service.ts` — HTML email generation (branded, with dark mode)
+- `server/src/services/newsletter-service.ts` — Core orchestration (send, confirm, unsubscribe)
+- `server/src/controllers/` — Admin routes + content-api routes
+- `server/src/bootstrap.ts` — Cron registration
+- `admin/src/` — React admin UI
+
+### Plugin development
+After modifying plugin source files, rebuild and restart Strapi:
+```bash
+cd backend/src/plugins/newsletter && npm run build
+# Then restart Strapi (Ctrl+C and re-run `make backend`)
+```
+
+### Key gotchas (Strapi 5)
+- `documents().update()` only modifies the draft — call `publish()` after to propagate to the published version
+- Document Service API returns **relative** media URLs (e.g., `/uploads/img.jpg`), unlike the REST API which resolves them to absolute. Use `strapi.config.get('server.url')` to resolve.
+- Query published documents with `status: 'published'` param, not a filter
+
+### Environment variables
+
+| Variable | Location | Purpose |
+|----------|----------|---------|
+| `RESEND_API_KEY` | Strapi Cloud | Resend API key for sending emails |
+| `CLIENT_URL` | Strapi Cloud | Frontend URL (shared with admin preview config) |
+| `STRAPI_PUBLIC_URL` | Strapi Cloud | Strapi public URL for resolving media URLs in emails |
+
 ## Deployment
 
 Both services auto-deploy on merge to main:

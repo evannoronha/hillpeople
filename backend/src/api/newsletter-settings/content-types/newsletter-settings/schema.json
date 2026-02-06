@@ -1,0 +1,66 @@
+{
+  "kind": "singleType",
+  "collectionName": "newsletter_settings",
+  "info": {
+    "singularName": "newsletter-settings",
+    "pluralName": "newsletter-settings-items",
+    "displayName": "Newsletter Settings"
+  },
+  "options": {
+    "draftAndPublish": false
+  },
+  "pluginOptions": {},
+  "attributes": {
+    "senderName": {
+      "type": "string",
+      "required": true,
+      "default": "Hill People"
+    },
+    "senderEmail": {
+      "type": "email",
+      "required": true,
+      "default": "web@hillpeople.net"
+    },
+    "headingText": {
+      "type": "string",
+      "required": true,
+      "default": "New from Hill People"
+    },
+    "headingColor": {
+      "type": "string",
+      "required": true,
+      "default": "#643f41"
+    },
+    "linkColor": {
+      "type": "string",
+      "required": true,
+      "default": "#f16e53"
+    },
+    "buttonColor": {
+      "type": "string",
+      "required": true,
+      "default": "#627f7c"
+    },
+    "buttonTextColor": {
+      "type": "string",
+      "required": true,
+      "default": "#f4f2ec"
+    },
+    "footerText": {
+      "type": "text",
+      "default": "You received this because you subscribed to Hill People newsletter."
+    },
+    "cronEnabled": {
+      "type": "boolean",
+      "default": true
+    },
+    "cronIntervalMinutes": {
+      "type": "integer",
+      "default": 30
+    },
+    "cooldownMinutes": {
+      "type": "integer",
+      "default": 30
+    }
+  }
+}

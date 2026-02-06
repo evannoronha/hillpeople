@@ -70,15 +70,15 @@ export function initNewsletterSignup() {
 
       if (res.ok) {
         message.textContent = 'Thanks! Check your email to confirm your subscription.';
-        message.classList.remove('hidden', 'text-red-400');
-        message.classList.add('text-green-300');
+        message.classList.remove('hidden', 'text-red-300', 'dark:text-red-800');
+        message.classList.add('text-green-300', 'dark:text-green-800');
         form.reset();
         submitButton.textContent = 'Subscribed!';
       } else {
         const errorData = await res.json().catch(() => ({}));
         message.textContent = errorData?.error?.message || 'Something went wrong. Please try again.';
-        message.classList.remove('hidden', 'text-green-300');
-        message.classList.add('text-red-400');
+        message.classList.remove('hidden', 'text-green-300', 'dark:text-green-800');
+        message.classList.add('text-red-300', 'dark:text-red-800');
         submitButton.disabled = false;
         submitButton.textContent = 'Subscribe';
       }

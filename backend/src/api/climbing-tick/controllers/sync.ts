@@ -92,7 +92,7 @@ async function syncPersonTicks(strapi: Core.Strapi, personDocumentId: string): P
       }
     });
 
-    // TODO: Send email alert via newsletter worker
+    // TODO: Send email alert via newsletter plugin
     strapi.log.error('Failed to fetch Mountain Project CSV', {
       personId: personDocumentId,
       error: fetchError.message
