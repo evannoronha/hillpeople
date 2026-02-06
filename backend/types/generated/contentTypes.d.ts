@@ -754,7 +754,7 @@ export interface ApiNewsletterSendNewsletterSend
       Schema.Attribute.DefaultTo<0>;
     sentAt: Schema.Attribute.DateTime & Schema.Attribute.Required;
     status: Schema.Attribute.Enumeration<
-      ['pending', 'sending', 'completed', 'failed']
+      ['pending', 'sending', 'completed', 'partial', 'failed']
     > &
       Schema.Attribute.DefaultTo<'pending'>;
     successCount: Schema.Attribute.Integer & Schema.Attribute.DefaultTo<0>;
