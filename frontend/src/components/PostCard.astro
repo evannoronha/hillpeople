@@ -1,6 +1,6 @@
 ---
 import type { StrapiImage } from '../lib/api';
-import { getMediaUrl } from '../lib/imageUrl';
+import { getMediaUrl, getFocalPointStyle } from '../lib/imageUrl';
 import { calculateReadingTime } from '../lib/readingTime';
 
 interface Props {
@@ -48,6 +48,9 @@ const fallbackUrl = coverImage ? getMediaUrl(coverImage.url) : null;
 // Sizes for responsive grid: 1 col mobile, 2 col sm, 3 col lg
 const sizes = '(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 33vw';
 
+// Focal point for object-position
+const objectPosition = coverImage ? getFocalPointStyle(coverImage) : undefined;
+
 // Format date
 const formattedDate = new Date(publishedDate).toLocaleDateString(undefined, {
   year: 'numeric',
@@ -73,6 +76,7 @@ const formattedDate = new Date(publishedDate).toLocaleDateString(undefined, {
         decoding="async"
         fetchpriority={priority ? "high" : undefined}
         class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
+        style={objectPosition ? `object-position: ${objectPosition}` : undefined}
       />
     </div>
   )}

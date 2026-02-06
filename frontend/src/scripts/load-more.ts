@@ -6,6 +6,8 @@ interface PostImage {
   width: number;
   height: number;
   alt: string;
+  focalX?: number;
+  focalY?: number;
 }
 
 interface PostData {
@@ -46,6 +48,10 @@ function createPostCard(post: PostData): string {
   const isoDate = new Date(post.publishedDate).toISOString();
   const sizes = '(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 33vw';
 
+  const objectPositionStyle = post.image?.focalX != null && post.image?.focalY != null
+    ? ` style="object-position: ${post.image.focalX}% ${post.image.focalY}%"`
+    : '';
+
   const imageHtml = post.image
     ? `<div class="aspect-square overflow-hidden rounded-t-lg">
         <img
@@ -57,7 +63,7 @@ function createPostCard(post: PostData): string {
           alt="${escapeHtml(post.image.alt)}"
           loading="lazy"
           decoding="async"
-          class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
+          class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"${objectPositionStyle}
         />
       </div>`
     : '';
