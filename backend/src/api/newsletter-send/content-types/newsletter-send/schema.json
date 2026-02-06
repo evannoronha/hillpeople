@@ -1,0 +1,49 @@
+{
+  "kind": "collectionType",
+  "collectionName": "newsletter_sends",
+  "info": {
+    "singularName": "newsletter-send",
+    "pluralName": "newsletter-sends",
+    "displayName": "Newsletter Send"
+  },
+  "options": {
+    "draftAndPublish": false
+  },
+  "pluginOptions": {},
+  "attributes": {
+    "sentAt": {
+      "type": "datetime",
+      "required": true
+    },
+    "trigger": {
+      "type": "enumeration",
+      "enum": ["cron", "manual", "test"],
+      "required": true
+    },
+    "postSlugs": {
+      "type": "json",
+      "required": true
+    },
+    "recipientCount": {
+      "type": "integer",
+      "required": true,
+      "default": 0
+    },
+    "successCount": {
+      "type": "integer",
+      "default": 0
+    },
+    "failureCount": {
+      "type": "integer",
+      "default": 0
+    },
+    "status": {
+      "type": "enumeration",
+      "enum": ["pending", "sending", "completed", "failed"],
+      "default": "pending"
+    },
+    "errorDetails": {
+      "type": "json"
+    }
+  }
+}
