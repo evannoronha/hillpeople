@@ -1,0 +1,6 @@
+{
+  "private": true,
+  "devDependencies": {
+    "pm2": "^6.0.5"
+  }
+}
