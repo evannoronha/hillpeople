@@ -207,13 +207,13 @@ Four GitHub Actions workflows run on pull requests:
 | Workflow | File | Trigger | Purpose |
 |----------|------|---------|---------|
 | **Build** | `build.yml` | PR opened/sync | Validates frontend + backend build (parallel jobs) |
-| **Preview** | `preview.yml` | PR opened/sync/reopen | Uploads a new version of `hillpeople-frontend` worker with preview URL |
+| **Preview** | `preview.yml` | PR opened/sync/reopen/close | Deploys preview worker per PR; cleans up on close |
 | **Lighthouse** | `lighthouse.yml` | PR (frontend changes) | Performance audits on built site |
 | **Claude Review** | `claude-review.yml` | PR | AI code review |
 
 ### Preview Deployments
 
-Each PR uploads a new version of the existing `hillpeople-frontend` worker via `wrangler versions upload`. The preview URL is `<version-id>.hillpeople-frontend.workers.dev`. This inherits all env vars and Durable Object bindings from the production worker — no separate configuration needed. Old versions are managed automatically by Cloudflare.
+Each PR gets a preview worker at `hillpeople-preview-pr-{N}.workers.dev`. The preview worker does **not** include Durable Object caching (Cloudflare preview URLs don't support DO bindings) — requests go directly to Strapi. The `STRAPI_API_TOKEN` secret is provisioned automatically via `wrangler secret put`. The worker is deleted when the PR is closed.
 
 ### Required GitHub Secrets
 
