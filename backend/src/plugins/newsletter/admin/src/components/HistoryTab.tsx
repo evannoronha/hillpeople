@@ -109,9 +109,7 @@ const HistoryTab = () => {
             <Th><Typography variant="sigma">Date</Typography></Th>
             <Th><Typography variant="sigma">Trigger</Typography></Th>
             <Th><Typography variant="sigma">Posts</Typography></Th>
-            <Th><Typography variant="sigma">Recipients</Typography></Th>
-            <Th><Typography variant="sigma">Success</Typography></Th>
-            <Th><Typography variant="sigma">Failed</Typography></Th>
+            <Th><Typography variant="sigma">Sent</Typography></Th>
             <Th><Typography variant="sigma">Status</Typography></Th>
           </Tr>
         </Thead>
@@ -119,6 +117,12 @@ const HistoryTab = () => {
           {sends.map((send) => {
             const statusColor = STATUS_COLORS[send.status] || STATUS_COLORS.pending;
             const triggerColor = TRIGGER_COLORS[send.trigger] || TRIGGER_COLORS.cron;
+            const postCount = Array.isArray(send.postSlugs) ? send.postSlugs.length : 0;
+            const postLabel = postCount === 0
+              ? '—'
+              : postCount === 1
+                ? (send.postSlugs[0].title || send.postSlugs[0].slug)
+                : `${send.postSlugs[0].title || send.postSlugs[0].slug} +${postCount - 1} more`;
 
             return (
               <Tr key={send.documentId}>
@@ -133,21 +137,16 @@ const HistoryTab = () => {
                   </Badge>
                 </Td>
                 <Td>
-                  <Typography>
-                    {Array.isArray(send.postSlugs)
-                      ? send.postSlugs.map(p => p.title || p.slug).join(', ')
-                      : '—'}
+                  <Typography style={{ maxWidth: 300, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', display: 'block' }}>
+                    {postLabel}
                   </Typography>
                 </Td>
                 <Td>
-                  <Typography>{send.recipientCount}</Typography>
-                </Td>
-                <Td>
-                  <Typography textColor="success600">{send.successCount}</Typography>
-                </Td>
-                <Td>
-                  <Typography textColor={send.failureCount > 0 ? 'danger600' : 'neutral600'}>
-                    {send.failureCount}
+                  <Typography>
+                    {send.successCount}/{send.recipientCount}
+                    {send.failureCount > 0 && (
+                      <Typography tag="span" textColor="danger600"> ({send.failureCount} failed)</Typography>
+                    )}
                   </Typography>
                 </Td>
                 <Td>
