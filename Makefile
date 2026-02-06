@@ -1,4 +1,4 @@
-.PHONY: dev dev-prod sync-data backend upgrade-strapi newsletter-dev newsletter-deploy newsletter-send newsletter-send-to newsletter-send-posts newsletter-send-force newsletter-godmode-send act-lighthouse act-claude lighthouse
+.PHONY: dev dev-prod sync-data backend upgrade-strapi build build-frontend build-backend newsletter-dev newsletter-deploy newsletter-send newsletter-send-to newsletter-send-posts newsletter-send-force newsletter-godmode-send act-lighthouse act-claude lighthouse
 
 # Run frontend against local Strapi (http://localhost:1337)
 dev:
@@ -17,6 +17,18 @@ sync-data:
 # Run local Strapi backend
 backend:
 	cd backend && npm run develop
+
+# Build everything (frontend + backend)
+build: build-frontend build-backend
+
+# Build frontend against production Strapi
+build-frontend:
+	cd frontend && STRAPI_API_URL=https://journal.hillpeople.net npm run build
+
+# Build backend (plugins + admin panel)
+build-backend:
+	cd backend/src/plugins/mp-sync-helper && npm install
+	cd backend && npm run build
 
 # Upgrade Strapi to latest version
 upgrade-strapi:

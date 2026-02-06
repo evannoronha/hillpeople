@@ -13,6 +13,9 @@ Hill People is a blog platform with an Astro frontend (https://hillpeople.net) a
 make dev                   # Frontend against local Strapi (localhost:1337)
 make dev-prod              # Frontend against production Strapi
 make backend               # Run local Strapi backend
+make build                 # Build everything (frontend + backend)
+make build-frontend        # Build frontend only
+make build-backend         # Build backend only
 make sync-data             # Pull production data to local Strapi
 make upgrade-strapi        # Upgrade Strapi to latest version
 ```
@@ -151,6 +154,34 @@ When adding a new content type in Strapi that affects frontend pages:
    ```typescript
    '{content-type}': ['/affected-page', '/api/affected-endpoint'],
    ```
+
+## CI / Pull Requests
+
+Every PR triggers the following GitHub Actions workflows:
+
+### Build (`build.yml`)
+Validates that both frontend and backend compile without errors. Runs on every PR regardless of which files changed.
+
+### Preview Deploy (`preview.yml`)
+Deploys the frontend to a temporary Cloudflare Worker (`hillpeople-preview-pr-{number}`) so reviewers can QA changes in a browser without checking out the branch locally. The preview connects to the production Strapi backend for live data. A comment with the preview URL is posted on the PR automatically. The preview worker is deleted when the PR is closed.
+
+**Note:** Preview deployments run without Durable Object caching — the DO binding is intentionally omitted from the preview config. The frontend handles this gracefully (all requests go directly to Strapi).
+
+### Lighthouse CI (`lighthouse.yml`)
+Runs performance, accessibility, and SEO checks against the built frontend. Only triggers on `frontend/**` changes.
+
+### Claude Auto Review (`claude-review.yml`)
+AI code review on every PR.
+
+### Required GitHub Secrets for CI
+
+| Secret | Purpose |
+|--------|---------|
+| `CLOUDFLARE_WORKERS_API_TOKEN` | Cloudflare API token with Workers Scripts edit permission (for preview deploys) |
+| `CLOUDFLARE_ACCOUNT_ID` | Cloudflare account ID (for preview deploys) |
+| `STRAPI_API_TOKEN` | Strapi read token (for Lighthouse CI) |
+| `ANTHROPIC_API_KEY` | Anthropic API key (for Claude review) |
+| `LHCI_GITHUB_TOKEN` | Lighthouse CI GitHub app token |
 
 ## Deployment
 
