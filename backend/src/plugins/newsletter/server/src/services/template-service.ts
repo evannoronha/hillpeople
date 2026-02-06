@@ -185,6 +185,52 @@ const service = ({ strapi }: { strapi: Core.Strapi }) => ({
 </body>
 </html>`;
   },
+
+  buildReconfirmationHtml(
+    confirmUrl: string,
+    settings: Partial<NewsletterSettings> = {}
+  ): string {
+    const s = { ...DEFAULTS, ...settings };
+
+    return `<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+  <meta name="color-scheme" content="light dark" />
+  <meta name="supported-color-schemes" content="light dark" />
+  <title>Let's try that again</title>
+  <!--[if !mso]><!-->
+  <link href="https://fonts.googleapis.com/css2?family=Libre+Baskerville:wght@400;700&display=swap" rel="stylesheet" />
+  <!--<![endif]-->
+  <style>${darkModeStyles}</style>
+</head>
+<body class="email-body" style="margin: 0; padding: 0; background-color: ${BRAND.bg}; font-family: 'Libre Baskerville', Georgia, serif; color: ${BRAND.text}; -webkit-text-size-adjust: 100%;">
+  <div style="max-width: 600px; margin: 0 auto; padding: 40px 20px;">
+
+    <!-- Header -->
+    <div style="text-align: center; padding-bottom: 32px;">
+      <h1 class="email-heading" style="margin: 0; font-size: 32px; color: ${BRAND.heading}; font-family: 'Libre Baskerville', Georgia, serif; font-weight: 700;">Hill People</h1>
+    </div>
+
+    <!-- Card -->
+    <div class="email-card" style="background: ${BRAND.cardBg}; border-radius: 6px; padding: 36px 32px; border: 1px solid ${BRAND.border}; text-align: center;">
+      <h2 class="email-text" style="margin: 0 0 16px 0; font-size: 24px; color: ${BRAND.text}; font-family: 'Libre Baskerville', Georgia, serif;">Let's try that again</h2>
+      <p class="email-text" style="margin: 0 0 28px 0; font-size: 16px; line-height: 1.6; color: ${BRAND.text};">Your previous confirmation link expired, but no worries. Click below to confirm your subscription.</p>
+      <a href="${confirmUrl}" style="display: inline-block; background-color: ${s.buttonColor}; color: ${s.buttonTextColor}; padding: 14px 32px; text-decoration: none; border-radius: 4px; font-size: 16px; font-family: -apple-system, sans-serif; font-weight: 600;">Confirm Subscription</a>
+      <p class="email-muted" style="margin: 24px 0 0 0; font-size: 13px; color: ${BRAND.textMuted}; font-family: -apple-system, sans-serif;">This link expires in 24 hours.</p>
+    </div>
+
+    <!-- Footer -->
+    <div style="padding-top: 24px; text-align: center;">
+      <p class="email-muted" style="font-size: 12px; color: ${BRAND.textMuted}; font-family: -apple-system, sans-serif; margin: 0;">If you didn't subscribe, you can safely ignore this email.</p>
+    </div>
+
+  </div>
+</body>
+</html>`;
+  },
 });
 
 export default service;

@@ -87,6 +87,21 @@ const service = ({ strapi }: { strapi: Core.Strapi }) => ({
     strapi.log.info(`Confirmation email sent to ${email}`);
   },
 
+  async sendReconfirmationEmail(email: string, confirmationToken: string): Promise<void> {
+    const frontendUrl = strapi.plugin('newsletter').config('frontendUrl');
+    const settings = await this.getSettings();
+
+    const confirmUrl = `${frontendUrl}/newsletter/confirm/${confirmationToken}`;
+
+    const templateService = strapi.plugin('newsletter').service('template-service');
+    const html = templateService.buildReconfirmationHtml(confirmUrl, settings);
+
+    const emailService = strapi.plugin('newsletter').service('email-service');
+    await emailService.sendEmail(email, "Let's try that again — confirm your subscription", html);
+
+    strapi.log.info(`Reconfirmation email sent to ${email}`);
+  },
+
   async confirmSubscriber(token: string): Promise<{ success: boolean; error?: string }> {
     const subscribers = await strapi.documents('api::subscriber.subscriber').findMany({
       filters: { confirmationToken: { $eq: token } },
@@ -112,7 +127,7 @@ const service = ({ strapi }: { strapi: Core.Strapi }) => ({
         } as any,
       });
 
-      await this.sendConfirmationEmail(subscriber.email, newToken);
+      await this.sendReconfirmationEmail(subscriber.email, newToken);
       strapi.log.info(`Resent confirmation email for expired token: ${subscriber.email}`);
       return { success: false, error: 'expired_resent' };
     }
