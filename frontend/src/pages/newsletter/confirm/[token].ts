@@ -25,6 +25,10 @@ export const GET: APIRoute = async ({ params, redirect }) => {
       return redirect('/newsletter/confirmed', 302);
     }
 
+    if (data.error === 'expired_resent') {
+      return redirect('/newsletter/error?message=' + encodeURIComponent('Your confirmation link expired. We just sent you a new one — check your inbox.'), 302);
+    }
+
     return redirect('/newsletter/error?message=' + encodeURIComponent(data.error || 'Invalid token'), 302);
   } catch (error) {
     console.error('Confirmation proxy error:', error);

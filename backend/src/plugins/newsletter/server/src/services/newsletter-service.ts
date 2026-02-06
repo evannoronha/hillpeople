@@ -98,9 +98,23 @@ const service = ({ strapi }: { strapi: Core.Strapi }) => ({
 
     const subscriber = subscribers[0];
 
-    // Check token expiry
+    // Token expired — generate a new one and resend confirmation
     if (subscriber.tokenExpiry && new Date(subscriber.tokenExpiry) < new Date()) {
-      return { success: false, error: 'Confirmation token has expired' };
+      const crypto = await import('crypto');
+      const newToken = crypto.randomBytes(32).toString('hex');
+      const newExpiry = new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString();
+
+      await strapi.documents('api::subscriber.subscriber').update({
+        documentId: subscriber.documentId,
+        data: {
+          confirmationToken: newToken,
+          tokenExpiry: newExpiry,
+        } as any,
+      });
+
+      await this.sendConfirmationEmail(subscriber.email, newToken);
+      strapi.log.info(`Resent confirmation email for expired token: ${subscriber.email}`);
+      return { success: false, error: 'expired_resent' };
     }
 
     await strapi.documents('api::subscriber.subscriber').update({
