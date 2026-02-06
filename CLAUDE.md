@@ -10,12 +10,22 @@ Hill People is a blog platform with an Astro frontend (https://hillpeople.net) a
 
 ### Quick Start (from repo root)
 ```bash
-make dev                   # Frontend against local Strapi (localhost:1337)
-make dev-prod              # Frontend against production Strapi
-make backend               # Run local Strapi backend
+make pm2                   # Start frontend + backend via PM2 (local Strapi)
+make pm2-prod              # Start frontend via PM2 (production Strapi, no local backend)
+make pm2-frontend          # Start/restart just frontend
+make pm2-backend           # Start/restart just backend
+make pm2-stop              # Stop all PM2 processes
+make pm2-kill              # Kill PM2 daemon + all processes
+make pm2-logs              # Tail all logs
+make pm2-logs-frontend     # Tail frontend logs
+make pm2-logs-backend      # Tail backend logs
+make pm2-status            # Show PM2 process table
 make sync-data             # Pull production data to local Strapi
 make upgrade-strapi        # Upgrade Strapi to latest version
+make build                 # Build frontend + backend
 ```
+
+PM2 targets use `startOrRestart` so they're idempotent — safe to call multiple times without spawning duplicate processes.
 
 ### Frontend (from `frontend/` directory)
 ```bash
@@ -174,7 +184,7 @@ The newsletter system is a Strapi plugin at `backend/src/plugins/newsletter/`. I
 After modifying plugin source files, rebuild and restart Strapi:
 ```bash
 cd backend/src/plugins/newsletter && npm run build
-# Then restart Strapi (Ctrl+C and re-run `make backend`)
+# Then restart Strapi: make pm2-backend
 ```
 
 ### Key gotchas (Strapi 5)
@@ -189,6 +199,30 @@ cd backend/src/plugins/newsletter && npm run build
 | `RESEND_API_KEY` | Strapi Cloud | Resend API key for sending emails |
 | `CLIENT_URL` | Strapi Cloud | Frontend URL (shared with admin preview config) |
 | `STRAPI_PUBLIC_URL` | Strapi Cloud | Strapi public URL for resolving media URLs in emails |
+
+## CI / Pull Requests
+
+Four GitHub Actions workflows run on pull requests:
+
+| Workflow | File | Trigger | Purpose |
+|----------|------|---------|---------|
+| **Build** | `build.yml` | PR opened/sync | Validates frontend + backend build (parallel jobs) |
+| **Preview** | `preview.yml` | PR opened/sync/reopen/close | Deploys frontend preview to Cloudflare Workers; cleans up on close |
+| **Lighthouse** | `lighthouse.yml` | PR (frontend changes) | Performance audits on built site |
+| **Claude Review** | `claude-review.yml` | PR | AI code review |
+
+### Preview Deployments
+
+Each PR gets a preview at `hillpeople-preview-pr-{N}.workers.dev`. Preview workers do **not** include Durable Object caching — requests go directly to Strapi. The worker is automatically deleted when the PR is closed.
+
+### Required GitHub Secrets
+
+| Secret | Purpose |
+|--------|---------|
+| `CLOUDFLARE_WORKERS_API_TOKEN` | Cloudflare API token with Workers Scripts permissions |
+| `CLOUDFLARE_ACCOUNT_ID` | Cloudflare account ID for Workers API |
+| `STRAPI_API_TOKEN` | Strapi API token (used by Lighthouse workflow) |
+| `LHCI_GITHUB_TOKEN` | Lighthouse CI GitHub App token |
 
 ## Deployment
 

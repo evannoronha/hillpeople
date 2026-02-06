@@ -1,22 +1,73 @@
-.PHONY: dev dev-prod sync-data backend upgrade-strapi act-lighthouse act-claude lighthouse
+.PHONY: pm2 pm2-prod pm2-frontend pm2-backend pm2-stop pm2-kill pm2-logs pm2-logs-frontend pm2-logs-backend pm2-status
+.PHONY: build build-frontend build-backend
+.PHONY: sync-data upgrade-strapi act-lighthouse act-claude lighthouse
 
-# Run frontend against local Strapi (http://localhost:1337)
-dev:
+PM2 = npx pm2
+
+# ─── PM2 Dev Orchestration ───────────────────────────────────────────
+
+# Start frontend + backend against local Strapi
+pm2:
 	cp frontend/.dev.vars.local frontend/.dev.vars
-	cd frontend && npm run dev
+	$(PM2) startOrRestart ecosystem.config.js
 
-# Run frontend against production Strapi
-dev-prod:
+# Start frontend against production Strapi (no local backend needed)
+pm2-prod:
 	cp frontend/.dev.vars.prod frontend/.dev.vars
-	cd frontend && npm run dev
+	$(PM2) startOrRestart ecosystem.config.js --only frontend
 
-# Sync local Strapi data from production (requires STRAPI_PRODUCTION_URL and STRAPI_TRANSFER_TOKEN in backend/.env)
+# Start/restart just frontend
+pm2-frontend:
+	$(PM2) startOrRestart ecosystem.config.js --only frontend
+
+# Start/restart just backend
+pm2-backend:
+	$(PM2) startOrRestart ecosystem.config.js --only backend
+
+# Stop all PM2 processes
+pm2-stop:
+	$(PM2) stop all
+
+# Kill PM2 daemon and all processes
+pm2-kill:
+	$(PM2) kill
+
+# Tail all logs
+pm2-logs:
+	$(PM2) logs
+
+# Tail frontend logs
+pm2-logs-frontend:
+	$(PM2) logs frontend
+
+# Tail backend logs
+pm2-logs-backend:
+	$(PM2) logs backend
+
+# Show PM2 process table
+pm2-status:
+	$(PM2) status
+
+# ─── Build ───────────────────────────────────────────────────────────
+
+# Build frontend + backend
+build: build-frontend build-backend
+
+# Build frontend against production Strapi
+build-frontend:
+	cd frontend && STRAPI_API_URL=https://journal.hillpeople.net npm run build
+
+# Build backend (install plugin deps first)
+build-backend:
+	cd backend/src/plugins/mp-sync-helper && npm install
+	cd backend/src/plugins/newsletter && npm install
+	cd backend && npm run build
+
+# ─── Utilities ───────────────────────────────────────────────────────
+
+# Sync local Strapi data from production
 sync-data:
 	cd backend && npm run transfer
-
-# Run local Strapi backend
-backend:
-	cd backend && npm run develop
 
 # Upgrade Strapi to latest version
 upgrade-strapi:
@@ -30,10 +81,6 @@ act-claude:
 	gh act pull_request -W .github/workflows/claude-review.yml
 
 # Run Lighthouse CI locally
-# Prerequisites:
-#   1. Copy frontend/.dev.vars.example to frontend/.dev.vars
-#   2. Fill in STRAPI_API_TOKEN in .dev.vars
-#   3. Chrome must be installed
 lighthouse:
 	cd frontend && STRAPI_API_URL=https://journal.hillpeople.net npm run build
 	npx @lhci/cli autorun
