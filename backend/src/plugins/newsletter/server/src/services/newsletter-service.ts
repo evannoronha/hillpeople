@@ -1,6 +1,6 @@
 import type { Core } from '@strapi/strapi';
 
-interface SendOptions {
+export interface SendOptions {
   trigger: 'cron' | 'manual' | 'test';
   slugs?: string[];
   toOverride?: string;
@@ -8,7 +8,7 @@ interface SendOptions {
   markPostsAsSent?: boolean;
 }
 
-interface Post {
+export interface Post {
   documentId: string;
   title: string;
   slug: string;
@@ -17,7 +17,7 @@ interface Post {
   newsletterSent: boolean;
 }
 
-interface Subscriber {
+export interface Subscriber {
   documentId: string;
   email: string;
   confirmed: boolean;
@@ -117,7 +117,7 @@ const service = ({ strapi }: { strapi: Core.Strapi }) => ({
       start: (page - 1) * pageSize,
     });
 
-    const total = await strapi.documents('api::newsletter-send.newsletter-send').count();
+    const total = await strapi.documents('api::newsletter-send.newsletter-send').count({});
 
     return { results: sends, pagination: { page, pageSize, total } };
   },

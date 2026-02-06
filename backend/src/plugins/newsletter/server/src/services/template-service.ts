@@ -1,6 +1,6 @@
 import type { Core } from '@strapi/strapi';
 
-interface NewsletterSettings {
+export interface NewsletterSettings {
   headingText: string;
   headingColor: string;
   linkColor: string;
@@ -9,7 +9,7 @@ interface NewsletterSettings {
   footerText: string;
 }
 
-interface PostInfo {
+export interface PostInfo {
   title: string;
   slug: string;
   publishedDate: string;
