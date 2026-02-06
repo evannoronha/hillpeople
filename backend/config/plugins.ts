@@ -19,7 +19,7 @@ export default () => ({
         resolve: './src/plugins/newsletter',
         config: {
             resendApiKey: process.env.RESEND_API_KEY || '',
-            frontendUrl: process.env.FRONTEND_URL || 'https://hillpeople.net',
+            frontendUrl: process.env.CLIENT_URL || 'https://hillpeople.net',
         },
     },
 });
