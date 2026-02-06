@@ -18,36 +18,11 @@ export default {
     result: { email: string; confirmationToken: string };
   }) {
     const { result } = event;
-    const workerUrl = process.env.NEWSLETTER_WORKER_URL;
-
-    if (!workerUrl) {
-      strapi.log.warn('NEWSLETTER_WORKER_URL not set, skipping confirmation email');
-      return;
-    }
-
-    const requestBody = {
-      email: result.email,
-      confirmationToken: result.confirmationToken,
-    };
-
-    strapi.log.info(`Sending confirmation request to ${workerUrl}/send-confirmation`);
-    strapi.log.info(`Request body: ${JSON.stringify(requestBody)}`);
 
     try {
-      const response = await fetch(`${workerUrl}/send-confirmation`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(requestBody),
-      });
-
-      const responseText = await response.text();
-      strapi.log.info(`Worker response: ${response.status} - ${responseText}`);
-
-      if (!response.ok) {
-        strapi.log.error(`Failed to send confirmation email: ${response.status} - ${responseText}`);
-      } else {
-        strapi.log.info(`Confirmation email sent to ${result.email}`);
-      }
+      const newsletterService = strapi.plugin('newsletter').service('newsletter-service');
+      await newsletterService.sendConfirmationEmail(result.email, result.confirmationToken);
+      strapi.log.info(`Confirmation email sent to ${result.email}`);
     } catch (error) {
       strapi.log.error('Error sending confirmation email:', error);
     }
