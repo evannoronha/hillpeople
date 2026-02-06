@@ -1,4 +1,24 @@
 import type { Core } from '@strapi/strapi';
+import type { Post } from '../services/newsletter-service';
+
+/**
+ * Resolve media URL: absolute URLs pass through, relative URLs get the Strapi
+ * server URL prepended so images work in emails.
+ */
+function resolveMediaUrl(url: string | undefined, strapiUrl?: string): string | undefined {
+  if (!url) return undefined;
+  if (url.startsWith('http')) return url;
+  if (strapiUrl) return `${strapiUrl.replace(/\/$/, '')}${url}`;
+  return undefined;
+}
+
+function getPreviewImageUrl(post: Post, strapiUrl?: string): string | undefined {
+  const img = post.coverImage;
+  if (!img) return undefined;
+  const preferred = img.formats?.medium ?? img.formats?.small;
+  const url = preferred?.url ?? img.url;
+  return resolveMediaUrl(url, strapiUrl);
+}
 
 const controller = ({ strapi }: { strapi: Core.Strapi }) => ({
   async send(ctx) {
@@ -123,6 +143,7 @@ const controller = ({ strapi }: { strapi: Core.Strapi }) => ({
       const templateService = strapi.plugin('newsletter').service('template-service');
       const settings = await newsletterService.getSettings();
       const frontendUrl = strapi.plugin('newsletter').config('frontendUrl');
+      const strapiUrl: string | undefined = strapi.config.get('server.url') || undefined;
       const posts = await newsletterService.getEligiblePosts();
 
       if (posts.length === 0) {
@@ -132,11 +153,11 @@ const controller = ({ strapi }: { strapi: Core.Strapi }) => ({
       }
 
       const html = templateService.buildNewsletterHtml(
-        posts.map((p: any) => ({
+        posts.map((p: Post) => ({
           title: p.title,
           slug: p.slug,
           publishedDate: p.publishedDate,
-          coverImageUrl: p.coverImage?.formats?.medium?.url || p.coverImage?.formats?.small?.url || p.coverImage?.url,
+          coverImageUrl: getPreviewImageUrl(p, strapiUrl),
           excerpt: p.seo?.excerpt,
         })),
         `${frontendUrl}/newsletter/unsubscribe/preview`,

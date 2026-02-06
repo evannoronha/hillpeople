@@ -34,16 +34,18 @@ export interface Subscriber {
 /**
  * Get the best image URL for email use. Prefers the 'medium' format (~750px)
  * since emails don't need full-size images. Falls back to original URL.
+ * Relative URLs (from Document Service API) are resolved against strapiUrl.
  */
-function getEmailImageUrl(post: Post): string | undefined {
+function getEmailImageUrl(post: Post, strapiUrl?: string): string | undefined {
   const img = post.coverImage;
   if (!img) return undefined;
   const preferred = img.formats?.medium ?? img.formats?.small;
   const url = preferred?.url ?? img.url;
   if (!url) return undefined;
-  // Strapi Cloud returns absolute URLs; local dev returns relative
   if (url.startsWith('http')) return url;
-  return undefined; // Skip relative URLs — they won't work in email clients
+  // Document Service API returns relative paths — resolve against Strapi server URL
+  if (strapiUrl) return `${strapiUrl.replace(/\/$/, '')}${url}`;
+  return undefined;
 }
 
 const service = ({ strapi }: { strapi: Core.Strapi }) => ({
@@ -176,6 +178,7 @@ const service = ({ strapi }: { strapi: Core.Strapi }) => ({
     // Fetch settings
     const settings = await this.getSettings();
     const frontendUrl = strapi.plugin('newsletter').config('frontendUrl');
+    const strapiUrl: string | undefined = strapi.config.get('server.url') || undefined;
 
     // Fetch posts
     let posts: Post[];
@@ -255,7 +258,7 @@ const service = ({ strapi }: { strapi: Core.Strapi }) => ({
             title: p.title,
             slug: p.slug,
             publishedDate: p.publishedDate,
-            coverImageUrl: getEmailImageUrl(p),
+            coverImageUrl: getEmailImageUrl(p, strapiUrl),
             excerpt: p.seo?.excerpt,
           })),
           unsubscribeUrl,
