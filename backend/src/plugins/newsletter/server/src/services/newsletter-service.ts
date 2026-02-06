@@ -32,13 +32,13 @@ const service = ({ strapi }: { strapi: Core.Strapi }) => ({
 
   async getEligiblePosts(): Promise<Post[]> {
     const settings = await this.getSettings();
-    const cooldownMinutes = (settings as any).cooldownMinutes || 30;
+    const cooldownMinutes = (settings as any).cooldownMinutes ?? 30;
     const cooldownTime = new Date(Date.now() - cooldownMinutes * 60 * 1000).toISOString();
 
     const posts = await strapi.documents('api::post.post').findMany({
+      status: 'published',
       filters: {
-        publishedAt: { $notNull: true },
-        newsletterSent: { $eq: false },
+        newsletterSent: { $ne: true },
         updatedAt: { $lt: cooldownTime },
       },
       sort: { publishedDate: 'desc' },
