@@ -116,6 +116,33 @@ const controller = ({ strapi }: { strapi: Core.Strapi }) => ({
       ctx.throw(500, 'Failed to fetch stats', { error: error.message });
     }
   },
+
+  async preview(ctx) {
+    try {
+      const newsletterService = strapi.plugin('newsletter').service('newsletter-service');
+      const templateService = strapi.plugin('newsletter').service('template-service');
+      const settings = await newsletterService.getSettings();
+      const frontendUrl = strapi.plugin('newsletter').config('frontendUrl');
+      const posts = await newsletterService.getEligiblePosts();
+
+      if (posts.length === 0) {
+        ctx.status = 400;
+        ctx.body = { error: { message: 'No eligible posts to preview' } };
+        return;
+      }
+
+      const html = templateService.buildNewsletterHtml(
+        posts.map((p: any) => ({ title: p.title, slug: p.slug, publishedDate: p.publishedDate })),
+        `${frontendUrl}/newsletter/unsubscribe/preview`,
+        frontendUrl,
+        settings,
+      );
+
+      ctx.body = { html };
+    } catch (error: any) {
+      ctx.throw(500, 'Failed to generate preview', { error: error.message });
+    }
+  },
 });
 
 export default controller;

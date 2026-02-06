@@ -43,5 +43,11 @@ export default {
       handler: 'newsletter-controller.getStats',
       config: { policies: [] },
     },
+    {
+      method: 'GET',
+      path: '/preview',
+      handler: 'newsletter-controller.preview',
+      config: { policies: [] },
+    },
   ],
 };

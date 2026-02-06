@@ -43,6 +43,9 @@ const SendTab = () => {
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<string | null>(null);
   const [showConfirm, setShowConfirm] = useState(false);
+  const [showPreview, setShowPreview] = useState(false);
+  const [previewHtml, setPreviewHtml] = useState<string | null>(null);
+  const [previewLoading, setPreviewLoading] = useState(false);
 
   const { get, post } = useFetchClient();
 
@@ -113,6 +116,20 @@ const SendTab = () => {
     }
   };
 
+  const handlePreview = async () => {
+    try {
+      setPreviewLoading(true);
+      setError(null);
+      const { data } = await get('/newsletter/preview');
+      setPreviewHtml(data.html || '');
+      setShowPreview(true);
+    } catch (err: any) {
+      setError(err.response?.data?.error?.message || err.message || 'Failed to load preview');
+    } finally {
+      setPreviewLoading(false);
+    }
+  };
+
   if (loading) {
     return (
       <Flex justifyContent="center" padding={6}>
@@ -168,15 +185,26 @@ const SendTab = () => {
               Published posts that haven't been sent yet
             </Typography>
           </Box>
-          <Button
-            onClick={() => setShowConfirm(true)}
-            loading={sending}
-            disabled={sending || posts.length === 0}
-            startIcon={<Check />}
-            size="L"
-          >
-            Send Newsletter
-          </Button>
+          <Flex gap={2}>
+            <Button
+              onClick={handlePreview}
+              loading={previewLoading}
+              disabled={previewLoading || posts.length === 0}
+              variant="secondary"
+              size="L"
+            >
+              Preview
+            </Button>
+            <Button
+              onClick={() => setShowConfirm(true)}
+              loading={sending}
+              disabled={sending || posts.length === 0}
+              startIcon={<Check />}
+              size="L"
+            >
+              Send Newsletter
+            </Button>
+          </Flex>
         </Flex>
 
         {posts.length === 0 ? (
@@ -236,6 +264,53 @@ const SendTab = () => {
           </Button>
         </Flex>
       </Box>
+
+      {/* Preview dialog */}
+      {showPreview && previewHtml && (
+        <Box
+          style={{
+            position: 'fixed',
+            top: 0,
+            left: 0,
+            right: 0,
+            bottom: 0,
+            zIndex: 1000,
+            backgroundColor: 'rgba(0, 0, 0, 0.5)',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+          }}
+          onClick={() => setShowPreview(false)}
+        >
+          <Box
+            style={{
+              backgroundColor: '#fff',
+              borderRadius: 8,
+              width: '90%',
+              maxWidth: 700,
+              height: '85vh',
+              display: 'flex',
+              flexDirection: 'column',
+              overflow: 'hidden',
+            }}
+            onClick={(e: any) => e.stopPropagation()}
+          >
+            <Flex justifyContent="space-between" alignItems="center" padding={4}>
+              <Typography variant="delta">Email Preview</Typography>
+              <Button variant="tertiary" onClick={() => setShowPreview(false)}>
+                Close
+              </Button>
+            </Flex>
+            <Box style={{ flex: 1, overflow: 'auto' }}>
+              <iframe
+                srcDoc={previewHtml}
+                title="Newsletter Preview"
+                style={{ width: '100%', height: '100%', border: 'none' }}
+              />
+            </Box>
+          </Box>
+        </Box>
+      )}
 
       {/* Confirmation dialog */}
       <Dialog.Root open={showConfirm} onOpenChange={setShowConfirm}>
