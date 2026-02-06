@@ -291,9 +291,13 @@ const service = ({ strapi }: { strapi: Core.Strapi }) => ({
     if (markPostsAsSent && successCount > 0) {
       for (const post of posts) {
         try {
+          // update() only modifies the draft — must publish() to propagate to the published version
           await strapi.documents('api::post.post').update({
             documentId: post.documentId,
             data: { newsletterSent: true } as any,
+          });
+          await strapi.documents('api::post.post').publish({
+            documentId: post.documentId,
           });
           strapi.log.info(`${logPrefix} Marked post ${post.slug} as sent`);
         } catch (error: any) {
