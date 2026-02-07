@@ -158,13 +158,27 @@ Embed or link to an external service. Cheapest in development effort, but doesn'
 ### Decisions
 
 - **Upload UX:** CLI-based via `wrangler r2 object put` for MVP. Web UI can come later.
+- **pic-time migration:** Migrate via manual download. Pic-Time has no public export API. Download full-res zips from the Workflow tab gallery by gallery, then batch upload to R2 via CLI.
+
+### Migration Plan (pic-time → R2)
+
+1. In pic-time admin: Gallery → Workflow → Send/Download Photos → Select All → download zip (full-res)
+2. Repeat for each gallery, organize into local folders by gallery name
+3. Batch upload to R2:
+   ```bash
+   for f in gallery-folder/*; do
+     wrangler r2 object put hillpeople-photos/gallery-slug/$(basename "$f") --file "$f"
+   done
+   ```
+4. Add gallery metadata in Strapi (title, slug, list of R2 keys)
+5. Verify galleries render on the new `/photos` pages
+6. Cancel pic-time subscription
 
 ### Open Questions
 
 1. **Gallery organization:** Flat list of galleries, or categories/albums/tags?
-2. **Existing pic-time content:** Do you want to migrate photos from pic-time, or start fresh?
-3. **EXIF data:** Should we extract and display EXIF metadata (camera, lens, settings)?
-4. **Download originals:** Should visitors be able to download full-res versions?
+2. **EXIF data:** Should we extract and display EXIF metadata (camera, lens, settings)?
+3. **Download originals:** Should visitors be able to download full-res versions?
 
 ## Sources
 
