@@ -26,6 +26,8 @@ interface GroupedRoute {
     route: TickRoute | null;
     climbers: string[];
     bestStars: number;
+    style?: string;
+    leadStyle?: string;
 }
 
 interface ApiResponse {
@@ -52,16 +54,19 @@ function groupTicksByRoute(ticks: TickData[]): Map<string, GroupedRoute> {
 
     for (const tick of ticks) {
         const routeUrl = tick.route?.mountainProjectUrl || 'unknown';
+        const groupKey = `${routeUrl}|${tick.style || ''}|${tick.leadStyle || ''}`;
 
-        if (!routeMap.has(routeUrl)) {
-            routeMap.set(routeUrl, {
+        if (!routeMap.has(groupKey)) {
+            routeMap.set(groupKey, {
                 route: tick.route,
                 climbers: [],
                 bestStars: 0,
+                style: tick.style,
+                leadStyle: tick.leadStyle,
             });
         }
 
-        const groupedRoute = routeMap.get(routeUrl)!;
+        const groupedRoute = routeMap.get(groupKey)!;
 
         if (tick.person?.name && !groupedRoute.climbers.includes(tick.person.name)) {
             groupedRoute.climbers.push(tick.person.name);
@@ -94,6 +99,7 @@ function createRouteHtml(groupedRoute: GroupedRoute): string {
                     <a href="${routeUrl}" target="_blank" rel="noopener noreferrer" class="font-semibold hover:underline text-[var(--color-header)]">${routeName}</a>
                     ${rating ? `<span class="text-sm font-mono">${rating}</span>` : ""}
                     ${routeType ? `<span class="text-xs opacity-70">${routeType}</span>` : ""}
+                    ${groupedRoute.style ? `<span class="text-xs px-2 py-0.5 rounded bg-[var(--color-accent)]/20">${groupedRoute.style}${groupedRoute.leadStyle ? ` · ${groupedRoute.leadStyle}` : ""}</span>` : ""}
                 </div>
                 ${location ? `<p class="text-sm truncate">${location}</p>` : ""}
                 ${climbers ? `<p class="text-xs mt-1 opacity-70">${climbers}</p>` : ""}

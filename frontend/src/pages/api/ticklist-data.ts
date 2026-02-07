@@ -236,12 +236,13 @@ function groupTicksByDateAndRoute(ticks: ClimbingTick[]): TicksByDate[] {
         const date = tick.tickDate;
         if (!date) continue;
         const routeUrl = tick.route?.mountainProjectUrl || 'unknown';
+        const groupKey = `${routeUrl}|${tick.style || ''}|${tick.leadStyle || ''}`;
 
         if (!byDate.has(date)) byDate.set(date, new Map());
         const dateRoutes = byDate.get(date)!;
 
-        if (!dateRoutes.has(routeUrl)) {
-            dateRoutes.set(routeUrl, {
+        if (!dateRoutes.has(groupKey)) {
+            dateRoutes.set(groupKey, {
                 route: tick.route || null,
                 climbers: [],
                 bestStars: 0,
@@ -252,7 +253,7 @@ function groupTicksByDateAndRoute(ticks: ClimbingTick[]): TicksByDate[] {
             });
         }
 
-        const groupedRoute = dateRoutes.get(routeUrl)!;
+        const groupedRoute = dateRoutes.get(groupKey)!;
 
         if (tick.person?.name && !groupedRoute.climbers.includes(tick.person.name)) {
             groupedRoute.climbers.push(tick.person.name);
