@@ -224,6 +224,108 @@ A download button in the lightbox links to:
 The `Content-Disposition` header can be set by a Worker to trigger a browser download
 rather than navigation.
 
+### Lightbox Performance Strategy
+
+The goal: hold down the right arrow key and scroll through dozens of photos with no perceptible
+lag, matching the pic-time experience. This requires a three-tier image resolution system with
+aggressive preloading.
+
+#### Three Resolution Tiers
+
+All served from the same R2 original via different CF transform URL params:
+
+| Tier | Size | Quality | Purpose |
+|------|------|---------|---------|
+| Thumbnail | 300px wide | q=70 | Grid display, instant placeholder |
+| Preview | 1200px wide | q=75 | Fast-scrolling lightbox view |
+| Full | viewport-width (e.g. 2400px) | q=85 | Crisp final render after settling |
+
+```
+Thumbnail: /cdn-cgi/image/w=300,q=70,f=auto/{r2-origin}/{key}
+Preview:   /cdn-cgi/image/w=1200,q=75,f=auto/{r2-origin}/{key}
+Full:      /cdn-cgi/image/w=2400,q=85,f=auto/{r2-origin}/{key}
+```
+
+#### Preload Window
+
+When the user is viewing photo N, keep a sliding window of preloaded preview images:
+
+```
+preloaded:  [N-2] [N-1] [N] [N+1] [N+2] [N+3]
+                         ^^^
+                      currently viewing
+```
+
+- Use `new Image()` objects stored in a `Map<string, HTMLImageElement>` cache
+- On each navigation, shift the window: start loading the new edge images, evict old ones
+- Preload ahead (3 forward, 2 back) since users more commonly advance
+
+#### Navigation Flow (on arrow key press)
+
+```
+1. Check preview cache for target photo
+   ├── HIT  → show cached preview instantly (< 1ms)
+   └── MISS → show thumbnail as placeholder (already in browser cache from grid)
+              └── preview loads in background → swap in when ready
+
+2. After user stops navigating (300ms debounce):
+   └── Load full-res version for the current photo
+       └── When loaded, call img.decode() then swap in (no jank)
+
+3. Shift preload window to new position
+   └── Start preloading new edge images via new Image()
+```
+
+The key insight: **thumbnails are always available instantly** because the grid already loaded
+them. So worst case (cache miss on preview), the user sees a slightly soft image for a fraction
+of a second, never a blank frame or spinner.
+
+#### Implementation Details
+
+**Dual-layer image display:**
+```html
+<!-- Two stacked images in the lightbox -->
+<img id="lightbox-base" />   <!-- shows best immediately available version -->
+<img id="lightbox-full" />   <!-- layered on top, shows full-res when ready -->
+```
+
+**EXIF-driven aspect ratio:**
+Since we store width/height in the EXIF JSON, we can set the lightbox container's aspect ratio
+before any image loads, preventing layout shift:
+```css
+.lightbox-container { aspect-ratio: var(--photo-w) / var(--photo-h); }
+```
+
+**Key repeat handling:**
+Browser key repeat fires rapidly (~30+ events/sec when held). The navigation itself should be
+instant (just swap a cached image src), but full-res loading and preload window shifts should
+be debounced/throttled to avoid a stampede of requests.
+
+**`img.decode()` for jank-free swaps:**
+Before replacing the visible image src, call `decode()` to ensure the browser has decoded the
+image off the main thread:
+```js
+const img = new Image();
+img.src = fullResUrl;
+await img.decode();
+lightboxFull.src = img.src; // swap is now instant, no decode jank
+```
+
+**CF edge cache advantage:**
+After the first visitor loads a transformed image, it's cached at the nearest Cloudflare edge.
+Subsequent visitors (and return visits) get the cached version — effectively instant. This means
+the preloading strategy mainly matters for first-time cold loads; warm loads are already fast.
+
+#### Performance Budget
+
+| Metric | Target |
+|--------|--------|
+| Navigation latency (cached preview) | < 16ms (one frame) |
+| Navigation latency (cache miss, show thumbnail) | < 16ms |
+| Preview load (cold, CF transform) | < 200ms |
+| Full-res swap after settling | < 500ms |
+| Memory ceiling (preload window) | ~6 preview images × ~200KB = ~1.2MB |
+
 ### Suggested Implementation Plan
 
 **Phase 1: Infrastructure**
