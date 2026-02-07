@@ -21,6 +21,8 @@ interface GroupedRoute {
     bestStars: number;
     photos: StrapiImage[];
     notes: string[];
+    style?: string;
+    leadStyle?: string;
 }
 
 function groupTicksByRoute(tickList: ClimbingTick[]): GroupedRoute[] {
@@ -28,18 +30,21 @@ function groupTicksByRoute(tickList: ClimbingTick[]): GroupedRoute[] {
 
     for (const tick of tickList) {
         const routeUrl = tick.route?.mountainProjectUrl || 'unknown';
+        const groupKey = `${routeUrl}|${tick.style || ''}|${tick.leadStyle || ''}`;
 
-        if (!routeMap.has(routeUrl)) {
-            routeMap.set(routeUrl, {
+        if (!routeMap.has(groupKey)) {
+            routeMap.set(groupKey, {
                 route: tick.route,
                 climbers: [],
                 bestStars: 0,
                 photos: [],
                 notes: [],
+                style: tick.style,
+                leadStyle: tick.leadStyle,
             });
         }
 
-        const groupedRoute = routeMap.get(routeUrl)!;
+        const groupedRoute = routeMap.get(groupKey)!;
 
         if (tick.person?.name && !groupedRoute.climbers.includes(tick.person.name)) {
             groupedRoute.climbers.push(tick.person.name);
@@ -93,6 +98,11 @@ const routes = groupTicksByRoute(ticks);
                             )}
                             {groupedRoute.route?.routeType && (
                                 <span class="text-xs opacity-70">{groupedRoute.route.routeType}</span>
+                            )}
+                            {groupedRoute.style && (
+                                <span class="text-xs px-2 py-0.5 rounded bg-[var(--color-accent)]/20">
+                                    {groupedRoute.style}{groupedRoute.leadStyle ? ` · ${groupedRoute.leadStyle}` : ''}
+                                </span>
                             )}
                         </div>
                         {groupedRoute.route?.location && (
