@@ -155,13 +155,16 @@ Embed or link to an external service. Cheapest in development effort, but doesn'
 - MVP: CLI-based upload via `wrangler r2 object put` + manually add metadata in Strapi
 - Future: Build a custom Strapi plugin or standalone upload UI with drag-and-drop
 
+### Decisions
+
+- **Upload UX:** CLI-based via `wrangler r2 object put` for MVP. Web UI can come later.
+
 ### Open Questions
 
-1. **Upload UX priority:** Is CLI upload acceptable for MVP, or do you want a web UI from the start?
-2. **Gallery organization:** Flat list of galleries, or categories/albums/tags?
-3. **Existing pic-time content:** Do you want to migrate photos from pic-time, or start fresh?
-4. **EXIF data:** Should we extract and display EXIF metadata (camera, lens, settings)?
-5. **Download originals:** Should visitors be able to download full-res versions?
+1. **Gallery organization:** Flat list of galleries, or categories/albums/tags?
+2. **Existing pic-time content:** Do you want to migrate photos from pic-time, or start fresh?
+3. **EXIF data:** Should we extract and display EXIF metadata (camera, lens, settings)?
+4. **Download originals:** Should visitors be able to download full-res versions?
 
 ## Sources
 
