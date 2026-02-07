@@ -63,18 +63,7 @@ Serving flow:
     → e.g., /cdn-cgi/image/width=800,quality=80,format=auto/r2-public-url/photo.jpg
     → Cloudflare transforms on first request, caches at edge thereafter
 
-Strapi data model:
-  Gallery (collection type):
-    - title (text)
-    - slug (uid)
-    - description (richtext)
-    - date (date)
-    - coverImageKey (text) — R2 object key
-    - photos (JSON or repeatable component):
-        - key (text) — R2 object key
-        - caption (text)
-        - order (integer)
-    - post (relation → Post, optional) — attach gallery to blog post
+Strapi data model: see "Data Model" section below
 ```
 
 **Pros:**
@@ -130,6 +119,111 @@ Embed or link to an external service. Cheapest in development effort, but doesn'
 4. **Integration:** Same Cloudflare platform as the existing frontend, can reuse the Worker
 5. **Flexibility:** On-the-fly resizing means you can change layouts without regenerating images
 
+### Data Model
+
+Photos are a first-class collection type (not embedded components) so they can be queried
+independently for meta-galleries (e.g., "all climbing photos" across every gallery).
+
+**Photo** (collection type):
+```
+photo
+├── r2Key (text, required, unique) — R2 object key, e.g. "european-vacation/paris/DSC_1234.jpg"
+├── caption (text)
+├── dateTaken (datetime) — from EXIF or manual entry
+├── exif (JSON) — extracted at upload time
+│   {
+│     "camera": "Fujifilm X-T5",
+│     "lens": "XF 23mm f/1.4",
+│     "focalLength": "23mm",
+│     "aperture": "f/2.8",
+│     "shutterSpeed": "1/250",
+│     "iso": 400,
+│     "width": 6240,
+│     "height": 4160
+│   }
+├── tags (relation → Tag, many-to-many) — for meta-galleries
+├── scene (relation → Scene, many-to-one) — which scene this belongs to
+└── sortOrder (integer) — position within its scene
+```
+
+**Scene** (collection type):
+```
+scene
+├── title (text, required) — e.g., "Paris", "Swiss Alps"
+├── description (text)
+├── sortOrder (integer) — position within the gallery
+├── gallery (relation → Gallery, many-to-one)
+├── photos (relation → Photo, one-to-many)
+└── coverPhoto (relation → Photo, one-to-one, optional) — defaults to first photo
+```
+
+**Gallery** (collection type):
+```
+gallery
+├── title (text, required) — e.g., "European Vacation 2025"
+├── slug (uid, from title)
+├── description (richtext)
+├── date (date) — primary date for sorting
+├── scenes (relation → Scene, one-to-many)
+├── coverPhoto (relation → Photo, one-to-one) — hero/card image
+├── post (relation → Post, optional) — attach gallery to blog post
+└── tags (relation → Tag, many-to-many) — gallery-level tags
+```
+
+**Tag** (collection type):
+```
+tag
+├── name (text, required, unique) — e.g., "climbing", "portraits", "landscape"
+├── slug (uid, from name)
+├── description (text, optional)
+├── coverPhoto (relation → Photo, one-to-one, optional) — hero image for tag page
+├── photos (relation → Photo, many-to-many, inverse) — all photos with this tag
+└── galleries (relation → Gallery, many-to-many, inverse) — all galleries with this tag
+```
+
+**Post** (existing, add field):
+```
+post (existing)
+└── gallery (relation → Gallery, one-to-one, optional) — linked gallery
+```
+
+#### URL Structure
+
+| URL | Content | Data Source |
+|-----|---------|-------------|
+| `/photos` | Grid of all galleries | All galleries, sorted by date |
+| `/photos/[gallery-slug]` | Single gallery with scenes | Gallery → Scenes → Photos |
+| `/photos/tagged/[tag-slug]` | Meta-gallery: all photos with tag | Tag → Photos (across galleries) |
+| `/blog/[slug]` (existing) | Blog post, with optional gallery embed | Post → Gallery |
+
+#### EXIF Extraction
+
+EXIF data is extracted at upload time by the CLI upload script using `exiftool` or a Node.js
+library like `exif-reader`. The script:
+1. Reads EXIF from the original file
+2. Uploads the image to R2
+3. Outputs a JSON manifest with R2 keys + EXIF data for import into Strapi
+
+```bash
+# Example upload script pseudocode
+for file in gallery-folder/*; do
+  key="gallery-slug/scene-slug/$(basename "$file")"
+  wrangler r2 object put "hillpeople-photos/$key" --file "$file"
+  exiftool -json "$file" >> manifest.json
+done
+# Then import manifest.json into Strapi via API
+```
+
+#### Web-Res Downloads
+
+Photos are downloadable at web resolution (2048px long edge) via the CF transform URL.
+A download button in the lightbox links to:
+```
+/cdn-cgi/image/width=2048,quality=90,format=jpeg/{r2-public-url}/{key}
+```
+The `Content-Disposition` header can be set by a Worker to trigger a browser download
+rather than navigation.
+
 ### Suggested Implementation Plan
 
 **Phase 1: Infrastructure**
@@ -139,46 +233,51 @@ Embed or link to an external service. Cheapest in development effort, but doesn'
 - Build a simple upload endpoint or CLI script for batch uploads
 
 **Phase 2: Strapi Data Model**
-- Create a `Gallery` collection type with metadata fields (title, slug, description, date)
-- Create a `GalleryPhoto` repeatable component (r2Key, caption, order)
-- Add optional relation from `Gallery` → `Post` (and vice versa)
-- Add cache invalidation lifecycle hooks
+- Create `Photo` collection type (r2Key, caption, dateTaken, exif JSON, sortOrder)
+- Create `Scene` collection type (title, description, sortOrder, photos relation)
+- Create `Gallery` collection type (title, slug, description, date, scenes relation, coverPhoto)
+- Create `Tag` collection type (name, slug, photos M2M, galleries M2M)
+- Add optional `gallery` relation on existing `Post` type
+- Add cache invalidation lifecycle hooks for all new types
 
-**Phase 3: Frontend**
+**Phase 3: Upload Tooling**
+- Build CLI upload script: takes a folder of images, extracts EXIF, uploads to R2, outputs JSON manifest
+- Build Strapi import script: reads manifest, creates Photo entries via Strapi API
+- Document the workflow for adding a new gallery end-to-end
+
+**Phase 4: Frontend**
 - Build `/photos` index page (gallery grid with cover images)
-- Build `/photos/[slug]` gallery page (thumbnail grid + lightbox)
-- Extend existing `PhotoGallery.astro` or build a new full-page gallery component
-- Add gallery embed support to blog post pages (when a post has an attached gallery)
+- Build `/photos/[gallery-slug]` page (scenes with photo grids + lightbox)
+- Build `/photos/tagged/[tag-slug]` meta-gallery page
+- Lightbox with EXIF display panel and web-res download button
+- Add gallery embed/link on blog post pages (when post has an attached gallery)
 - Image URLs use CF transform syntax: `/cdn-cgi/image/w=800,q=80,f=auto/{r2-url}/{key}`
-
-**Phase 4: Upload Workflow**
-- MVP: CLI-based upload via `wrangler r2 object put` + manually add metadata in Strapi
-- Future: Build a custom Strapi plugin or standalone upload UI with drag-and-drop
+- Add pages to Lighthouse CI and cache invalidation config
 
 ### Decisions
 
 - **Upload UX:** CLI-based via `wrangler r2 object put` for MVP. Web UI can come later.
 - **pic-time migration:** Migrate via manual download. Pic-Time has no public export API. Download full-res zips from the Workflow tab gallery by gallery, then batch upload to R2 via CLI.
+- **Gallery organization:** Nested structure. Galleries contain Scenes (ordered sections). Tags provide cross-cutting meta-galleries (e.g., "all climbing photos", "all studio portraits").
+- **EXIF data:** Extracted at upload time, stored as JSON on each Photo. Viewable in the frontend (lightbox or photo detail).
+- **Downloads:** Web-resolution (2048px long edge, JPEG) via CF transform URL. Not full-res originals.
 
 ### Migration Plan (pic-time → R2)
 
 1. In pic-time admin: Gallery → Workflow → Send/Download Photos → Select All → download zip (full-res)
-2. Repeat for each gallery, organize into local folders by gallery name
-3. Batch upload to R2:
+2. Repeat for each gallery, organize into local folders by gallery name/scene
+3. Run upload script (extracts EXIF, uploads to R2, generates manifest):
    ```bash
-   for f in gallery-folder/*; do
-     wrangler r2 object put hillpeople-photos/gallery-slug/$(basename "$f") --file "$f"
+   for f in gallery-folder/scene-folder/*; do
+     key="gallery-slug/scene-slug/$(basename "$f")"
+     wrangler r2 object put "hillpeople-photos/$key" --file "$f"
+     exiftool -json "$f" >> manifest.json
    done
    ```
-4. Add gallery metadata in Strapi (title, slug, list of R2 keys)
-5. Verify galleries render on the new `/photos` pages
-6. Cancel pic-time subscription
-
-### Open Questions
-
-1. **Gallery organization:** Flat list of galleries, or categories/albums/tags?
-2. **EXIF data:** Should we extract and display EXIF metadata (camera, lens, settings)?
-3. **Download originals:** Should visitors be able to download full-res versions?
+4. Import manifest into Strapi via API (creates Photo entries with R2 keys + EXIF)
+5. Create Gallery and Scene entries in Strapi, link to Photos
+6. Verify galleries render on the new `/photos` pages
+7. Cancel pic-time subscription
 
 ## Sources
 
