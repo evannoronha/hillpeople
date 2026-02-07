@@ -87,7 +87,7 @@ The frontend uses a two-layer caching strategy to minimize Strapi API calls whil
 
 A Cloudflare Durable Object (`StrapiCache`) provides a single shared cache instance across all Worker isolates. Located in `frontend/src/durable-objects/StrapiCache.ts`.
 
-- **TTL**: 1 hour
+- **TTL**: 12 hours
 - **Scope**: Global — shared across all Worker isolates (unlike per-isolate caching)
 - **Storage**: SQLite-backed with in-memory read-through cache (persists across DO evictions)
 - **Skips caching**: 404s and empty responses
