@@ -5,8 +5,8 @@
  * Strapi API responses via the StrapiCache Durable Object.
  */
 
-// Cache TTL in milliseconds (1 hour)
-const CACHE_TTL_MS = 60 * 60 * 1000;
+// Cache TTL in milliseconds (12 hours)
+const CACHE_TTL_MS = 12 * 60 * 60 * 1000;
 
 interface CacheGetResponse {
   hit: boolean;
