@@ -151,9 +151,13 @@ export function parseCSV(csvText: string): ParsedTick[] {
  * Create a deterministic unique ID for a tick
  * Used for deduplication during sync
  */
-export function createTickId(personDocumentId: string, date: string, url: string): string {
+export function createTickId(personDocumentId: string, date: string, url: string, style?: string, leadStyle?: string): string {
   // Extract route ID from URL for a shorter, more stable ID
   const urlMatch = url.match(/\/route\/(\d+)\//);
   const routeId = urlMatch ? urlMatch[1] : url.replace(/[^a-zA-Z0-9]/g, '');
-  return `${personDocumentId}-${date}-${routeId}`;
+  // Include style to distinguish repeat ascents of the same route on the same day
+  const styleSuffix = [style, leadStyle].filter(Boolean).join('-');
+  return styleSuffix
+    ? `${personDocumentId}-${date}-${routeId}-${styleSuffix}`
+    : `${personDocumentId}-${date}-${routeId}`;
 }
