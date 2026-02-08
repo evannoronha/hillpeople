@@ -65,7 +65,6 @@ interface GroupedRoute {
         name: string;
         rating: string;
         routeType?: string;
-        pitches?: number;
         location?: string;
         mountainProjectUrl?: string;
     } | null;
@@ -83,6 +82,7 @@ interface GroupedRoute {
     notes: string[];
     style?: string;
     leadStyle?: string;
+    pitches?: number;
 }
 
 interface TicksByDate {
@@ -355,6 +355,11 @@ function renderTickList(ticksByDate: TicksByDate[], strapiUrl: string): void {
                                 ${groupedRoute.style ? `
                                     <span class="text-xs px-2 py-0.5 rounded bg-[var(--color-accent)]/20">
                                         ${groupedRoute.style}${groupedRoute.leadStyle ? ` · ${groupedRoute.leadStyle}` : ''}
+                                    </span>
+                                ` : ''}
+                                ${groupedRoute.pitches && groupedRoute.pitches > 1 ? `
+                                    <span class="text-xs px-2 py-0.5 rounded bg-[var(--color-header)]/20 font-semibold">
+                                        ${groupedRoute.pitches}p
                                     </span>
                                 ` : ''}
                             </div>

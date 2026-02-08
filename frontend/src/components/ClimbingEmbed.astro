@@ -23,6 +23,7 @@ interface GroupedRoute {
     notes: string[];
     style?: string;
     leadStyle?: string;
+    pitches: number;
 }
 
 function groupTicksByRoute(tickList: ClimbingTick[]): GroupedRoute[] {
@@ -41,10 +42,12 @@ function groupTicksByRoute(tickList: ClimbingTick[]): GroupedRoute[] {
                 notes: [],
                 style: tick.style,
                 leadStyle: tick.leadStyle,
+                pitches: 0,
             });
         }
 
         const groupedRoute = routeMap.get(groupKey)!;
+        groupedRoute.pitches += tick.pitches || 1;
 
         if (tick.person?.name && !groupedRoute.climbers.includes(tick.person.name)) {
             groupedRoute.climbers.push(tick.person.name);
@@ -102,6 +105,11 @@ const routes = groupTicksByRoute(ticks);
                             {groupedRoute.style && (
                                 <span class="text-xs px-2 py-0.5 rounded bg-[var(--color-accent)]/20">
                                     {groupedRoute.style}{groupedRoute.leadStyle ? ` · ${groupedRoute.leadStyle}` : ''}
+                                </span>
+                            )}
+                            {groupedRoute.pitches > 1 && (
+                                <span class="text-xs px-2 py-0.5 rounded bg-[var(--color-header)]/20 font-semibold">
+                                    {groupedRoute.pitches}p
                                 </span>
                             )}
                         </div>

@@ -561,12 +561,6 @@ export interface ApiClimbingRouteClimbingRoute
           editable: false;
         };
       }>;
-    pitches: Schema.Attribute.Integer &
-      Schema.Attribute.SetPluginOptions<{
-        'content-manager': {
-          editable: false;
-        };
-      }>;
     publishedAt: Schema.Attribute.DateTime;
     rating: Schema.Attribute.String &
       Schema.Attribute.SetPluginOptions<{
@@ -646,6 +640,13 @@ export interface ApiClimbingTickClimbingTick
         };
       }>;
     photos: Schema.Attribute.Media<'images', true>;
+    pitches: Schema.Attribute.Integer &
+      Schema.Attribute.SetPluginOptions<{
+        'content-manager': {
+          editable: false;
+        };
+      }> &
+      Schema.Attribute.DefaultTo<1>;
     publishedAt: Schema.Attribute.DateTime;
     route: Schema.Attribute.Relation<
       'manyToOne',

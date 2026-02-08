@@ -90,6 +90,15 @@
       "multiple": true,
       "allowedTypes": ["images"]
     },
+    "pitches": {
+      "type": "integer",
+      "default": 1,
+      "pluginOptions": {
+        "content-manager": {
+          "editable": false
+        }
+      }
+    },
     "mountainProjectTickId": {
       "type": "string",
       "unique": true,

@@ -111,8 +111,8 @@ export function computeTickStats(ticks: ClimbingTick[]): TickStats {
         const route = tick.route;
         if (!route) continue;
 
-        // Count pitches
-        const pitches = route.pitches || 1;
+        // Count pitches (from the tick, not the route)
+        const pitches = tick.pitches || 1;
         stats.totalPitches += pitches;
 
         // Track unique climbing days
@@ -228,7 +228,7 @@ export function computeGoalProgress(goal: ClimbingGoal, ticks: ClimbingTick[]): 
         case 'lead_pitches':
             current = filteredTicks
                 .filter(t => t.style?.toLowerCase() === 'lead')
-                .reduce((sum, t) => sum + (t.route?.pitches || 1), 0);
+                .reduce((sum, t) => sum + (t.pitches || 1), 0);
             break;
 
         case 'lead_climbs':

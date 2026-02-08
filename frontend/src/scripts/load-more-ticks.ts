@@ -17,6 +17,7 @@ interface TickData {
     tickDate: string;
     style: string;
     leadStyle: string;
+    pitches: number;
     yourStars: number;
     route: TickRoute | null;
     person: TickPerson | null;
@@ -28,6 +29,7 @@ interface GroupedRoute {
     bestStars: number;
     style?: string;
     leadStyle?: string;
+    pitches: number;
 }
 
 interface ApiResponse {
@@ -63,10 +65,12 @@ function groupTicksByRoute(ticks: TickData[]): Map<string, GroupedRoute> {
                 bestStars: 0,
                 style: tick.style,
                 leadStyle: tick.leadStyle,
+                pitches: 0,
             });
         }
 
         const groupedRoute = routeMap.get(groupKey)!;
+        groupedRoute.pitches += tick.pitches || 1;
 
         if (tick.person?.name && !groupedRoute.climbers.includes(tick.person.name)) {
             groupedRoute.climbers.push(tick.person.name);
@@ -100,6 +104,7 @@ function createRouteHtml(groupedRoute: GroupedRoute): string {
                     ${rating ? `<span class="text-sm font-mono">${rating}</span>` : ""}
                     ${routeType ? `<span class="text-xs opacity-70">${routeType}</span>` : ""}
                     ${groupedRoute.style ? `<span class="text-xs px-2 py-0.5 rounded bg-[var(--color-accent)]/20">${groupedRoute.style}${groupedRoute.leadStyle ? ` · ${groupedRoute.leadStyle}` : ""}</span>` : ""}
+                    ${groupedRoute.pitches > 1 ? `<span class="text-xs px-2 py-0.5 rounded bg-[var(--color-header)]/20 font-semibold">${groupedRoute.pitches}p</span>` : ""}
                 </div>
                 ${location ? `<p class="text-sm truncate">${location}</p>` : ""}
                 ${climbers ? `<p class="text-xs mt-1 opacity-70">${climbers}</p>` : ""}
