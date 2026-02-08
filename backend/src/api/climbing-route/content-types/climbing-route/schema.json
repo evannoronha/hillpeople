@@ -70,14 +70,6 @@
         }
       }
     },
-    "pitches": {
-      "type": "integer",
-      "pluginOptions": {
-        "content-manager": {
-          "editable": false
-        }
-      }
-    },
     "length": {
       "type": "integer",
       "pluginOptions": {

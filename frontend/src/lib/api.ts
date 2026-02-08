@@ -220,7 +220,6 @@ export interface ClimbingRoute {
     routeType: string;
     location: string;
     avgStars: number;
-    pitches: number;
     length: number;
     mountainProjectUrl: string;
 }
@@ -252,6 +251,7 @@ export interface ClimbingTick {
     tickDate: string;
     style: string;
     leadStyle: string;
+    pitches: number;
     yourStars: number;
     yourRating: string;
     mpNotes: string;

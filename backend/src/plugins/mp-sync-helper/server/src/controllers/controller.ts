@@ -105,7 +105,6 @@ async function syncPersonTicks(strapi: Core.Strapi, personDocumentId: string): P
             routeType: tick.routeType,
             location: tick.location,
             avgStars: tick.avgStars,
-            pitches: tick.pitches,
             length: tick.length,
           }
         });
@@ -125,6 +124,7 @@ async function syncPersonTicks(strapi: Core.Strapi, personDocumentId: string): P
             yourStars: tick.yourStars,
             yourRating: tick.yourRating,
             mpNotes: tick.notes,
+            pitches: tick.pitches,
           } as any
         });
         updated++;
@@ -140,6 +140,7 @@ async function syncPersonTicks(strapi: Core.Strapi, personDocumentId: string): P
             yourRating: tick.yourRating,
             mpNotes: tick.notes,
             notes: tick.notes,
+            pitches: tick.pitches,
             mountainProjectTickId: tickId,
           } as any
         });

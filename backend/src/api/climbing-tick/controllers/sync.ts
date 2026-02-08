@@ -126,7 +126,6 @@ async function syncPersonTicks(strapi: Core.Strapi, personDocumentId: string): P
             routeType: tick.routeType,
             location: tick.location,
             avgStars: tick.avgStars,
-            pitches: tick.pitches,
             length: tick.length,
           }
         });
@@ -142,7 +141,7 @@ async function syncPersonTicks(strapi: Core.Strapi, personDocumentId: string): P
       });
 
       if (existingTick) {
-        // Update only MP-sourced fields (yourStars, yourRating, mpNotes)
+        // Update only MP-sourced fields (yourStars, yourRating, mpNotes, pitches)
         // Preserve local notes and photos
         await strapi.documents('api::climbing-tick.climbing-tick').update({
           documentId: existingTick.documentId,
@@ -150,7 +149,7 @@ async function syncPersonTicks(strapi: Core.Strapi, personDocumentId: string): P
             yourStars: tick.yourStars,
             yourRating: tick.yourRating,
             mpNotes: tick.notes,
-            // Don't update: notes, photos (local overrides)
+            pitches: tick.pitches,
           }
         });
         updated++;
@@ -167,6 +166,7 @@ async function syncPersonTicks(strapi: Core.Strapi, personDocumentId: string): P
             yourRating: tick.yourRating,
             mpNotes: tick.notes,
             notes: tick.notes, // Default to MP notes, can be overridden
+            pitches: tick.pitches,
             mountainProjectTickId: tickId,
           }
         });

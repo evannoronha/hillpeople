@@ -85,6 +85,7 @@ interface GroupedRoute {
     notes: string[];
     style?: string;
     leadStyle?: string;
+    pitches: number;
 }
 
 interface TicksByDate {
@@ -123,7 +124,7 @@ function computeTickStats(ticks: ClimbingTick[]): TickStats {
         const route = tick.route;
         if (!route) continue;
 
-        const pitches = route.pitches || 1;
+        const pitches = tick.pitches || 1;
         stats.totalPitches += pitches;
 
         if (tick.tickDate) uniqueDates.add(tick.tickDate);
@@ -205,7 +206,7 @@ function computeGoalProgress(goal: ClimbingGoal, ticks: ClimbingTick[]): GoalPro
         case 'lead_pitches':
             current = filteredTicks
                 .filter(t => t.style?.toLowerCase() === 'lead')
-                .reduce((sum, t) => sum + (t.route?.pitches || 1), 0);
+                .reduce((sum, t) => sum + (t.pitches || 1), 0);
             break;
         case 'lead_climbs':
             current = filteredTicks.filter(t => t.style?.toLowerCase() === 'lead').length;
@@ -250,10 +251,12 @@ function groupTicksByDateAndRoute(ticks: ClimbingTick[]): TicksByDate[] {
                 notes: [],
                 style: tick.style,
                 leadStyle: tick.leadStyle,
+                pitches: 0,
             });
         }
 
         const groupedRoute = dateRoutes.get(groupKey)!;
+        groupedRoute.pitches += tick.pitches || 1;
 
         if (tick.person?.name && !groupedRoute.climbers.includes(tick.person.name)) {
             groupedRoute.climbers.push(tick.person.name);
