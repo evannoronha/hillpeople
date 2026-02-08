@@ -45,7 +45,7 @@ interface SyncResponse {
 const HomePage = () => {
   const [people, setPeople] = useState<Person[]>([]);
   const [loading, setLoading] = useState(true);
-  const [syncing, setSyncing] = useState(false);
+  const [syncing, setSyncing] = useState<'full' | 'quick' | null>(null);
   const [syncResult, setSyncResult] = useState<SyncResponse | null>(null);
   const [error, setError] = useState<string | null>(null);
 
@@ -67,21 +67,21 @@ const HomePage = () => {
     fetchPeople();
   }, []);
 
-  const handleSync = async () => {
+  const handleSync = async (mode: 'full' | 'quick') => {
     try {
-      setSyncing(true);
+      setSyncing(mode);
       setSyncResult(null);
       setError(null);
 
-      const { data } = await post('/mp-sync-helper/sync-all');
+      const url = mode === 'quick' ? '/mp-sync-helper/quick-sync' : '/mp-sync-helper/sync-all';
+      const { data } = await post(url);
       setSyncResult(data as SyncResponse);
 
-      // Refresh people to show updated sync dates
       await fetchPeople();
     } catch (err: any) {
       setError(err.response?.data?.error?.message || err.message || 'Sync failed');
     } finally {
-      setSyncing(false);
+      setSyncing(null);
     }
   };
 
@@ -103,14 +103,25 @@ const HomePage = () => {
         </Box>
 
         <Box paddingBottom={6}>
-          <Button
-            onClick={handleSync}
-            loading={syncing}
-            disabled={syncing || loading}
-            size="L"
-          >
-            {syncing ? 'Syncing...' : 'Sync All Climbing Data'}
-          </Button>
+          <Flex gap={4}>
+            <Button
+              onClick={() => handleSync('quick')}
+              loading={syncing === 'quick'}
+              disabled={!!syncing || loading}
+              size="L"
+            >
+              {syncing === 'quick' ? 'Syncing...' : 'Quick Sync (Last 12 Months)'}
+            </Button>
+            <Button
+              onClick={() => handleSync('full')}
+              loading={syncing === 'full'}
+              disabled={!!syncing || loading}
+              size="L"
+              variant="secondary"
+            >
+              {syncing === 'full' ? 'Syncing...' : 'Full Sync (All Time)'}
+            </Button>
+          </Flex>
         </Box>
 
         {error && (
