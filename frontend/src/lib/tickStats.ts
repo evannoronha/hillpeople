@@ -137,19 +137,21 @@ export function computeTickStats(ticks: ClimbingTick[]): TickStats {
             stats.leadPitches += pitches;
         }
 
-        // Lead style stats - use isRedpointSend which checks lead + clean send
+        // Lead style stats - only count lead ticks
         const isRedpoint = isRedpointSend(tick);
-        const leadStyle = tick.leadStyle?.toLowerCase();
-        if (leadStyle === 'onsight') {
-            stats.onsightCount++;
-            stats.flashCount++;
-            stats.redpointCount++;
-        } else if (leadStyle === 'flash') {
-            stats.flashCount++;
-            stats.redpointCount++;
-        } else if (isRedpoint) {
-            // Explicit redpoint or lead with no leadStyle
-            stats.redpointCount++;
+        if (isLead) {
+            const leadStyle = tick.leadStyle?.toLowerCase();
+            if (leadStyle === 'onsight') {
+                stats.onsightCount++;
+                stats.flashCount++;
+                stats.redpointCount++;
+            } else if (leadStyle === 'flash') {
+                stats.flashCount++;
+                stats.redpointCount++;
+            } else if (isRedpoint) {
+                // Explicit redpoint or lead with no leadStyle
+                stats.redpointCount++;
+            }
         }
 
         // Grade distribution (all routes)
@@ -270,7 +272,7 @@ export function computeGoalProgress(goal: ClimbingGoal, ticks: ClimbingTick[]): 
 
         case 'onsights':
             current = filteredTicks
-                .filter(t => t.leadStyle?.toLowerCase() === 'onsight')
+                .filter(t => t.style?.toLowerCase() === 'lead' && t.leadStyle?.toLowerCase() === 'onsight')
                 .length;
             break;
 

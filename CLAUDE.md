@@ -63,6 +63,14 @@ npm run upgrade    # Upgrade Strapi to latest version
 - **`about/`** - Single type for the about page
 - **`post/middlewares/postAttributionMiddleware.ts`** - Auto-populates `createdBy`/`updatedBy` fields
 
+### Climbing Data Model
+
+**Ticks** (`climbing-tick`): Each tick is one logged ascent with `style` (Lead/TR/Follow), `leadStyle` (Onsight/Flash/Redpoint/Fell\Hung/etc.), `pitches` (per-tick, not per-route), and `tickDate`. Ticks are synced from Mountain Project CSV via the `mp-sync-helper` plugin.
+
+**Lead style hierarchy**: Onsight > Flash > Redpoint. All onsights count as flashes and redpoints. All flashes count as redpoints. Leads with no `leadStyle` are assumed redpoints. The `isRedpointSend()` helper in `lib/tickStats.ts` encodes this logic.
+
+**Goals** (`climbing-goal`): Goals have a `goalType` enum (`lead_pitches`, `lead_climbs`, `redpoints`, `onsights`, `grade_target`) plus optional `minGrade` and `routeType` filters. The `minGrade`/`routeType` filters apply universally to all goal types (not just `grade_target`). Goal progress is computed in `computeGoalProgress()` which exists in both `lib/tickStats.ts` (SSR) and `pages/api/ticklist-data.ts` (API) — these must be kept in sync.
+
 ### Preview Mode
 Strapi admin generates preview URLs like `/blog/{slug}?status=draft`. The frontend checks for `status=draft` query param to fetch and render draft content.
 

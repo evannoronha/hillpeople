@@ -142,16 +142,18 @@ function computeTickStats(ticks: ClimbingTick[]): TickStats {
         }
 
         const isRedpoint = isRedpointSend(tick);
-        const leadStyle = tick.leadStyle?.toLowerCase();
-        if (leadStyle === 'onsight') {
-            stats.onsightCount++;
-            stats.flashCount++;
-            stats.redpointCount++;
-        } else if (leadStyle === 'flash') {
-            stats.flashCount++;
-            stats.redpointCount++;
-        } else if (isRedpoint) {
-            stats.redpointCount++;
+        if (isLead) {
+            const leadStyle = tick.leadStyle?.toLowerCase();
+            if (leadStyle === 'onsight') {
+                stats.onsightCount++;
+                stats.flashCount++;
+                stats.redpointCount++;
+            } else if (leadStyle === 'flash') {
+                stats.flashCount++;
+                stats.redpointCount++;
+            } else if (isRedpoint) {
+                stats.redpointCount++;
+            }
         }
 
         const grade = extractGrade(route.rating);
@@ -236,7 +238,7 @@ function computeGoalProgress(goal: ClimbingGoal, ticks: ClimbingTick[]): GoalPro
             current = filteredTicks.filter(t => isRedpointSend(t)).length;
             break;
         case 'onsights':
-            current = filteredTicks.filter(t => t.leadStyle?.toLowerCase() === 'onsight').length;
+            current = filteredTicks.filter(t => t.style?.toLowerCase() === 'lead' && t.leadStyle?.toLowerCase() === 'onsight').length;
             break;
         case 'grade_target':
             current = filteredTicks.filter(t => isRedpointSend(t)).length;
