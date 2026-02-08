@@ -109,6 +109,9 @@ async function syncPersonTicks(strapi: Core.Strapi, personDocumentId: string): P
   let updated = 0;
   let skipped = 0;
 
+  // Track occurrences of identical ticks (same route, date, style) for unique IDs
+  const tickIdCounts = new Map<string, number>();
+
   for (const tick of ticks) {
     try {
       // Upsert route
@@ -133,7 +136,11 @@ async function syncPersonTicks(strapi: Core.Strapi, personDocumentId: string): P
       }
 
       // Create unique tick ID for deduplication
-      const tickId = createTickId(personDocumentId, tick.date, tick.url, tick.style, tick.leadStyle);
+      // Track occurrence count to distinguish identical ticks (same route, date, style)
+      const baseTickId = createTickId(personDocumentId, tick.date, tick.url, tick.style, tick.leadStyle);
+      const occurrence = (tickIdCounts.get(baseTickId) || 0) + 1;
+      tickIdCounts.set(baseTickId, occurrence);
+      const tickId = createTickId(personDocumentId, tick.date, tick.url, tick.style, tick.leadStyle, occurrence);
 
       // Check if tick exists
       const existingTick = await strapi.documents('api::climbing-tick.climbing-tick').findFirst({
