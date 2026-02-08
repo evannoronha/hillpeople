@@ -134,7 +134,7 @@ async function syncPersonTicks(strapi: Core.Strapi, personDocumentId: string): P
       }
 
       // Create unique tick ID for deduplication
-      const tickId = createTickId(personDocumentId, tick.date, tick.url);
+      const tickId = createTickId(personDocumentId, tick.date, tick.url, tick.style, tick.leadStyle);
 
       // Check if tick exists
       const existingTick = await strapi.documents('api::climbing-tick.climbing-tick').findFirst({

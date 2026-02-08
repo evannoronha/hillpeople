@@ -112,7 +112,7 @@ async function syncPersonTicks(strapi: Core.Strapi, personDocumentId: string): P
         strapi.log.debug(`Created route: ${tick.route}`);
       }
 
-      const tickId = createTickId(personDocumentId, tick.date, tick.url);
+      const tickId = createTickId(personDocumentId, tick.date, tick.url, tick.style, tick.leadStyle);
 
       const existingTick = await strapi.documents('api::climbing-tick.climbing-tick').findFirst({
         filters: { mountainProjectTickId: tickId }
