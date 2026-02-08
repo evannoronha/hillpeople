@@ -152,12 +152,13 @@ export function parseCSV(csvText: string): ParsedTick[] {
  * Used for deduplication during sync.
  * Includes style to distinguish different ascent types of the same route on the same day.
  */
-export function createTickId(personDocumentId: string, date: string, url: string, style?: string, leadStyle?: string): string {
+export function createTickId(personDocumentId: string, date: string, url: string, style?: string, leadStyle?: string, occurrence?: number): string {
   // Extract route ID from URL for a shorter, more stable ID
   const urlMatch = url.match(/\/route\/(\d+)\//);
   const routeId = urlMatch ? urlMatch[1] : url.replace(/[^a-zA-Z0-9]/g, '');
   const parts = [personDocumentId, date, routeId];
   const styleSuffix = [style, leadStyle].filter(Boolean).join('-');
   if (styleSuffix) parts.push(styleSuffix);
+  if (occurrence && occurrence > 1) parts.push(String(occurrence));
   return parts.join('-');
 }
