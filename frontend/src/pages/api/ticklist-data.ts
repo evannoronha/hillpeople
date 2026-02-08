@@ -48,6 +48,12 @@ function isGradeAtOrAbove(rating: string, minGrade: string): boolean {
     return ratingValue >= minValue;
 }
 
+function isRedpointSend(tick: ClimbingTick): boolean {
+    if (tick.style?.toLowerCase() !== 'lead') return false;
+    const leadStyle = tick.leadStyle?.toLowerCase();
+    return !leadStyle || leadStyle === 'redpoint' || leadStyle === 'onsight' || leadStyle === 'flash';
+}
+
 interface TickStats {
     totalTicks: number;
     totalPitches: number;
@@ -135,11 +141,18 @@ function computeTickStats(ticks: ClimbingTick[]): TickStats {
             stats.leadPitches += pitches;
         }
 
+        const isRedpoint = isRedpointSend(tick);
         const leadStyle = tick.leadStyle?.toLowerCase();
-        const isRedpoint = leadStyle === 'redpoint' || leadStyle === 'onsight' || leadStyle === 'flash' || (isLead && !leadStyle);
-        if (leadStyle === 'redpoint') stats.redpointCount++;
-        if (leadStyle === 'onsight') stats.onsightCount++;
-        if (leadStyle === 'flash') stats.flashCount++;
+        if (leadStyle === 'onsight') {
+            stats.onsightCount++;
+            stats.flashCount++;
+            stats.redpointCount++;
+        } else if (leadStyle === 'flash') {
+            stats.flashCount++;
+            stats.redpointCount++;
+        } else if (isRedpoint) {
+            stats.redpointCount++;
+        }
 
         const grade = extractGrade(route.rating);
         stats.byGrade[grade] = (stats.byGrade[grade] || 0) + 1;
@@ -202,6 +215,14 @@ function computeGoalProgress(goal: ClimbingGoal, ticks: ClimbingTick[]): GoalPro
         return tickYear === goal.year;
     });
 
+    // Apply minGrade and routeType filters when set on the goal (applies to all goal types)
+    if (goal.minGrade) {
+        filteredTicks = filteredTicks.filter(t => isGradeAtOrAbove(t.route?.rating || '', goal.minGrade!));
+    }
+    if (goal.routeType) {
+        filteredTicks = filteredTicks.filter(t => t.route?.routeType?.toLowerCase() === goal.routeType!.toLowerCase());
+    }
+
     switch (goal.goalType) {
         case 'lead_pitches':
             current = filteredTicks
@@ -212,17 +233,13 @@ function computeGoalProgress(goal: ClimbingGoal, ticks: ClimbingTick[]): GoalPro
             current = filteredTicks.filter(t => t.style?.toLowerCase() === 'lead').length;
             break;
         case 'redpoints':
-            current = filteredTicks.filter(t => t.leadStyle?.toLowerCase() === 'redpoint').length;
+            current = filteredTicks.filter(t => isRedpointSend(t)).length;
             break;
         case 'onsights':
             current = filteredTicks.filter(t => t.leadStyle?.toLowerCase() === 'onsight').length;
             break;
         case 'grade_target':
-            current = filteredTicks.filter(t => {
-                if (goal.minGrade && !isGradeAtOrAbove(t.route?.rating || '', goal.minGrade)) return false;
-                if (goal.routeType && t.route?.routeType?.toLowerCase() !== goal.routeType.toLowerCase()) return false;
-                return true;
-            }).length;
+            current = filteredTicks.filter(t => isRedpointSend(t)).length;
             break;
     }
 

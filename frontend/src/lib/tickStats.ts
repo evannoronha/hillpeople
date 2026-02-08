@@ -79,6 +79,16 @@ export function extractGrade(rating: string): string {
 }
 
 /**
+ * Check if a tick counts as a redpoint (clean lead send).
+ * Onsights and flashes are also redpoints. Leads with no leadStyle are assumed redpoints.
+ */
+export function isRedpointSend(tick: ClimbingTick): boolean {
+    if (tick.style?.toLowerCase() !== 'lead') return false;
+    const leadStyle = tick.leadStyle?.toLowerCase();
+    return !leadStyle || leadStyle === 'redpoint' || leadStyle === 'onsight' || leadStyle === 'flash';
+}
+
+/**
  * Compute comprehensive stats from a list of climbing ticks
  */
 export function computeTickStats(ticks: ClimbingTick[]): TickStats {
@@ -127,13 +137,20 @@ export function computeTickStats(ticks: ClimbingTick[]): TickStats {
             stats.leadPitches += pitches;
         }
 
-        // Lead style stats
+        // Lead style stats - use isRedpointSend which checks lead + clean send
+        const isRedpoint = isRedpointSend(tick);
         const leadStyle = tick.leadStyle?.toLowerCase();
-        // isRedpoint includes redpoint/onsight/flash, plus leads with no lead style specified
-        const isRedpoint = leadStyle === 'redpoint' || leadStyle === 'onsight' || leadStyle === 'flash' || (isLead && !leadStyle);
-        if (leadStyle === 'redpoint') stats.redpointCount++;
-        if (leadStyle === 'onsight') stats.onsightCount++;
-        if (leadStyle === 'flash') stats.flashCount++;
+        if (leadStyle === 'onsight') {
+            stats.onsightCount++;
+            stats.flashCount++;
+            stats.redpointCount++;
+        } else if (leadStyle === 'flash') {
+            stats.flashCount++;
+            stats.redpointCount++;
+        } else if (isRedpoint) {
+            // Explicit redpoint or lead with no leadStyle
+            stats.redpointCount++;
+        }
 
         // Grade distribution (all routes)
         const grade = extractGrade(route.rating);
@@ -224,6 +241,14 @@ export function computeGoalProgress(goal: ClimbingGoal, ticks: ClimbingTick[]): 
         return tickYear === goal.year;
     });
 
+    // Apply minGrade and routeType filters when set on the goal (applies to all goal types)
+    if (goal.minGrade) {
+        filteredTicks = filteredTicks.filter(t => isGradeAtOrAbove(t.route?.rating || '', goal.minGrade!));
+    }
+    if (goal.routeType) {
+        filteredTicks = filteredTicks.filter(t => t.route?.routeType?.toLowerCase() === goal.routeType!.toLowerCase());
+    }
+
     switch (goal.goalType) {
         case 'lead_pitches':
             current = filteredTicks
@@ -239,7 +264,7 @@ export function computeGoalProgress(goal: ClimbingGoal, ticks: ClimbingTick[]): 
 
         case 'redpoints':
             current = filteredTicks
-                .filter(t => t.leadStyle?.toLowerCase() === 'redpoint')
+                .filter(t => isRedpointSend(t))
                 .length;
             break;
 
@@ -251,17 +276,7 @@ export function computeGoalProgress(goal: ClimbingGoal, ticks: ClimbingTick[]): 
 
         case 'grade_target':
             current = filteredTicks
-                .filter(t => {
-                    // Check grade requirement
-                    if (goal.minGrade && !isGradeAtOrAbove(t.route?.rating || '', goal.minGrade)) {
-                        return false;
-                    }
-                    // Check route type requirement
-                    if (goal.routeType && t.route?.routeType?.toLowerCase() !== goal.routeType.toLowerCase()) {
-                        return false;
-                    }
-                    return true;
-                })
+                .filter(t => isRedpointSend(t))
                 .length;
             break;
     }
