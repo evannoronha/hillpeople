@@ -20,29 +20,46 @@ const controller = ({ strapi }: { strapi: Core.Strapi }) => ({
 
   async syncAll(ctx) {
     try {
-      const people = await strapi.documents('api::person.person').findMany({
-        filters: {
-          mountainProjectUserId: { $notNull: true, $ne: '' }
-        }
-      });
-
-      const results: Array<{ person: string; result: SyncResult }> = [];
-
-      for (const person of people) {
-        strapi.log.info(`Syncing ticks for ${person.name}`);
-        const result = await syncPersonTicks(strapi, person.documentId);
-        results.push({ person: person.name, result });
-      }
-
+      const results = await syncAllPeople(strapi);
       ctx.body = { success: true, results };
     } catch (error: any) {
       strapi.log.error('Sync all failed', { error });
       ctx.throw(500, 'Sync failed', { error: error.message });
     }
   },
+
+  async quickSync(ctx) {
+    const months = parseInt(ctx.query.months as string) || 12;
+    try {
+      const results = await syncAllPeople(strapi, months);
+      ctx.body = { success: true, months, results };
+    } catch (error: any) {
+      strapi.log.error('Quick sync failed', { error });
+      ctx.throw(500, 'Quick sync failed', { error: error.message });
+    }
+  },
 });
 
-async function syncPersonTicks(strapi: Core.Strapi, personDocumentId: string): Promise<SyncResult> {
+async function syncAllPeople(strapi: Core.Strapi, months?: number): Promise<Array<{ person: string; result: SyncResult }>> {
+  const people = await strapi.documents('api::person.person').findMany({
+    filters: {
+      mountainProjectUserId: { $notNull: true, $ne: '' }
+    }
+  });
+
+  const results: Array<{ person: string; result: SyncResult }> = [];
+
+  for (const person of people) {
+    const label = months ? `Quick syncing (last ${months} months)` : 'Syncing';
+    strapi.log.info(`${label} ticks for ${person.name}`);
+    const result = await syncPersonTicks(strapi, person.documentId, months);
+    results.push({ person: person.name, result });
+  }
+
+  return results;
+}
+
+async function syncPersonTicks(strapi: Core.Strapi, personDocumentId: string, months?: number): Promise<SyncResult> {
   const person = await strapi.documents('api::person.person').findOne({
     documentId: personDocumentId,
   });
@@ -82,8 +99,17 @@ async function syncPersonTicks(strapi: Core.Strapi, personDocumentId: string): P
     throw fetchError;
   }
 
-  const ticks = parseCSV(csvText);
+  let ticks = parseCSV(csvText);
   strapi.log.info(`Parsed ${ticks.length} ticks from CSV`);
+
+  if (months) {
+    const cutoff = new Date();
+    cutoff.setMonth(cutoff.getMonth() - months);
+    const cutoffStr = cutoff.toISOString().slice(0, 10);
+    const before = ticks.length;
+    ticks = ticks.filter(t => t.date >= cutoffStr);
+    strapi.log.info(`Filtered to ${ticks.length} ticks (from ${before}) within last ${months} months`);
+  }
 
   let created = 0;
   let updated = 0;
