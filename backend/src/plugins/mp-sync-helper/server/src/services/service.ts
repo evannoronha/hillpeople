@@ -26,7 +26,7 @@ const service = ({ strapi }: { strapi: Core.Strapi }) => ({
     const results: Array<{ person: string; result: SyncResult }> = [];
 
     // Suppress per-tick cache invalidation during bulk sync;
-    // the caller (cron or controller) handles a single invalidation at the end.
+    // a single invalidation fires at the end if anything changed.
     (globalThis as any).__suppressCacheInvalidation = true;
     try {
       for (const person of people) {
@@ -41,6 +41,32 @@ const service = ({ strapi }: { strapi: Core.Strapi }) => ({
 
     const elapsed = ((Date.now() - start) / 1000).toFixed(1);
     strapi.log.info(`Sync completed in ${elapsed}s (${people.length} people)`);
+
+    // Single cache invalidation if any ticks were created or updated
+    const anyChanges = results.some(({ result }) => result.created > 0 || result.updated > 0);
+    if (anyChanges) {
+      const revalidateUrl = process.env.FRONTEND_REVALIDATE_URL;
+      const revalidateSecret = process.env.REVALIDATE_SECRET;
+      if (revalidateUrl && revalidateSecret) {
+        try {
+          const res = await fetch(revalidateUrl, {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+              'Authorization': `Bearer ${revalidateSecret}`,
+            },
+            body: JSON.stringify({ model: 'climbing-tick' }),
+          });
+          if (res.ok) {
+            strapi.log.info('Cache invalidated for climbing-tick');
+          } else {
+            strapi.log.warn(`Cache invalidation failed: ${res.status}`);
+          }
+        } catch (err: any) {
+          strapi.log.error(`Cache invalidation error: ${err.message}`);
+        }
+      }
+    }
 
     return results;
   },
