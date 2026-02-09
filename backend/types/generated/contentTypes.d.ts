@@ -859,6 +859,44 @@ export interface ApiPersonPerson extends Struct.CollectionTypeSchema {
   };
 }
 
+export interface ApiPhotoAlbumPhotoAlbum extends Struct.CollectionTypeSchema {
+  collectionName: 'photo_albums';
+  info: {
+    description: 'A collection of photos organized into an album';
+    displayName: 'Photo Album';
+    pluralName: 'photo-albums';
+    singularName: 'photo-album';
+  };
+  options: {
+    draftAndPublish: true;
+  };
+  attributes: {
+    coverImageHeight: Schema.Attribute.Integer;
+    coverImagePath: Schema.Attribute.String;
+    coverImageWidth: Schema.Attribute.Integer;
+    createdAt: Schema.Attribute.DateTime;
+    createdBy: Schema.Attribute.Relation<'oneToOne', 'admin::user'> &
+      Schema.Attribute.Private;
+    date: Schema.Attribute.Date & Schema.Attribute.Required;
+    description: Schema.Attribute.Text;
+    locale: Schema.Attribute.String & Schema.Attribute.Private;
+    localizations: Schema.Attribute.Relation<
+      'oneToMany',
+      'api::photo-album.photo-album'
+    > &
+      Schema.Attribute.Private;
+    photos: Schema.Attribute.Component<'gallery.photo', true>;
+    post: Schema.Attribute.Relation<'manyToOne', 'api::post.post'>;
+    publishedAt: Schema.Attribute.DateTime;
+    slug: Schema.Attribute.UID<'title'> & Schema.Attribute.Required;
+    sortOrder: Schema.Attribute.Integer & Schema.Attribute.DefaultTo<0>;
+    title: Schema.Attribute.String & Schema.Attribute.Required;
+    updatedAt: Schema.Attribute.DateTime;
+    updatedBy: Schema.Attribute.Relation<'oneToOne', 'admin::user'> &
+      Schema.Attribute.Private;
+  };
+}
+
 export interface ApiPostPost extends Struct.CollectionTypeSchema {
   collectionName: 'posts';
   info: {
@@ -882,6 +920,10 @@ export interface ApiPostPost extends Struct.CollectionTypeSchema {
       Schema.Attribute.Private;
     newsletterSent: Schema.Attribute.Boolean &
       Schema.Attribute.DefaultTo<false>;
+    photoAlbums: Schema.Attribute.Relation<
+      'oneToMany',
+      'api::photo-album.photo-album'
+    >;
     publishedAt: Schema.Attribute.DateTime;
     publishedDate: Schema.Attribute.DateTime;
     richContent: Schema.Attribute.RichText &
@@ -1529,6 +1571,7 @@ declare module '@strapi/strapi' {
       'api::newsletter-send.newsletter-send': ApiNewsletterSendNewsletterSend;
       'api::newsletter-settings.newsletter-settings': ApiNewsletterSettingsNewsletterSettings;
       'api::person.person': ApiPersonPerson;
+      'api::photo-album.photo-album': ApiPhotoAlbumPhotoAlbum;
       'api::post.post': ApiPostPost;
       'api::privacy-policy.privacy-policy': ApiPrivacyPolicyPrivacyPolicy;
       'api::site-settings.site-settings': ApiSiteSettingsSiteSettings;
