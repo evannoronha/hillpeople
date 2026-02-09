@@ -16,6 +16,7 @@ const service = ({ strapi }: { strapi: Core.Strapi }) => ({
   },
 
   async syncAllPeople(months?: number): Promise<Array<{ person: string; result: SyncResult }>> {
+    const start = Date.now();
     const people = await strapi.documents('api::person.person').findMany({
       filters: {
         mountainProjectUserId: { $notNull: true, $ne: '' }
@@ -30,6 +31,9 @@ const service = ({ strapi }: { strapi: Core.Strapi }) => ({
       const result = await this.syncPersonTicks(person.documentId, months);
       results.push({ person: person.name, result });
     }
+
+    const elapsed = ((Date.now() - start) / 1000).toFixed(1);
+    strapi.log.info(`Sync completed in ${elapsed}s (${people.length} people)`);
 
     return results;
   },
