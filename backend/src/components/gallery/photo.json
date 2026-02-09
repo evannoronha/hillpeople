@@ -1,0 +1,52 @@
+{
+  "collectionName": "components_gallery_photos",
+  "info": {
+    "displayName": "Gallery Photo",
+    "icon": "picture"
+  },
+  "attributes": {
+    "r2Path": {
+      "type": "string",
+      "required": true
+    },
+    "width": {
+      "type": "integer",
+      "required": true
+    },
+    "height": {
+      "type": "integer",
+      "required": true
+    },
+    "caption": {
+      "type": "text"
+    },
+    "altText": {
+      "type": "string"
+    },
+    "sortOrder": {
+      "type": "integer",
+      "default": 0
+    },
+    "cameraMake": {
+      "type": "string"
+    },
+    "cameraModel": {
+      "type": "string"
+    },
+    "lens": {
+      "type": "string"
+    },
+    "focalLength": {
+      "type": "string"
+    },
+    "aperture": {
+      "type": "string"
+    },
+    "shutterSpeed": {
+      "type": "string"
+    },
+    "iso": {
+      "type": "string"
+    }
+  }
+}

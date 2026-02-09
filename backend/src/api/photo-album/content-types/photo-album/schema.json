@@ -1,0 +1,55 @@
+{
+  "kind": "collectionType",
+  "collectionName": "photo_albums",
+  "info": {
+    "singularName": "photo-album",
+    "pluralName": "photo-albums",
+    "displayName": "Photo Album",
+    "description": "A collection of photos organized into an album"
+  },
+  "options": {
+    "draftAndPublish": true
+  },
+  "attributes": {
+    "title": {
+      "type": "string",
+      "required": true
+    },
+    "slug": {
+      "type": "uid",
+      "targetField": "title",
+      "required": true
+    },
+    "description": {
+      "type": "text"
+    },
+    "date": {
+      "type": "date",
+      "required": true
+    },
+    "coverImagePath": {
+      "type": "string"
+    },
+    "coverImageWidth": {
+      "type": "integer"
+    },
+    "coverImageHeight": {
+      "type": "integer"
+    },
+    "sortOrder": {
+      "type": "integer",
+      "default": 0
+    },
+    "photos": {
+      "type": "component",
+      "repeatable": true,
+      "component": "gallery.photo"
+    },
+    "post": {
+      "type": "relation",
+      "relation": "manyToOne",
+      "target": "api::post.post",
+      "inversedBy": "photoAlbums"
+    }
+  }
+}
