@@ -2,6 +2,7 @@
 import Layout from "../layouts/Layout.astro";
 import TicklistFilters from "../components/TicklistFilters.astro";
 import ChartsIsland from "../components/charts-react/ChartsIsland";
+import TicklistIsland from "../components/ticklist-react/TicklistIsland";
 import { fetchAllPeople, fetchSiteSettings } from "../lib/api";
 import { STRAPI_API_URL } from 'astro:env/server';
 
@@ -159,47 +160,10 @@ const clientConfig = {
         <section>
             <h2 id="sends-header" class="text-2xl font-bold mb-6">
                 {showAllTime ? 'All' : showLast12Months ? 'Recent' : selectedYear} Sends
-                <span id="route-count" class="text-lg font-normal opacity-70 ml-2"></span>
             </h2>
 
-            <div id="ticks-container">
-                <!-- Tick list skeleton -->
-                <div class="ticks-skeleton space-y-4">
-                    {[1, 2, 3].map(() => (
-                        <div class="animate-pulse">
-                            <div class="h-6 bg-[var(--color-accent)]/20 rounded w-48 mb-3"></div>
-                            <div class="space-y-2">
-                                {[1, 2].map(() => (
-                                    <div class="p-3 rounded-lg border border-[var(--color-accent)]/30">
-                                        <div class="h-5 bg-[var(--color-accent)]/20 rounded w-3/4 mb-2"></div>
-                                        <div class="h-4 bg-[var(--color-accent)]/20 rounded w-1/2"></div>
-                                    </div>
-                                ))}
-                            </div>
-                        </div>
-                    ))}
-                </div>
-            </div>
-
-            <div id="empty-state" class="hidden text-center py-16 opacity-60">
-                <p class="text-lg mb-2">No climbs logged</p>
-                <p class="text-sm">Try selecting a different period or person.</p>
-            </div>
+            <TicklistIsland client:only="react" />
         </section>
-    </div>
-
-    <!-- Photo lightbox modal -->
-    <div
-        id="photo-lightbox"
-        class="fixed inset-0 z-50 hidden items-center justify-center bg-black/90 p-4"
-        role="dialog"
-        aria-modal="true"
-        aria-label="Photo viewer"
-    >
-        <button type="button" id="lightbox-close" class="absolute top-4 right-4 text-white text-3xl leading-none hover:opacity-70 transition z-10" aria-label="Close">&times;</button>
-        <button type="button" id="lightbox-prev" class="absolute left-4 top-1/2 -translate-y-1/2 text-white text-4xl leading-none hover:opacity-70 transition z-10 hidden" aria-label="Previous photo">&#8249;</button>
-        <button type="button" id="lightbox-next" class="absolute right-4 top-1/2 -translate-y-1/2 text-white text-4xl leading-none hover:opacity-70 transition z-10 hidden" aria-label="Next photo">&#8250;</button>
-        <img id="lightbox-image" src="" alt="" class="max-h-[90vh] max-w-[90vw] object-contain" />
     </div>
 </Layout>
 

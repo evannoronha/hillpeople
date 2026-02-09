@@ -315,142 +315,16 @@ function renderGoalsDashboard(goals: GoalProgress[], personName?: string, goalYe
     }
 }
 
-function renderTickList(ticksByDate: TicksByDate[], strapiUrl: string): void {
-    const container = document.getElementById('ticks-container');
-    const routeCount = document.getElementById('route-count');
-    const emptyState = document.getElementById('empty-state');
-    if (!container) return;
+function dispatchTicklistData(ticks: TicksByDate[], strapiUrl: string): void {
+    const ticklistData = { ticks, strapiUrl };
 
-    const totalRoutes = ticksByDate.reduce((sum, day) => sum + day.routes.length, 0);
-    if (routeCount) routeCount.textContent = `(${totalRoutes} routes)`;
+    // Store on window so React island can access it if it mounts after the event
+    (window as unknown as { __TICKLIST_DATA__: typeof ticklistData }).__TICKLIST_DATA__ = ticklistData;
 
-    if (ticksByDate.length === 0) {
-        container.innerHTML = '';
-        emptyState?.classList.remove('hidden');
-        return;
-    }
-
-    emptyState?.classList.add('hidden');
-
-    let itemIndex = 0;
-    container.innerHTML = ticksByDate.map(({ date, formattedDate, routes }) => `
-        <div class="tick-day mb-8" data-date="${date}">
-            <h3 class="text-lg font-semibold mb-3 sticky top-0 bg-[var(--color-bg)] py-2 border-b border-[var(--color-accent)]/30">
-                ${formattedDate}
-            </h3>
-            <div class="space-y-2">
-                ${routes.map(groupedRoute => {
-                    const delay = Math.min(itemIndex * 30, 500); // Cap at 500ms
-                    itemIndex++;
-                    return `
-                    <div class="tick-item flex items-start gap-4 p-3 rounded-lg border border-[var(--color-accent)]/30 hover:border-[var(--color-header)] transition" style="animation-delay: ${delay}ms;">
-                        <div class="flex-1 min-w-0">
-                            <div class="flex items-baseline gap-2 flex-wrap">
-                                <a href="${groupedRoute.route?.mountainProjectUrl || '#'}" target="_blank" rel="noopener noreferrer"
-                                    class="font-semibold hover:underline text-[var(--color-header)]">
-                                    ${groupedRoute.route?.name || 'Unknown Route'}
-                                </a>
-                                ${groupedRoute.route?.rating ? `<span class="text-sm font-mono">${groupedRoute.route.rating}</span>` : ''}
-                                ${groupedRoute.route?.routeType ? `<span class="text-xs opacity-70">${groupedRoute.route.routeType}</span>` : ''}
-                                ${groupedRoute.style ? `
-                                    <span class="text-xs px-2 py-0.5 rounded bg-[var(--color-accent)]/20">
-                                        ${groupedRoute.style}${groupedRoute.leadStyle ? ` · ${groupedRoute.leadStyle}` : ''}
-                                    </span>
-                                ` : ''}
-                                ${groupedRoute.pitches && groupedRoute.pitches > 1 ? `
-                                    <span class="text-xs px-2 py-0.5 rounded bg-[var(--color-header)]/20 font-semibold">
-                                        ${groupedRoute.pitches}p
-                                    </span>
-                                ` : ''}
-                            </div>
-                            ${groupedRoute.route?.location ? `<p class="text-sm truncate opacity-80">${groupedRoute.route.location}</p>` : ''}
-                            ${groupedRoute.climbers.length > 0 ? `<p class="text-xs mt-1 opacity-70">${groupedRoute.climbers.join(' & ')}</p>` : ''}
-                            ${groupedRoute.notes.length > 0 ? `<p class="text-sm mt-2 italic opacity-80">${groupedRoute.notes.join(' · ')}</p>` : ''}
-                            ${groupedRoute.photos && groupedRoute.photos.length > 0 ? `
-                                <div class="photo-gallery flex gap-2 mt-2 flex-wrap">
-                                    ${groupedRoute.photos.slice(0, 4).map((photo, idx) => {
-                                        const thumbUrl = photo.formats?.thumbnail?.url || photo.formats?.small?.url || photo.url;
-                                        const fullUrl = photo.formats?.large?.url || photo.url;
-                                        const resolvedThumb = thumbUrl.startsWith('http') ? thumbUrl : strapiUrl + thumbUrl;
-                                        const resolvedFull = fullUrl.startsWith('http') ? fullUrl : strapiUrl + fullUrl;
-                                        return `<button type="button" class="flex-shrink-0 cursor-pointer border-0 p-0 bg-transparent" data-photo-url="${resolvedFull}" data-photo-alt="Climbing photo" data-photo-index="${idx}"><img src="${resolvedThumb}" alt="Climbing photo" class="h-16 w-16 object-cover rounded hover:opacity-80 transition" loading="lazy" /></button>`;
-                                    }).join('')}
-                                </div>
-                            ` : ''}
-                        </div>
-                        ${groupedRoute.bestStars > 0 ? `
-                            <div class="flex-shrink-0 text-sm text-[var(--color-header)]" title="${groupedRoute.bestStars} stars">
-                                ${'★'.repeat(groupedRoute.bestStars)}${'☆'.repeat(4 - groupedRoute.bestStars)}
-                            </div>
-                        ` : ''}
-                    </div>
-                `;}).join('')}
-            </div>
-        </div>
-    `).join('');
-}
-
-function initTicklistLightbox(): void {
-    const lightbox = document.getElementById('photo-lightbox');
-    const lightboxImage = document.getElementById('lightbox-image') as HTMLImageElement;
-    const closeBtn = document.getElementById('lightbox-close');
-    const prevBtn = document.getElementById('lightbox-prev');
-    const nextBtn = document.getElementById('lightbox-next');
-    if (!lightbox || !lightboxImage || !closeBtn || !prevBtn || !nextBtn) return;
-
-    let currentGallery: HTMLElement | null = null;
-    let currentIndex = 0;
-
-    function getPhotos(gallery: HTMLElement) {
-        return Array.from(gallery.querySelectorAll('button[data-photo-url]')) as HTMLButtonElement[];
-    }
-
-    function showPhoto(index: number) {
-        if (!currentGallery) return;
-        const photos = getPhotos(currentGallery);
-        if (index < 0 || index >= photos.length) return;
-        currentIndex = index;
-        const photo = photos[index];
-        lightboxImage.src = photo.dataset.photoUrl || '';
-        lightboxImage.alt = photo.dataset.photoAlt || '';
-        prevBtn!.classList.toggle('hidden', index === 0);
-        nextBtn!.classList.toggle('hidden', index === photos.length - 1);
-    }
-
-    function openLightbox(gallery: HTMLElement, index: number) {
-        currentGallery = gallery;
-        showPhoto(index);
-        lightbox!.classList.remove('hidden');
-        lightbox!.classList.add('flex');
-        document.body.style.overflow = 'hidden';
-    }
-
-    function closeLightbox() {
-        lightbox!.classList.add('hidden');
-        lightbox!.classList.remove('flex');
-        document.body.style.overflow = '';
-        currentGallery = null;
-    }
-
-    document.querySelectorAll('#ticks-container .photo-gallery button[data-photo-url]').forEach((btn) => {
-        btn.addEventListener('click', (e) => {
-            const button = e.currentTarget as HTMLButtonElement;
-            const gallery = button.closest('.photo-gallery') as HTMLElement;
-            const index = parseInt(button.dataset.photoIndex || '0', 10);
-            openLightbox(gallery, index);
-        });
-    });
-
-    closeBtn.addEventListener('click', closeLightbox);
-    prevBtn.addEventListener('click', () => showPhoto(currentIndex - 1));
-    nextBtn.addEventListener('click', () => showPhoto(currentIndex + 1));
-    lightbox.addEventListener('click', (e) => { if (e.target === lightbox) closeLightbox(); });
-    document.addEventListener('keydown', (e) => {
-        if (lightbox!.classList.contains('hidden')) return;
-        if (e.key === 'Escape') closeLightbox();
-        if (e.key === 'ArrowLeft') showPhoto(currentIndex - 1);
-        if (e.key === 'ArrowRight') showPhoto(currentIndex + 1);
-    });
+    // Dispatch event for React island to receive data
+    window.dispatchEvent(new CustomEvent('ticklist-data-update', {
+        detail: ticklistData
+    }));
 }
 
 // Parameters for data loading
@@ -545,9 +419,8 @@ async function loadTicklistData(params: LoadParams): Promise<void> {
         // Update sends header
         updateSendsHeader(showAllTime, showLast12Months, selectedYear);
 
-        // Render tick list
-        renderTickList(ticks, strapiUrl);
-        initTicklistLightbox();
+        // Dispatch tick data to React island
+        dispatchTicklistData(ticks, strapiUrl);
 
     } catch (error) {
         console.error('Error loading ticklist data:', error);
@@ -584,10 +457,7 @@ function updateSendsHeader(showAllTime?: boolean, showLast12Months?: boolean, se
     const header = document.getElementById('sends-header');
     if (!header) return;
 
-    const routeCount = document.getElementById('route-count');
-    const countText = routeCount?.textContent || '';
-
-    header.innerHTML = `${showAllTime ? 'All' : showLast12Months ? 'Recent' : selectedYear} Sends <span id="route-count" class="text-lg font-normal opacity-70 ml-2">${countText}</span>`;
+    header.textContent = `${showAllTime ? 'All' : showLast12Months ? 'Recent' : selectedYear} Sends`;
 }
 
 // Get person name from the dropdown
