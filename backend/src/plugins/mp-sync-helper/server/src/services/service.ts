@@ -25,11 +25,18 @@ const service = ({ strapi }: { strapi: Core.Strapi }) => ({
 
     const results: Array<{ person: string; result: SyncResult }> = [];
 
-    for (const person of people) {
-      const label = months ? `Quick syncing (last ${months} months)` : 'Syncing';
-      strapi.log.info(`${label} ticks for ${person.name}`);
-      const result = await this.syncPersonTicks(person.documentId, months);
-      results.push({ person: person.name, result });
+    // Suppress per-tick cache invalidation during bulk sync;
+    // the caller (cron or controller) handles a single invalidation at the end.
+    (globalThis as any).__suppressCacheInvalidation = true;
+    try {
+      for (const person of people) {
+        const label = months ? `Quick syncing (last ${months} months)` : 'Syncing';
+        strapi.log.info(`${label} ticks for ${person.name}`);
+        const result = await this.syncPersonTicks(person.documentId, months);
+        results.push({ person: person.name, result });
+      }
+    } finally {
+      (globalThis as any).__suppressCacheInvalidation = false;
     }
 
     const elapsed = ((Date.now() - start) / 1000).toFixed(1);

@@ -2,6 +2,7 @@
  * Utility to trigger cache invalidation on the frontend
  */
 export async function invalidateCache(model: string, entry?: { slug?: string }) {
+  if ((globalThis as any).__suppressCacheInvalidation) return;
   const revalidateUrl = process.env.FRONTEND_REVALIDATE_URL;
   const revalidateSecret = process.env.REVALIDATE_SECRET;
 
