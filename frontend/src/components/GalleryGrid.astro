@@ -1,0 +1,96 @@
+---
+import type { GalleryPhoto } from "../lib/api";
+import { galleryImageUrl, gallerySrcset } from "../lib/gallery-images";
+
+interface Props {
+    photos: GalleryPhoto[];
+}
+
+const { photos } = Astro.props;
+
+function formatExif(photo: GalleryPhoto): string {
+    const parts = [
+        photo.cameraMake && photo.cameraModel
+            ? `${photo.cameraMake} ${photo.cameraModel}`
+            : photo.cameraModel || photo.cameraMake || "",
+        photo.lens || "",
+        photo.focalLength || "",
+        photo.aperture || "",
+        photo.shutterSpeed ? `${photo.shutterSpeed}s` : "",
+        photo.iso ? `ISO ${photo.iso}` : "",
+    ].filter(Boolean);
+    return parts.join(" \u00b7 ");
+}
+---
+
+<div class="gallery-grid pswp-gallery" id="gallery">
+    {photos.map((photo, index) => {
+        const exifStr = formatExif(photo);
+        return (
+            <a
+                href={galleryImageUrl(photo.r2Path, "large")}
+                data-pswp-width={photo.width || undefined}
+                data-pswp-height={photo.height || undefined}
+                data-pswp-srcset={gallerySrcset(photo.r2Path)}
+                data-cropped="true"
+                target="_blank"
+                rel="noreferrer"
+                class="gallery-item"
+            >
+                <img
+                    src={galleryImageUrl(photo.r2Path, "medium")}
+                    alt={photo.altText || photo.caption || ""}
+                    width={photo.width || undefined}
+                    height={photo.height || undefined}
+                    loading={index < 6 ? "eager" : "lazy"}
+                    class="gallery-image"
+                />
+                {/* Hidden caption element for PhotoSwipe dynamic caption plugin */}
+                <span class="pswp-caption-content" style="display:none;">
+                    {photo.caption && <span class="caption-text">{photo.caption}</span>}
+                    {exifStr && <span class="caption-exif">{exifStr}</span>}
+                </span>
+            </a>
+        );
+    })}
+</div>
+
+<style>
+    .gallery-grid {
+        columns: 2;
+        column-gap: 0.75rem;
+    }
+
+    @media (min-width: 640px) {
+        .gallery-grid {
+            columns: 3;
+        }
+    }
+
+    @media (min-width: 1024px) {
+        .gallery-grid {
+            columns: 4;
+        }
+    }
+
+    .gallery-item {
+        display: block;
+        break-inside: avoid;
+        margin-bottom: 0.75rem;
+        border-radius: 0.375rem;
+        overflow: hidden;
+        cursor: zoom-in;
+    }
+
+    .gallery-image {
+        display: block;
+        width: 100%;
+        height: auto;
+        transition: transform 0.3s ease, opacity 0.3s ease;
+    }
+
+    .gallery-item:hover .gallery-image {
+        transform: scale(1.02);
+        opacity: 0.9;
+    }
+</style>
