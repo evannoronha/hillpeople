@@ -6,8 +6,10 @@ export const ALL_CACHEABLE_URLS = [
   '/',
   '/about',
   '/climbing',
+  '/photos',
   '/privacy',
   '/api/posts',
+  '/api/photo-albums',
   '/api/ticklist-data',
   '/api/climbing-ticks',
 ];
@@ -22,6 +24,7 @@ export const CONTENT_TYPE_URLS: Record<string, string[]> = {
   'climbing-goal': ['/climbing', '/api/ticklist-data'],
   'person': ['/climbing', '/api/ticklist-data'],
   'privacy-policy': ['/privacy'],
+  'photo-album': ['/photos', '/api/photo-albums'],
 };
 
 interface CloudflarePurgeResponse {

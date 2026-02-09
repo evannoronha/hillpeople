@@ -1,0 +1,82 @@
+---
+import Layout from "../../layouts/Layout.astro";
+import { fetchPhotoAlbums, fetchSiteSettings } from "../../lib/api";
+import { galleryImageUrl } from "../../lib/gallery-images";
+
+const [albums, siteSettings] = await Promise.all([
+    fetchPhotoAlbums(Astro.locals),
+    fetchSiteSettings(Astro.locals),
+]);
+
+const siteName = siteSettings?.siteName || "Hill People";
+const description = "Photo galleries from our adventures.";
+
+Astro.response.headers.set(
+    "Cache-Control",
+    "public, s-maxage=3600, stale-while-revalidate=86400",
+);
+---
+
+<Layout pageTitle="Photos" description={description} siteName={siteName}>
+    <div class="max-w-5xl mx-auto px-4 py-10">
+        <header class="text-center mb-10">
+            <h1 class="text-4xl font-bold mb-2">Photos</h1>
+            <p class="text-lg opacity-80">{description}</p>
+        </header>
+
+        {albums.length === 0 ? (
+            <p class="text-center opacity-60">No albums yet.</p>
+        ) : (
+            <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+                {albums.map((album) => (
+                    <a
+                        href={`/photos/${album.slug}`}
+                        class="group block overflow-hidden rounded-lg shadow-md hover:shadow-lg transition-shadow bg-[var(--color-bg)]"
+                    >
+                        <div class="aspect-[3/2] overflow-hidden bg-[var(--color-accent)]/10">
+                            {album.coverImagePath ? (
+                                <img
+                                    src={galleryImageUrl(album.coverImagePath, "thumbnail", { fit: "cover" })}
+                                    alt={album.title}
+                                    width={400}
+                                    height={267}
+                                    class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
+                                    loading="lazy"
+                                />
+                            ) : (
+                                <div class="w-full h-full flex items-center justify-center opacity-30">
+                                    <svg xmlns="http://www.w3.org/2000/svg" width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+                                        <rect width="18" height="18" x="3" y="3" rx="2" ry="2" />
+                                        <circle cx="9" cy="9" r="2" />
+                                        <path d="m21 15-3.086-3.086a2 2 0 0 0-2.828 0L6 21" />
+                                    </svg>
+                                </div>
+                            )}
+                        </div>
+                        <div class="p-4">
+                            <h2 class="text-lg font-bold group-hover:text-[var(--color-header)] transition-colors">
+                                {album.title}
+                            </h2>
+                            <div class="flex items-center gap-2 mt-1 text-sm opacity-70">
+                                <time datetime={album.date}>
+                                    {new Date(album.date).toLocaleDateString("en-US", {
+                                        year: "numeric",
+                                        month: "long",
+                                        day: "numeric",
+                                    })}
+                                </time>
+                                <span>&middot;</span>
+                                <span>{album.photos?.length || 0} photos</span>
+                            </div>
+                            {album.description && (
+                                <p class="mt-2 text-sm opacity-70 line-clamp-2">
+                                    {album.description}
+                                </p>
+                            )}
+                        </div>
+                    </a>
+                ))}
+            </div>
+        )}
+    </div>
+</Layout>

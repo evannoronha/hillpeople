@@ -17,6 +17,8 @@
     "@types/react-dom": "^19.2.3",
     "astro": "^5.17.1",
     "framer-motion": "^12.31.0",
+    "photoswipe": "^5.4.4",
+    "photoswipe-dynamic-caption-plugin": "^1.2.7",
     "react": "^19.2.4",
     "react-dom": "^19.2.4",
     "tailwindcss": "^4.1.3"
