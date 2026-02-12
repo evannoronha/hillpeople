@@ -56,12 +56,11 @@ function matchesFilters(route: GroupedRoute, filters: TicklistFilters): boolean 
         if (!name.includes(q) && !location.includes(q)) return false;
     }
 
-    // Style filter
+    // Style filter — match if any tick in the group qualifies
     if (filters.styleFilter === 'lead') {
-        if (route.style !== 'Lead') return false;
+        if (!route.ticks.some(t => t.style === 'Lead')) return false;
     } else if (filters.styleFilter === 'lead_sends') {
-        if (route.style !== 'Lead') return false;
-        if (route.leadStyle === 'Fell/Hung') return false;
+        if (!route.ticks.some(t => t.style === 'Lead' && t.leadStyle !== 'Fell/Hung')) return false;
     }
 
     return true;

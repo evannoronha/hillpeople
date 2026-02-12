@@ -96,6 +96,18 @@ function Lightbox({
     );
 }
 
+function formatTickLabel(tick: { climber?: string; style?: string; leadStyle?: string; pitches: number; notes?: string }): string {
+    const parts: string[] = [];
+    if (tick.climber) parts.push(tick.climber);
+    if (tick.style) {
+        let styleStr = tick.style;
+        if (tick.leadStyle) styleStr += ` \u00b7 ${tick.leadStyle}`;
+        parts.push(styleStr);
+    }
+    if (tick.pitches > 1) parts.push(`${tick.pitches}p`);
+    return parts.join(' \u2014 ');
+}
+
 function RouteCard({
     route,
     strapiUrl,
@@ -117,6 +129,10 @@ function RouteCard({
         alt: 'Climbing photo',
     }));
 
+    const uniqueNotes = route.ticks
+        .map(t => t.notes)
+        .filter((n, i, arr): n is string => !!n && arr.indexOf(n) === i);
+
     return (
         <div className="tick-item flex items-start gap-4 p-3 rounded-lg border border-[var(--color-accent)]/30 hover:border-[var(--color-header)] transition">
             <div className="flex-1 min-w-0">
@@ -135,25 +151,19 @@ function RouteCard({
                     {route.route?.routeType && (
                         <span className="text-xs opacity-70">{route.route.routeType}</span>
                     )}
-                    {route.style && (
-                        <span className="text-xs px-2 py-0.5 rounded bg-[var(--color-accent)]/20">
-                            {route.style}{route.leadStyle ? ` \u00b7 ${route.leadStyle}` : ''}
-                        </span>
-                    )}
-                    {route.pitches && route.pitches > 1 && (
-                        <span className="text-xs px-2 py-0.5 rounded bg-[var(--color-header)]/20 font-semibold">
-                            {route.pitches}p
-                        </span>
-                    )}
                 </div>
                 {route.route?.location && (
                     <p className="text-sm truncate opacity-80">{route.route.location}</p>
                 )}
-                {route.climbers.length > 0 && (
-                    <p className="text-xs mt-1 opacity-70">{route.climbers.join(' & ')}</p>
-                )}
-                {route.notes.length > 0 && (
-                    <p className="text-sm mt-2 italic opacity-80">{route.notes.join(' \u00b7 ')}</p>
+                <div className="mt-1 space-y-0.5">
+                    {route.ticks.map((tick, idx) => (
+                        <div key={idx} className="flex items-center gap-2 text-xs">
+                            <span className="opacity-70">{formatTickLabel(tick)}</span>
+                        </div>
+                    ))}
+                </div>
+                {uniqueNotes.length > 0 && (
+                    <p className="text-sm mt-2 italic opacity-80">{uniqueNotes.join(' \u00b7 ')}</p>
                 )}
                 {photos.length > 0 && (
                     <div className="photo-gallery flex gap-2 mt-2 flex-wrap">
