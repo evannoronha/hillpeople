@@ -11,6 +11,7 @@
 import { Plugin, FileRepository } from 'ckeditor5';
 import { getArticleContext, getFolderPath } from '../utils/articleContext';
 import { ensureFolderPath } from '../utils/folderManager';
+import { resizeImageIfNeeded } from '../utils/resizeImage';
 
 interface UploadConfig {
   uploadUrl: string;
@@ -63,18 +64,20 @@ class FolderAwareAdapter {
   }
 
   /**
-   * Starts the upload process
+   * Starts the upload process — resizes large images client-side first
    */
   upload(): Promise<{ alt?: string; urls?: Record<string | number, string> }> {
-    return this.loader.file.then((file) => {
-      return this.getFolderId().then((folderId) => {
-        return new Promise<{ alt?: string; urls?: Record<string | number, string> }>((resolve, reject) => {
-          this.initRequest();
-          this.initListeners(resolve, reject, file);
-          this.sendRequest(file, folderId);
+    return this.loader.file
+      .then((file) => resizeImageIfNeeded(file))
+      .then((file) => {
+        return this.getFolderId().then((folderId) => {
+          return new Promise<{ alt?: string; urls?: Record<string | number, string> }>((resolve, reject) => {
+            this.initRequest();
+            this.initListeners(resolve, reject, file);
+            this.sendRequest(file, folderId);
+          });
         });
       });
-    });
   }
 
   /**

@@ -1,4 +1,5 @@
 import type { APIRoute } from 'astro';
+import { STRAPI_API_URL } from 'astro:env/server';
 
 const STRAPI_MEDIA_HOST = 'competent-victory-0bdd9770d0.media.strapiapp.com';
 
@@ -12,7 +13,11 @@ export const GET: APIRoute = async ({ params }) => {
     return new Response('Not found', { status: 404 });
   }
 
-  const strapiUrl = `https://${STRAPI_MEDIA_HOST}/${path}`;
+  // Local uploads (e.g. /img/uploads/foo.jpg) go to Strapi API URL,
+  // everything else goes to the Strapi Cloud media CDN
+  const strapiUrl = path.startsWith('uploads/')
+    ? `${STRAPI_API_URL}/${path}`
+    : `https://${STRAPI_MEDIA_HOST}/${path}`;
 
   try {
     const response = await fetch(strapiUrl);
