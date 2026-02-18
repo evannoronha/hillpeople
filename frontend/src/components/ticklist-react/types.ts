@@ -1,3 +1,11 @@
+export interface TickDetail {
+    climber?: string;
+    style?: string;
+    leadStyle?: string;
+    pitches: number;
+    notes?: string;
+}
+
 export interface GroupedRoute {
     route: {
         documentId?: string;
@@ -7,7 +15,7 @@ export interface GroupedRoute {
         location?: string;
         mountainProjectUrl?: string;
     } | null;
-    climbers: string[];
+    ticks: TickDetail[];
     bestStars: number;
     photos?: Array<{
         id: number;
@@ -19,10 +27,6 @@ export interface GroupedRoute {
             thumbnail?: { url: string };
         };
     }>;
-    notes: string[];
-    style?: string;
-    leadStyle?: string;
-    pitches?: number;
 }
 
 export interface TicksByDate {

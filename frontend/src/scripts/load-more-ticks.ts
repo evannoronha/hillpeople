@@ -23,13 +23,17 @@ interface TickData {
     person: TickPerson | null;
 }
 
-interface GroupedRoute {
-    route: TickRoute | null;
-    climbers: string[];
-    bestStars: number;
+interface TickDetail {
+    climber?: string;
     style?: string;
     leadStyle?: string;
     pitches: number;
+}
+
+interface GroupedRoute {
+    route: TickRoute | null;
+    ticks: TickDetail[];
+    bestStars: number;
 }
 
 interface ApiResponse {
@@ -55,26 +59,24 @@ function groupTicksByRoute(ticks: TickData[]): Map<string, GroupedRoute> {
     const routeMap = new Map<string, GroupedRoute>();
 
     for (const tick of ticks) {
-        const routeUrl = tick.route?.mountainProjectUrl || 'unknown';
-        const groupKey = `${routeUrl}|${tick.style || ''}|${tick.leadStyle || ''}`;
+        const groupKey = tick.route?.mountainProjectUrl || 'unknown';
 
         if (!routeMap.has(groupKey)) {
             routeMap.set(groupKey, {
                 route: tick.route,
-                climbers: [],
+                ticks: [],
                 bestStars: 0,
-                style: tick.style,
-                leadStyle: tick.leadStyle,
-                pitches: 0,
             });
         }
 
         const groupedRoute = routeMap.get(groupKey)!;
-        groupedRoute.pitches += tick.pitches || 1;
 
-        if (tick.person?.name && !groupedRoute.climbers.includes(tick.person.name)) {
-            groupedRoute.climbers.push(tick.person.name);
-        }
+        groupedRoute.ticks.push({
+            climber: tick.person?.name,
+            style: tick.style,
+            leadStyle: tick.leadStyle,
+            pitches: tick.pitches || 1,
+        });
 
         if (tick.yourStars && tick.yourStars > groupedRoute.bestStars) {
             groupedRoute.bestStars = tick.yourStars;
@@ -84,13 +86,28 @@ function groupTicksByRoute(ticks: TickData[]): Map<string, GroupedRoute> {
     return routeMap;
 }
 
+function formatTickLabel(tick: TickDetail): string {
+    const parts: string[] = [];
+    if (tick.climber) parts.push(tick.climber);
+    if (tick.style) {
+        let styleStr = tick.style;
+        if (tick.leadStyle) styleStr += ` · ${tick.leadStyle}`;
+        parts.push(styleStr);
+    }
+    if (tick.pitches > 1) parts.push(`${tick.pitches}p`);
+    return parts.join(" — ");
+}
+
 function createRouteHtml(groupedRoute: GroupedRoute): string {
     const routeName = groupedRoute.route?.name || "Unknown Route";
     const routeUrl = groupedRoute.route?.mountainProjectUrl || "#";
     const rating = groupedRoute.route?.rating || "";
     const routeType = groupedRoute.route?.routeType || "";
     const location = groupedRoute.route?.location || "";
-    const climbers = groupedRoute.climbers.join(" & ");
+
+    const ticksHtml = groupedRoute.ticks
+        .map(tick => `<div class="text-xs opacity-70">${formatTickLabel(tick)}</div>`)
+        .join("");
 
     const starsHtml = groupedRoute.bestStars > 0
         ? `<div class="flex-shrink-0 text-sm text-[var(--color-header)]" title="${groupedRoute.bestStars} stars">${"★".repeat(groupedRoute.bestStars)}${"☆".repeat(4 - groupedRoute.bestStars)}</div>`
@@ -103,11 +120,9 @@ function createRouteHtml(groupedRoute: GroupedRoute): string {
                     <a href="${routeUrl}" target="_blank" rel="noopener noreferrer" class="font-semibold hover:underline text-[var(--color-header)]">${routeName}</a>
                     ${rating ? `<span class="text-sm font-mono">${rating}</span>` : ""}
                     ${routeType ? `<span class="text-xs opacity-70">${routeType}</span>` : ""}
-                    ${groupedRoute.style ? `<span class="text-xs px-2 py-0.5 rounded bg-[var(--color-accent)]/20">${groupedRoute.style}${groupedRoute.leadStyle ? ` · ${groupedRoute.leadStyle}` : ""}</span>` : ""}
-                    ${groupedRoute.pitches > 1 ? `<span class="text-xs px-2 py-0.5 rounded bg-[var(--color-header)]/20 font-semibold">${groupedRoute.pitches}p</span>` : ""}
                 </div>
                 ${location ? `<p class="text-sm truncate">${location}</p>` : ""}
-                ${climbers ? `<p class="text-xs mt-1 opacity-70">${climbers}</p>` : ""}
+                <div class="mt-1 space-y-0.5">${ticksHtml}</div>
             </div>
             ${starsHtml}
         </div>
