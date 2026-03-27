@@ -59,6 +59,12 @@
       "type": "component",
       "repeatable": false,
       "component": "climbing.date-range"
+    },
+    "photoAlbums": {
+      "type": "relation",
+      "relation": "oneToMany",
+      "target": "api::photo-album.photo-album",
+      "mappedBy": "post"
     }
   }
 }
