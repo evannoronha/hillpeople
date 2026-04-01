@@ -417,6 +417,74 @@ export async function fetchClimbingTicksLast12Months(locals?: App.Locals): Promi
     }
 }
 
+// Photo album types
+export interface GalleryPhoto {
+    r2Path: string;
+    width: number;
+    height: number;
+    caption?: string;
+    altText?: string;
+    sortOrder: number;
+    cameraMake?: string;
+    cameraModel?: string;
+    lens?: string;
+    focalLength?: string;
+    aperture?: string;
+    shutterSpeed?: string;
+    iso?: string;
+}
+
+export interface PhotoAlbum {
+    id: number;
+    documentId: string;
+    title: string;
+    slug: string;
+    description?: string;
+    date: string;
+    coverImagePath?: string;
+    coverImageWidth?: number;
+    coverImageHeight?: number;
+    sortOrder: number;
+    photos: GalleryPhoto[];
+    post?: { slug: string; title: string };
+}
+
+export async function fetchPhotoAlbums(locals?: App.Locals): Promise<PhotoAlbum[]> {
+    try {
+        const reqUrl = `${STRAPI_URL}/api/photo-albums?populate=*&sort=date:desc`
+        console.debug("Fetching photo albums from:", reqUrl)
+        const response = await strapiFetch(reqUrl, locals)
+
+        if (!response.ok) {
+            throw new Error(`Failed to fetch photo albums: ${response.status}`)
+        }
+
+        const data = await response.json()
+        return data.data || []
+    } catch (error) {
+        console.error("Error fetching photo albums:", error)
+        return []
+    }
+}
+
+export async function fetchPhotoAlbumBySlug(slug: string, locals?: App.Locals): Promise<PhotoAlbum | null> {
+    try {
+        const reqUrl = `${STRAPI_URL}/api/photo-albums?filters[slug][$eq]=${slug}&populate=*`
+        console.debug("Fetching photo album from:", reqUrl)
+        const response = await strapiFetch(reqUrl, locals)
+
+        if (!response.ok) {
+            throw new Error(`Failed to fetch photo album: ${response.status}`)
+        }
+
+        const data = await response.json()
+        return data.data[0] || null
+    } catch (error) {
+        console.error("Error fetching photo album:", error)
+        return null
+    }
+}
+
 export async function fetchClimbingTicksLast12MonthsForPerson(personDocumentId: string, locals?: App.Locals): Promise<ClimbingTick[]> {
     try {
         const now = new Date();

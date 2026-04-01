@@ -9,6 +9,8 @@ import StructuredData from '../../components/StructuredData.astro';
 import StravaEmbed from '../../components/StravaEmbed.astro';
 import ClimbingEmbed from '../../components/ClimbingEmbed.astro';
 import { fetchPostBySlug, fetchSiteSettings } from '../../lib/api';
+import type { PhotoAlbum } from '../../lib/api';
+import { galleryImageUrl } from '../../lib/gallery-images';
 import {
   getMediaUrl,
   getLargestImage,
@@ -123,6 +125,40 @@ const structuredData = {
             endDate={post.climbingDateRange.endDate}
           />
         )}
+
+      {/* Photo gallery links */}
+      {post.photoAlbums && post.photoAlbums.length > 0 && (
+        <div class="mt-10 pt-8 border-t border-[var(--color-accent)]/30">
+          <h2 class="text-2xl font-bold mb-4">Photo Gallery</h2>
+          <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            {(post.photoAlbums as PhotoAlbum[]).map((album) => (
+              <a
+                href={`/photos/${album.slug}`}
+                class="group flex gap-4 items-center p-3 rounded-lg border border-[var(--color-accent)]/20 hover:border-[var(--color-header)]/40 transition-colors"
+              >
+                {album.coverImagePath && (
+                  <div class="w-20 h-20 rounded overflow-hidden flex-shrink-0">
+                    <img
+                      src={galleryImageUrl(album.coverImagePath, "thumbnail", { fit: "cover" })}
+                      alt={album.title}
+                      class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
+                      loading="lazy"
+                    />
+                  </div>
+                )}
+                <div>
+                  <span class="font-bold group-hover:text-[var(--color-header)] transition-colors">
+                    {album.title}
+                  </span>
+                  <span class="block text-sm opacity-70 mt-1">
+                    {album.photos?.length || 0} photos &rarr;
+                  </span>
+                </div>
+              </a>
+            ))}
+          </div>
+        </div>
+      )}
 
     </div>
   </article>

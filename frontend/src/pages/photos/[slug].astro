@@ -1,0 +1,65 @@
+---
+import Layout from "../../layouts/Layout.astro";
+import GalleryGrid from "../../components/GalleryGrid.astro";
+import { fetchPhotoAlbumBySlug, fetchSiteSettings } from "../../lib/api";
+
+const { slug } = Astro.params;
+const [album, siteSettings] = await Promise.all([
+    fetchPhotoAlbumBySlug(slug!, Astro.locals),
+    fetchSiteSettings(Astro.locals),
+]);
+
+if (!album) {
+    return Astro.redirect("/404");
+}
+
+const siteName = siteSettings?.siteName || "Hill People";
+const description = album.description || `Photo gallery: ${album.title}`;
+
+// Sort photos by sortOrder
+const sortedPhotos = [...(album.photos || [])].sort(
+    (a, b) => (a.sortOrder || 0) - (b.sortOrder || 0),
+);
+
+Astro.response.headers.set(
+    "Cache-Control",
+    "public, s-maxage=3600, stale-while-revalidate=86400",
+);
+---
+
+<Layout pageTitle={album.title} description={description} siteName={siteName}>
+    <div class="max-w-6xl mx-auto px-4 py-10">
+        <!-- Breadcrumbs -->
+        <nav class="mb-6 text-sm opacity-70">
+            <a href="/photos" class="hover:text-[var(--color-header)] transition-colors">
+                Photos
+            </a>
+            <span class="mx-2">/</span>
+            <span>{album.title}</span>
+        </nav>
+
+        <header class="mb-8">
+            <h1 class="text-3xl md:text-4xl font-bold mb-2">{album.title}</h1>
+            <div class="flex items-center gap-3 text-sm opacity-70">
+                <time datetime={album.date}>
+                    {new Date(album.date).toLocaleDateString("en-US", {
+                        year: "numeric",
+                        month: "long",
+                        day: "numeric",
+                    })}
+                </time>
+                <span>&middot;</span>
+                <span>{sortedPhotos.length} photos</span>
+            </div>
+            {album.description && (
+                <p class="mt-3 text-base opacity-80 max-w-2xl">
+                    {album.description}
+                </p>
+            )}
+        </header>
+
+        <GalleryGrid photos={sortedPhotos} />
+    </div>
+</Layout>
+
+<script src="../../scripts/gallery-lightbox.ts"></script>

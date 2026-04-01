@@ -1,9 +1,12 @@
 import type { APIRoute } from 'astro';
-import { fetchAllPosts } from "../lib/api";
+import { fetchAllPosts, fetchPhotoAlbums } from "../lib/api";
 
 export const GET: APIRoute = async ({ locals }) => {
     const siteUrl = import.meta.env.SITE;
-    const posts = await fetchAllPosts(locals);
+    const [posts, albums] = await Promise.all([
+        fetchAllPosts(locals),
+        fetchPhotoAlbums(locals),
+    ]);
 
     const result = `
 <?xml version="1.0" encoding="UTF-8"?>
@@ -19,6 +22,12 @@ export const GET: APIRoute = async ({ locals }) => {
             .join('\n')}
     <url><loc>${siteUrl}/about</loc></url>
     <url><loc>${siteUrl}/climbing</loc></url>
+    <url><loc>${siteUrl}/photos</loc></url>
+  ${albums
+            .map((album) => {
+                return `<url><loc>${siteUrl}/photos/${album.slug}</loc></url>`;
+            })
+            .join('\n')}
     <url><loc>${siteUrl}/privacy</loc></url>
 </urlset>
   `.trim();
