@@ -229,3 +229,17 @@ Each PR gets a preview worker at `hillpeople-preview-pr-{N}.workers.dev`. The pr
 Both services auto-deploy on merge to main:
 - Frontend: Cloudflare Pages
 - Backend: Strapi Cloud
+
+## Agent skills
+
+### Issue tracker
+
+Issues live in GitHub (`evannoronha/hillpeople`). See `docs/agents/issue-tracker.md`.
+
+### Triage labels
+
+Five canonical labels: `needs-triage`, `needs-info`, `ready-for-agent`, `ready-for-human`, `wontfix`. See `docs/agents/triage-labels.md`.
+
+### Domain docs
+
+Single-context layout — root `CONTEXT.md` and `docs/adr/`. See `docs/agents/domain.md`.
