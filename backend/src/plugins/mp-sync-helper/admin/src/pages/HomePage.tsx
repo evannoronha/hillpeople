@@ -42,6 +42,10 @@ interface SyncResponse {
   results: Array<{ person: string; result: SyncResult }>;
 }
 
+interface PeopleListResponse {
+  results: Person[];
+}
+
 const HomePage = () => {
   const [people, setPeople] = useState<Person[]>([]);
   const [loading, setLoading] = useState(true);
@@ -55,7 +59,8 @@ const HomePage = () => {
     try {
       setLoading(true);
       const { data } = await get('/content-manager/collection-types/api::person.person');
-      setPeople(data.results || []);
+      const peopleData = data as PeopleListResponse;
+      setPeople(peopleData.results || []);
     } catch (err: any) {
       setError(err.message || 'Failed to fetch people');
     } finally {

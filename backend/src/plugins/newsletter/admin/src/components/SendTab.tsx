@@ -33,6 +33,14 @@ interface Stats {
   lastSend: any;
 }
 
+interface PostsResponse {
+  results: Post[];
+}
+
+interface PreviewResponse {
+  html: string;
+}
+
 const SendTab = () => {
   const [posts, setPosts] = useState<Post[]>([]);
   const [stats, setStats] = useState<Stats | null>(null);
@@ -56,8 +64,8 @@ const SendTab = () => {
         get('/newsletter/eligible-posts'),
         get('/newsletter/stats'),
       ]);
-      setPosts(postsRes.data.results || []);
-      setStats(statsRes.data);
+      setPosts((postsRes.data as PostsResponse).results || []);
+      setStats(statsRes.data as Stats);
     } catch (err: any) {
       setError(err.message || 'Failed to fetch data');
     } finally {
@@ -121,7 +129,8 @@ const SendTab = () => {
       setPreviewLoading(true);
       setError(null);
       const { data } = await get('/newsletter/preview');
-      setPreviewHtml(data.html || '');
+      const previewData = data as PreviewResponse;
+      setPreviewHtml(previewData.html || '');
       setShowPreview(true);
     } catch (err: any) {
       setError(err.response?.data?.error?.message || err.message || 'Failed to load preview');

@@ -70,8 +70,9 @@ const SettingsTab = () => {
     try {
       setLoading(true);
       const { data } = await get('/newsletter/settings');
-      if (data && Object.keys(data).length > 0) {
-        setSettings({ ...DEFAULTS, ...data });
+      const settingsData = data as Partial<Settings>;
+      if (settingsData && Object.keys(settingsData).length > 0) {
+        setSettings({ ...DEFAULTS, ...settingsData });
       }
     } catch (err: any) {
       setError(err.message || 'Failed to fetch settings');
