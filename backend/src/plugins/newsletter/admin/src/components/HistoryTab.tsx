@@ -43,6 +43,11 @@ const TRIGGER_COLORS: Record<string, { bg: string; text: string }> = {
   test: { bg: 'warning100', text: 'warning700' },
 };
 
+interface HistoryResponse {
+  results: SendRecord[];
+  pagination?: { total: number };
+}
+
 const HistoryTab = () => {
   const [sends, setSends] = useState<SendRecord[]>([]);
   const [loading, setLoading] = useState(true);
@@ -57,8 +62,9 @@ const HistoryTab = () => {
     try {
       setLoading(true);
       const { data } = await get(`/newsletter/history?page=${p}&pageSize=${pageSize}`);
-      setSends(data.results || []);
-      setTotal(data.pagination?.total || 0);
+      const historyData = data as HistoryResponse;
+      setSends(historyData.results || []);
+      setTotal(historyData.pagination?.total || 0);
     } catch (err: any) {
       setError(err.message || 'Failed to fetch history');
     } finally {
