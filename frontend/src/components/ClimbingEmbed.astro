@@ -15,43 +15,45 @@ const effectiveEndDate = endDate || startDate;
 const ticks = await fetchClimbingTicksByDateRange(startDate, effectiveEndDate);
 
 // Group ticks by route (deduping multiple climbers)
-interface GroupedRoute {
-    route: ClimbingTick['route'];
-    climbers: string[];
-    bestStars: number;
-    photos: StrapiImage[];
-    notes: string[];
+interface TickDetail {
+    climber?: string;
     style?: string;
     leadStyle?: string;
     pitches: number;
+    notes?: string;
+}
+
+interface GroupedRoute {
+    route: ClimbingTick['route'];
+    ticks: TickDetail[];
+    bestStars: number;
+    photos: StrapiImage[];
 }
 
 function groupTicksByRoute(tickList: ClimbingTick[]): GroupedRoute[] {
     const routeMap = new Map<string, GroupedRoute>();
 
     for (const tick of tickList) {
-        const routeUrl = tick.route?.mountainProjectUrl || 'unknown';
-        const groupKey = `${routeUrl}|${tick.style || ''}|${tick.leadStyle || ''}`;
+        const groupKey = tick.route?.mountainProjectUrl || 'unknown';
 
         if (!routeMap.has(groupKey)) {
             routeMap.set(groupKey, {
                 route: tick.route,
-                climbers: [],
+                ticks: [],
                 bestStars: 0,
                 photos: [],
-                notes: [],
-                style: tick.style,
-                leadStyle: tick.leadStyle,
-                pitches: 0,
             });
         }
 
         const groupedRoute = routeMap.get(groupKey)!;
-        groupedRoute.pitches += tick.pitches || 1;
 
-        if (tick.person?.name && !groupedRoute.climbers.includes(tick.person.name)) {
-            groupedRoute.climbers.push(tick.person.name);
-        }
+        groupedRoute.ticks.push({
+            climber: tick.person?.name,
+            style: tick.style,
+            leadStyle: tick.leadStyle,
+            pitches: tick.pitches || 1,
+            notes: tick.notes || undefined,
+        });
 
         if (tick.yourStars && tick.yourStars > groupedRoute.bestStars) {
             groupedRoute.bestStars = tick.yourStars;
@@ -65,14 +67,21 @@ function groupTicksByRoute(tickList: ClimbingTick[]): GroupedRoute[] {
                 }
             }
         }
-
-        // Collect notes (avoid duplicates)
-        if (tick.notes && !groupedRoute.notes.includes(tick.notes)) {
-            groupedRoute.notes.push(tick.notes);
-        }
     }
 
     return Array.from(routeMap.values());
+}
+
+function formatTickLabel(tick: TickDetail): string {
+    const parts: string[] = [];
+    if (tick.climber) parts.push(tick.climber);
+    if (tick.style) {
+        let styleStr = tick.style;
+        if (tick.leadStyle) styleStr += ` · ${tick.leadStyle}`;
+        parts.push(styleStr);
+    }
+    if (tick.pitches > 1) parts.push(`${tick.pitches}p`);
+    return parts.join(" — ");
 }
 
 const routes = groupTicksByRoute(ticks);
@@ -84,7 +93,11 @@ const routes = groupTicksByRoute(ticks);
             Pitches Climbed
         </h3>
         <div class="space-y-2">
-            {routes.map((groupedRoute) => (
+            {routes.map((groupedRoute) => {
+                const uniqueNotes = groupedRoute.ticks
+                    .map(t => t.notes)
+                    .filter((n, i, arr): n is string => !!n && arr.indexOf(n) === i);
+                return (
                 <div class="flex items-start gap-4 p-2 rounded border border-[var(--color-accent)] hover:border-[var(--color-header)] transition">
                     <div class="flex-1 min-w-0">
                         <div class="flex items-baseline gap-2 flex-wrap">
@@ -102,28 +115,18 @@ const routes = groupTicksByRoute(ticks);
                             {groupedRoute.route?.routeType && (
                                 <span class="text-xs opacity-70">{groupedRoute.route.routeType}</span>
                             )}
-                            {groupedRoute.style && (
-                                <span class="text-xs px-2 py-0.5 rounded bg-[var(--color-accent)]/20">
-                                    {groupedRoute.style}{groupedRoute.leadStyle ? ` · ${groupedRoute.leadStyle}` : ''}
-                                </span>
-                            )}
-                            {groupedRoute.pitches > 1 && (
-                                <span class="text-xs px-2 py-0.5 rounded bg-[var(--color-header)]/20 font-semibold">
-                                    {groupedRoute.pitches}p
-                                </span>
-                            )}
                         </div>
                         {groupedRoute.route?.location && (
                             <p class="text-sm truncate">{groupedRoute.route.location}</p>
                         )}
-                        {groupedRoute.climbers.length > 0 && (
-                            <p class="text-xs mt-1 opacity-70">
-                                {groupedRoute.climbers.join(" & ")}
-                            </p>
-                        )}
-                        {groupedRoute.notes.length > 0 && (
+                        <div class="mt-1 space-y-0.5">
+                            {groupedRoute.ticks.map((tick) => (
+                                <div class="text-xs opacity-70">{formatTickLabel(tick)}</div>
+                            ))}
+                        </div>
+                        {uniqueNotes.length > 0 && (
                             <p class="text-sm mt-2 italic opacity-80">
-                                {groupedRoute.notes.join(" · ")}
+                                {uniqueNotes.join(" · ")}
                             </p>
                         )}
                         <PhotoGallery
@@ -137,7 +140,8 @@ const routes = groupTicksByRoute(ticks);
                         </div>
                     )}
                 </div>
-            ))}
+                );
+            })}
         </div>
     </div>
 )}

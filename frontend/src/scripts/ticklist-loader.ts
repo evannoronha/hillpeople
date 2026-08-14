@@ -59,6 +59,14 @@ interface GoalProgress {
     isComplete: boolean;
 }
 
+interface TickDetail {
+    climber?: string;
+    style?: string;
+    leadStyle?: string;
+    pitches: number;
+    notes?: string;
+}
+
 interface GroupedRoute {
     route: {
         documentId?: string;
@@ -68,7 +76,7 @@ interface GroupedRoute {
         location?: string;
         mountainProjectUrl?: string;
     } | null;
-    climbers: string[];
+    ticks: TickDetail[];
     bestStars: number;
     photos?: Array<{
         id: number;
@@ -79,10 +87,6 @@ interface GroupedRoute {
             thumbnail?: { url: string };
         };
     }>;
-    notes: string[];
-    style?: string;
-    leadStyle?: string;
-    pitches?: number;
 }
 
 interface TicksByDate {

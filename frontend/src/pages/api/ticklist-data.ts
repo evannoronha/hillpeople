@@ -47,15 +47,19 @@ interface GoalProgress {
     isComplete: boolean;
 }
 
-interface GroupedRoute {
-    route: ClimbingTick['route'] | null;
-    climbers: string[];
-    bestStars: number;
-    photos: ClimbingTick['photos'];
-    notes: string[];
+interface TickDetail {
+    climber?: string;
     style?: string;
     leadStyle?: string;
     pitches: number;
+    notes?: string;
+}
+
+interface GroupedRoute {
+    route: ClimbingTick['route'] | null;
+    ticks: TickDetail[];
+    bestStars: number;
+    photos: ClimbingTick['photos'];
 }
 
 interface TicksByDate {
@@ -217,8 +221,7 @@ function groupTicksByDateAndRoute(ticks: ClimbingTick[]): TicksByDate[] {
     for (const tick of ticks) {
         const date = tick.tickDate;
         if (!date) continue;
-        const routeUrl = tick.route?.mountainProjectUrl || 'unknown';
-        const groupKey = `${routeUrl}|${tick.style || ''}|${tick.leadStyle || ''}`;
+        const groupKey = tick.route?.mountainProjectUrl || 'unknown';
 
         if (!byDate.has(date)) byDate.set(date, new Map());
         const dateRoutes = byDate.get(date)!;
@@ -226,22 +229,21 @@ function groupTicksByDateAndRoute(ticks: ClimbingTick[]): TicksByDate[] {
         if (!dateRoutes.has(groupKey)) {
             dateRoutes.set(groupKey, {
                 route: tick.route || null,
-                climbers: [],
+                ticks: [],
                 bestStars: 0,
                 photos: [],
-                notes: [],
-                style: tick.style,
-                leadStyle: tick.leadStyle,
-                pitches: 0,
             });
         }
 
         const groupedRoute = dateRoutes.get(groupKey)!;
-        groupedRoute.pitches += tick.pitches || 1;
 
-        if (tick.person?.name && !groupedRoute.climbers.includes(tick.person.name)) {
-            groupedRoute.climbers.push(tick.person.name);
-        }
+        groupedRoute.ticks.push({
+            climber: tick.person?.name,
+            style: tick.style,
+            leadStyle: tick.leadStyle,
+            pitches: tick.pitches || 1,
+            notes: tick.notes || undefined,
+        });
 
         if (tick.yourStars && tick.yourStars > groupedRoute.bestStars) {
             groupedRoute.bestStars = tick.yourStars;
@@ -254,10 +256,6 @@ function groupTicksByDateAndRoute(ticks: ClimbingTick[]): TicksByDate[] {
                     groupedRoute.photos.push(photo);
                 }
             }
-        }
-
-        if (tick.notes && !groupedRoute.notes.includes(tick.notes)) {
-            groupedRoute.notes.push(tick.notes);
         }
     }
 
