@@ -200,6 +200,19 @@ cd backend/src/plugins/newsletter && npm run build
 | `CLIENT_URL` | Strapi Cloud | Frontend URL (shared with admin preview config) |
 | `STRAPI_PUBLIC_URL` | Strapi Cloud | Strapi public URL for resolving media URLs in emails |
 
+## SEO Assistant
+
+Post SEO fields (`seo.metaTitle`, `seo.metaDescription`, `seo.excerpt`) can be generated with the Claude API. The excerpt is also shown on post cards and in newsletter emails.
+
+- **Editor panel**: "Generate SEO" in the post edit view fills the form fields for review; nothing is saved until the author saves.
+- **Backfill**: "Fill missing SEO" on the Posts list fills empty fields on published posts and republishes them. Posts with unpublished edits are skipped so publishing never pushes draft changes live.
+- **Code**: `backend/src/utils/seo-generator.ts` (Claude call), `backend/src/utils/seo-assistant.ts` (admin routes under `/seo-assistant`, registered in `src/index.ts`), `backend/src/admin/components/` (UI)
+- **Frontend fallback**: posts with no meta description or excerpt use their first paragraph (`frontend/src/lib/description.ts`)
+
+| Variable | Location | Purpose |
+|----------|----------|---------|
+| `ANTHROPIC_API_KEY` | Strapi Cloud | Claude API key for SEO generation |
+
 ## CI / Pull Requests
 
 Four GitHub Actions workflows run on pull requests:

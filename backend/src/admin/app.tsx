@@ -6,7 +6,10 @@ import {
   StrapiUploadAdapter,
 } from '@_sh/strapi-plugin-ckeditor';
 import { Plugin } from 'ckeditor5';
+import type { StrapiApp } from '@strapi/strapi/admin';
 import { FolderAwareUploadAdapter } from './plugins/FolderAwareUploadAdapter';
+import { SeoAssistantPanel } from './components/SeoAssistantPanel';
+import { BackfillSeoButton } from './components/BackfillSeoButton';
 
 // Filter out StrapiUploadAdapter from base plugins - we replace it with FolderAwareUploadAdapter
 const basePlugins = (defaultHtmlPreset.editorConfig.plugins || []).filter(
@@ -590,5 +593,12 @@ export default {
   register() {
     setPluginConfig(config);
   },
-  bootstrap() {},
+  bootstrap(app: StrapiApp) {
+    const contentManager = app.getPlugin('content-manager');
+    (contentManager.apis as any).addEditViewSidePanel([SeoAssistantPanel]);
+    contentManager.injectComponent('listView', 'actions', {
+      name: 'backfill-seo',
+      Component: BackfillSeoButton,
+    });
+  },
 };
