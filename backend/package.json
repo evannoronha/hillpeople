@@ -42,5 +42,10 @@
   },
   "strapi": {
     "uuid": "5fc3f8e6-3f1e-4169-b6a9-abcd4ee76436"
+  },
+  "overrides": {
+    "sharp": "^0.35.5",
+    "webpack-dev-middleware": "^7.4.5",
+    "axios": "^1.20.0"
   }
 }
