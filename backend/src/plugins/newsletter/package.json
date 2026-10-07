@@ -65,5 +65,10 @@
   "name": "newsletter",
   "description": "Manage and send newsletters to subscribers",
   "license": "MIT",
-  "author": "Evan Noronha <hello@evannoronha.com>"
+  "author": "Evan Noronha <hello@evannoronha.com>",
+  "overrides": {
+    "sharp": "^0.35.5",
+    "webpack-dev-middleware": "^7.4.5",
+    "axios": "^1.20.0"
+  }
 }
