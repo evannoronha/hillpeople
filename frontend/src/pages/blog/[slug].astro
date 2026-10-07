@@ -16,6 +16,7 @@ import {
   injectHeadingIds,
 } from '../../lib/imageUrl';
 import { calculateReadingTime } from '../../lib/readingTime';
+import { descriptionFromHtml } from '../../lib/description';
 
 const { slug } = Astro.params;
 
@@ -50,7 +51,8 @@ const imageUrl = getMediaUrl(largestImage?.url);
 
 // Meta data
 const seoTitle = post.seo?.metaTitle || post.title;
-const seoDescription = post.seo?.metaDescription || post.seo?.excerpt || '';
+const seoDescription =
+  post.seo?.metaDescription || post.seo?.excerpt || descriptionFromHtml(post.richContent);
 const authorName =
   post.authorName ||
   `${post.createdBy?.firstname || ''} ${post.createdBy?.lastname || ''}`.trim();
