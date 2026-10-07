@@ -16,7 +16,7 @@ export default (config: UserConfig) => {
         'es-toolkit/compat/isEqual',
         'extend',
         'debug',
-        'sanitize-html',
+        'lodash/cloneDeep',
       ],
     },
   });
