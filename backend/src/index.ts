@@ -1,4 +1,6 @@
+import type { Core } from '@strapi/strapi';
 import sharp from 'sharp';
+import { registerSeoAssistantRoutes } from './utils/seo-assistant';
 
 // Serialize Sharp operations to prevent memory spikes when generating
 // responsive image formats (thumbnail + 5 breakpoints) in parallel.
@@ -13,7 +15,9 @@ export default {
    *
    * This gives you an opportunity to extend code.
    */
-  register() {},
+  register({ strapi }: { strapi: Core.Strapi }) {
+    registerSeoAssistantRoutes(strapi);
+  },
 
   /**
    * An asynchronous bootstrap function that runs before
